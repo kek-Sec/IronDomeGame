@@ -10,8 +10,6 @@ const fpsCounterEl = document.getElementById('fps-counter');
 const scoreEl = document.getElementById('score');
 const interceptorCountEl = document.getElementById('interceptor-count');
 const waveEl = document.getElementById('wave');
-const comboDisplay = document.getElementById('combo-display');
-const comboMultiplierEl = document.getElementById('combo-multiplier');
 const modalContainer = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-content-main');
 const pauseButton = document.getElementById('pause-button');
@@ -26,14 +24,7 @@ export function updateTopUI(state) {
     scoreEl.textContent = state.score;
     interceptorCountEl.textContent = state.remainingInterceptors;
     waveEl.textContent = state.currentWave + 1;
-    if (state.comboMultiplier > 1) {
-        comboMultiplierEl.textContent = `x${state.comboMultiplier}`;
-        comboDisplay.style.display = 'block';
-    } else {
-        comboDisplay.style.display = 'none';
-    }
     
-    // Show/hide pause button based on game state
     if (state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED') {
         pauseButton.style.display = 'flex';
         pauseIcon.innerHTML = state.gameState === 'PAUSED' ? '▶' : '||';
@@ -101,6 +92,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
  * @param {function} restartCallback - The function to call when the restart button is clicked.
  */
 export function showGameOverScreen(state, restartCallback) {
+    const { score, currentWave } = state;
     modalContainer.style.display = 'flex';
     modalContent.classList.add('game-over');
     modalContent.innerHTML = `<h1>MISSION FAILED</h1><p class="game-over-stats">FINAL SCORE: ${score}</p><p class="game-over-stats">WAVES SURVIVED: ${currentWave}</p><p>The defense has fallen. The war is not over.</p><button id="restart-button" class="modal-button">TRY AGAIN</button>`;

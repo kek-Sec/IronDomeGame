@@ -66,7 +66,7 @@ export class City {
     repair() { this.isDestroyed = false; }
 }
 
-// Base class for all enemy rockets
+// Base class for all enemy projectiles
 export class Rocket {
     constructor(startX, startY, targetVx, targetVy, width, sizeMultiplier = 1, speedMultiplier = 1) {
         this.x = startX ?? random(width * 0.1, width * 0.9);
@@ -98,37 +98,79 @@ export class Rocket {
     }
 }
 
-// A tougher rocket that requires multiple hits.
-export class ArmoredRocket extends Rocket {
+// A rocket that flickers in and out of visibility
+export class StealthRocket extends Rocket {
     constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
-        this.type = 'armored';
-        this.radius = 6 * sizeMultiplier;
-        this.health = 2;
-        this.color = '#ff9a00';
-        this.trailColor = 'rgba(255, 154, 0, 0.6)';
+        this.type = 'stealth';
+        this.color = '#ae00ff'; // Purple color
+        this.trailColor = 'rgba(174, 0, 255, 0.4)';
+        this.isVisible = true;
     }
-    _drawHead(ctx) {
-        super._drawHead(ctx);
-        if (this.health < 2) {
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(this.x - this.radius, this.y - this.radius);
-            ctx.lineTo(this.x + this.radius, this.y + this.radius);
-            ctx.stroke();
+    update() {
+        super.update();
+        // Flicker every 30 frames
+        if (this.life % 30 === 0) {
+            this.isVisible = !this.isVisible;
+        }
+    }
+    draw(ctx) {
+        if (this.isVisible) {
+            super.draw(ctx);
         }
     }
 }
 
-// A special rocket that splits into multiple smaller rockets
+// A small, fast-moving projectile spawned by a Swarmer
+export class Drone extends Rocket {
+    constructor(startX, startY, targetVx, targetVy, width, speedMultiplier = 1) {
+        super(startX, startY, targetVx, targetVy, width, 0.6, speedMultiplier * 1.5);
+        this.type = 'drone';
+        this.radius = 2;
+        this.trailColor = 'rgba(255, 255, 0, 0.5)';
+        this.color = 'yellow';
+    }
+}
+
+// A rocket that splits into a swarm of Drones
+export class SwarmerRocket extends Rocket {
+    constructor(width, height, sizeMultiplier = 1, speedMultiplier = 1) {
+        super(undefined, undefined, undefined, undefined, width, sizeMultiplier * 1.5, speedMultiplier * 0.8);
+        this.width = width;
+        this.type = 'swarmer';
+        this.radius *= 1.5; // Swarmers are bigger
+        this.color = '#32cd32'; // Lime green
+        this.trailColor = 'rgba(50, 205, 50, 0.5)';
+        this.splitHeight = random(height * 0.3, height * 0.6);
+        this.hasSplit = false;
+        this.speedMultiplier = speedMultiplier;
+    }
+    update() {
+        super.update();
+        if (this.y > this.splitHeight && !this.hasSplit) { this.hasSplit = true; }
+    }
+    split() {
+        const childDrones = []; const childCount = 6; // Releases more projectiles
+        for (let i = 0; i < childCount; i++) {
+            const angle = random(0, Math.PI * 2);
+            const speed = random(1, 3);
+            const newVx = Math.cos(angle) * speed;
+            const newVy = Math.sin(angle) * speed;
+            childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier));
+        }
+        return childDrones;
+    }
+}
+
+
+// A rocket that splits into multiple standard rockets
 export class MirvRocket extends Rocket {
     constructor(width, height, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
         this.width = width; this.type = 'mirv'; this.radius = 7 * sizeMultiplier;
         this.color = 'magenta'; this.trailColor = 'rgba(255, 0, 255, 0.5)';
         this.splitHeight = random(height * 0.2, height * 0.5); this.hasSplit = false;
-        this.speedMultiplier = speedMultiplier; // Store for children
+        this.speedMultiplier = speedMultiplier;
     }
     update() {
         super.update();
@@ -167,13 +209,11 @@ export class Interceptor {
         if (this.isHoming && !rockets.find(r => r.id === this.target.id)) {
             this.isHoming = false;
         }
-
         if (this.isHoming) {
             const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
             this.vx = Math.cos(angle) * this.speed;
             this.vy = Math.sin(angle) * this.speed;
         }
-
         this.trail.push({ x: this.x, y: this.y });
         if (this.trail.length > 25) this.trail.shift();
         this.x += this.vx; this.y += this.vy;
@@ -235,11 +275,8 @@ export class AutomatedTurret {
         if (inRange.length === 0) return null;
 
         // Prioritize more dangerous rockets
-        const armored = inRange.filter(r => r.type === 'armored');
-        if (armored.length > 0) return armored[0];
-
-        const mirvs = inRange.filter(r => r.type === 'mirv');
-        if (mirvs.length > 0) return mirvs[0];
+        const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv');
+        if (highPriority.length > 0) return highPriority[0];
         
         // Otherwise, target the closest one
         return inRange.reduce((closest, current) => {

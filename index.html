@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iron Dome Simulator</title>
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Link to your stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- UI Container for score, wave, etc. -->
     <div id="ui-container">
         <div class="ui-box">
              <h2>FPS: <span id="fps-counter">60</span></h2>
         </div>
         <div class="ui-box">
             <h2>SCORE: <span id="score">0</span></h2>
-        </div>
-        <div class="ui-box" id="combo-display" style="display: none;">
-             <h2>COMBO: <span id="combo-multiplier">x1</span></h2>
         </div>
         <div class="ui-box">
             <h2>WAVE: <span id="wave">1</span></h2>
@@ -28,18 +28,23 @@
         </div>
     </div>
 
+    <!-- Pause Button -->
     <div id="pause-button" class="pause-btn">
         <div id="pause-icon">||</div>
     </div>
 
 
+    <!-- The game canvas -->
     <canvas id="gameCanvas"></canvas>
 
+    <!-- Modal container for pop-up messages -->
     <div id="modal-container">
         <div id="modal-content-main" class="modal-content">
-            </div>
+            <!-- Content will be injected by JavaScript -->
+        </div>
     </div>
 
+    <!-- Link to your main JavaScript file. 'type="module"' is crucial. -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

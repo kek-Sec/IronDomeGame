@@ -8,7 +8,7 @@
 // --- Module Imports ---
 import { config, waveDefinitions, difficultySettings } from './config.js';
 import { random } from './utils.js';
-import { City, Rocket, MirvRocket, ArmoredRocket, Interceptor, Particle, AutomatedTurret, EMP } from './classes.js';
+import { City, Rocket, MirvRocket, StealthRocket, SwarmerRocket, Interceptor, Particle, AutomatedTurret, EMP } from './classes.js';
 import * as UI from './ui.js';
 
 // --- DOM & Canvas Setup ---
@@ -23,14 +23,13 @@ let animationFrameId; let state = {};
 // --- Game State Functions ---
 function getInitialState() {
     return {
-        gameState: 'START_SCREEN', // START_SCREEN, IN_WAVE, BETWEEN_WAVES, GAME_OVER, PAUSED
+        gameState: 'START_SCREEN',
         difficulty: 'normal', score: 0,
         remainingInterceptors: 0, currentWave: 0,
         interceptorSpeed: config.initialInterceptorSpeed,
         blastRadius: config.initialBlastRadius,
         rockets: [], interceptors: [], particles: [], cities: [], turrets: [], empPowerUps: [],
         empActiveTimer: 0, empShockwave: { radius: 0, alpha: 0 },
-        comboMultiplier: 1, comboTimer: 0,
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
         gameTime: 0,
@@ -43,13 +42,10 @@ function getInitialState() {
 // --- Core Game Logic ---
 function update() {
     state.gameTime++;
-    UI.updateTopUI(state); // Update UI every frame
+    UI.updateTopUI(state);
 
-    if (state.gameState !== 'IN_WAVE') return; // Do not update game logic if not in wave
+    if (state.gameState !== 'IN_WAVE') return;
     
-    if (state.comboTimer > 0) { state.comboTimer--; } 
-    else { state.comboMultiplier = 1; }
-
     if (state.empActiveTimer > 0) {
         state.empActiveTimer--;
         state.empShockwave.radius += 20;
@@ -77,6 +73,9 @@ function findTargetedRocket() {
     let closestDist = 50;
     state.targetedRocket = null;
     for (const rocket of state.rockets) {
+        // Can't target invisible stealth rockets
+        if (rocket.type === 'stealth' && !rocket.isVisible) continue;
+        
         const dist = Math.hypot(rocket.x - state.mouse.x, rocket.y - state.mouse.y);
         if (dist < closestDist) {
             closestDist = dist;
@@ -99,7 +98,8 @@ function handleSpawning() {
         
         if (rocketType === 'standard') { state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier)); } 
         else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier, speedMultiplier)); }
-        else if (rocketType === 'armored') { state.rockets.push(new ArmoredRocket(width, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'stealth') { state.rockets.push(new StealthRocket(width, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'swarmer') { state.rockets.push(new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier)); }
         
         state.waveRocketSpawn.timer = 0;
     }
@@ -116,7 +116,7 @@ function updateRockets() {
         const rocket = state.rockets[i];
         rocket.update();
         
-        if (rocket.type === 'mirv' && rocket.hasSplit) {
+        if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
             state.rockets.push(...rocket.split());
             state.rockets.splice(i, 1);
             continue;
@@ -164,22 +164,16 @@ function updateInterceptors() {
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
             if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
-                let destroyed = false;
-                if (rocket.type === 'armored' && rocket.health > 1) {
-                    rocket.health--;
-                    rocket.color = '#ff0000';
-                } else {
-                    let points = 0;
-                    if (rocket.type === 'standard') points = config.rocketPoints;
-                    else if (rocket.type === 'mirv') points = config.mirvPoints;
-                    else if (rocket.type === 'armored') points = config.armoredRocketPoints;
-                    state.score += points * state.comboMultiplier;
-                    state.rockets.splice(j, 1);
-                    state.comboTimer = config.comboTimeout;
-                    state.comboMultiplier++;
-                    destroyed = true;
-                }
-                createExplosion(rocket.x, rocket.y, destroyed ? 80 : 25, destroyed ? 200 : 100);
+                let points = 0;
+                if (rocket.type === 'standard') points = config.rocketPoints;
+                else if (rocket.type === 'mirv') points = config.mirvPoints;
+                else if (rocket.type === 'stealth') points = config.stealthPoints;
+                else if (rocket.type === 'swarmer') points = config.swarmerPoints;
+                else if (rocket.type === 'drone') points = config.dronePoints;
+                state.score += points;
+                
+                state.rockets.splice(j, 1);
+                createExplosion(rocket.x, rocket.y, 80, 200);
                 state.interceptors.splice(i, 1);
                 break;
             }
@@ -198,7 +192,6 @@ function updateParticles() {
 function checkWaveCompletion() {
     if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
         state.gameState = 'BETWEEN_WAVES';
-        state.comboMultiplier = 1;
         state.targetedRocket = null;
         refreshUpgradeScreen();
     }
@@ -298,7 +291,8 @@ function startNextWave() {
     let spawnList = [];
     for(let i=0; i<waveDef.standard; i++) spawnList.push('standard');
     for(let i=0; i<waveDef.mirv; i++) spawnList.push('mirv');
-    for(let i=0; i<waveDef.armored; i++) spawnList.push('armored');
+    for(let i=0; i<waveDef.stealth; i++) spawnList.push('stealth');
+    for(let i=0; i<waveDef.swarmer; i++) spawnList.push('swarmer');
     state.waveRocketSpawn.toSpawn = spawnList.sort(() => Math.random() - 0.5);
 
     state.waveRocketSpawn.timer = 0;
