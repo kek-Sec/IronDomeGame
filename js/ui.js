@@ -53,38 +53,61 @@ export function showStartScreen(startGameCallback) {
 }
 
 /**
- * Displays the upgrade screen between waves.
+ * Displays the upgrade screen between waves using a new card layout.
  * @param {object} state - The current game state.
  * @param {object} callbacks - An object containing callback functions for the buttons.
  * @param {object} config - The game's configuration object.
  */
 export function showBetweenWaveScreen(state, callbacks, config) {
-    const { score, currentWave, cities, turrets } = state;
-    const { upgradeInterceptorsCallback, upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback, upgradeSpeedCallback, upgradeBlastCallback } = callbacks;
+    const { score, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel } = state;
     const { upgradeCosts, maxTurrets } = config;
 
-    const destroyedCitiesCount = cities.filter(c => c.isDestroyed).length;
+    const shopItems = [
+        { id: 'interceptors', title: 'Restock Interceptors', desc: 'Purchase 5 additional interceptor missiles.', cost: upgradeCosts.interceptors, available: true },
+        { id: 'repair', title: 'Repair Base', desc: 'Repair one of your destroyed bases.', cost: upgradeCosts.repairCity, available: cities.some(c => c.isDestroyed) },
+        { id: 'turret', title: 'Build Turret', desc: 'Construct an automated defense turret. Max 2.', cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets },
+        { id: 'blast', title: 'Increase Blast Radius', desc: 'Permanently increase the explosion radius of your interceptors.', cost: upgradeCosts.blastRadius, available: true },
+        { id: 'turretSpeed', title: 'Upgrade Turret Speed', desc: 'Permanently increase the fire rate of all turrets.', cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3 },
+        { id: 'baseArmor', title: 'Armor Plating', desc: 'Apply armor to all bases, allowing them to survive one extra hit.', cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored },
+        { id: 'nuke', title: 'Nuke Interceptor', desc: 'A single-use interceptor with a massive blast radius. One per wave.', cost: upgradeCosts.nuke, available: true }
+    ];
+
+    let shopHTML = '<div class="shop-grid">';
+    shopItems.forEach(item => {
+        const affordable = score >= item.cost;
+        const disabled = !affordable || !item.available;
+        const maxed = item.maxed;
+        let statusText = `<div class="cost">Cost: ${item.cost}</div>`;
+        if (maxed) statusText = `<div class="cost">MAXED OUT</div>`;
+
+        shopHTML += `
+            <div class="shop-card ${disabled ? 'disabled' : ''} ${maxed ? 'maxed' : ''}" id="shop-${item.id}">
+                <h3>${item.title}</h3>
+                <p>${item.desc}</p>
+                ${statusText}
+            </div>
+        `;
+    });
+    shopHTML += '</div>';
+
     modalContainer.style.display = 'flex';
     modalContent.innerHTML = `
         <h1>WAVE ${currentWave + 1} COMPLETE</h1>
-        <p class="game-over-stats">Score: ${score}</p>
-        <div class="upgrade-options">
-            <button id="upgrade-interceptors" class="modal-button" ${score < upgradeCosts.interceptors ? 'disabled' : ''}>+5 Interceptors (Cost: ${upgradeCosts.interceptors})</button>
-            <button id="upgrade-repair" class="modal-button" ${score < upgradeCosts.repairCity || destroyedCitiesCount === 0 ? 'disabled' : ''}>Repair Base (Cost: ${upgradeCosts.repairCity})</button>
-            <button id="upgrade-turret" class="modal-button" ${score < upgradeCosts.automatedTurret || turrets.length >= maxTurrets ? 'disabled' : ''}>Build Turret (Cost: ${upgradeCosts.automatedTurret})</button>
-            <button id="upgrade-speed" class="modal-button" ${score < upgradeCosts.interceptorSpeed ? 'disabled' : ''}>Upgrade Speed (Cost: ${upgradeCosts.interceptorSpeed})</button>
-            <button id="upgrade-blast" class="modal-button" ${score < upgradeCosts.blastRadius ? 'disabled' : ''}>Upgrade Blast (Cost: ${upgradeCosts.blastRadius})</button>
-            <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
-        </div>
+        <p class="game-over-stats">SCORE: ${score}</p>
+        ${shopHTML}
+        <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
     `;
 
-    document.getElementById('upgrade-interceptors').addEventListener('click', upgradeInterceptorsCallback);
-    document.getElementById('upgrade-repair').addEventListener('click', upgradeRepairCallback);
-    document.getElementById('upgrade-turret').addEventListener('click', upgradeTurretCallback);
-    document.getElementById('upgrade-speed').addEventListener('click', upgradeSpeedCallback);
-    document.getElementById('upgrade-blast').addEventListener('click', upgradeBlastCallback);
-    document.getElementById('next-wave-button').addEventListener('click', nextWaveCallback);
+    document.getElementById('shop-interceptors').addEventListener('click', callbacks.upgradeInterceptorsCallback);
+    document.getElementById('shop-repair').addEventListener('click', callbacks.upgradeRepairCallback);
+    document.getElementById('shop-turret').addEventListener('click', callbacks.upgradeTurretCallback);
+    document.getElementById('shop-blast').addEventListener('click', callbacks.upgradeBlastCallback);
+    document.getElementById('shop-turretSpeed').addEventListener('click', callbacks.upgradeTurretSpeedCallback);
+    document.getElementById('shop-baseArmor').addEventListener('click', callbacks.upgradeBaseArmorCallback);
+    document.getElementById('shop-nuke').addEventListener('click', callbacks.upgradeNukeCallback);
+    document.getElementById('next-wave-button').addEventListener('click', callbacks.nextWaveCallback);
 }
+
 
 /**
  * Displays the game over screen.

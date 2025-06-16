@@ -22,10 +22,10 @@ export const difficultySettings = {
     },
     hard: {
         name: 'Hard',
-        initialInterceptors: 10, // Reduced from 15
-        waveDelayMultiplier: 0.7, // Reduced from 0.8 (faster spawns)
+        initialInterceptors: 10,
+        waveDelayMultiplier: 0.7,
         missileSizeMultiplier: 1.0,
-        turretFireRateMultiplier: 1.5, // Reduced from 1.25 (slower turrets)
+        turretFireRateMultiplier: 1.5,
     }
 };
 
@@ -34,12 +34,13 @@ export const config = {
     cityCount: 5,
     initialInterceptorSpeed: 7,
     initialBlastRadius: 15,
+    nukeBlastRadius: 150, // NEW: Nuke size
     rocketPoints: 100,
     mirvPoints: 200,
     stealthPoints: 300,
     swarmerPoints: 150,
     dronePoints: 25,
-    flareRocketPoints: 200, // Points for the flare rocket
+    flareRocketPoints: 200,
     maxTurrets: 2,
     turretFireRate: 90, 
     turretRange: 350,
@@ -51,7 +52,10 @@ export const config = {
         repairCity: 1000,
         automatedTurret: 2500,
         interceptorSpeed: 750,
-        blastRadius: 1200
+        blastRadius: 1200,
+        nuke: 3000, // NEW: Nuke cost
+        baseArmor: 2000, // NEW: Base armor cost
+        turretSpeed: 1500 // NEW: Turret fire rate upgrade
     }
 };
 

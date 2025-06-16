@@ -7,10 +7,11 @@ import { random } from './utils.js';
 
 // Represents a city/base to be defended
 export class City {
-    constructor(x, y, w, h) {
+    constructor(x, y, w, h, isArmored = false) {
         this.x = x; this.y = y; this.width = w; this.height = h;
         this.isDestroyed = false;
         this.structureType = Math.floor(random(0, 3));
+        this.isArmored = isArmored; // NEW
     }
     draw(ctx, height) {
         ctx.save();
@@ -20,6 +21,17 @@ export class City {
                 case 0: this.drawBunker(ctx); break;
                 case 1: this.drawDome(ctx, height); break;
                 case 2: this.drawCommsTower(ctx); break;
+            }
+            // Draw armor shield if active
+            if (this.isArmored) {
+                ctx.beginPath();
+                ctx.rect(this.x - 5, this.y - 5, this.width + 10, this.height + 5);
+                ctx.strokeStyle = 'rgba(0, 221, 255, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = 'cyan';
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
         }
         ctx.restore();
@@ -202,8 +214,8 @@ export class Flare {
         this.vx = random(-2, 2);
         this.vy = random(-1, 1);
         this.radius = 5;
-        this.life = 120; // Lasts 2 seconds
-        this.id = random(0, 1000000); // For tracking
+        this.life = 120;
+        this.id = random(0, 1000000);
     }
     update() {
         this.x += this.vx;
@@ -227,10 +239,10 @@ export class FlareRocket extends Rocket {
     constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
         this.type = 'flare';
-        this.color = '#00ced1'; // Dark turquoise
+        this.color = '#00ced1';
         this.trailColor = 'rgba(0, 206, 209, 0.5)';
         this.flareCooldown = 0;
-        this.flareDeployInterval = 90; // Deploys a flare every 1.5 seconds
+        this.flareDeployInterval = 90;
     }
     update(flares) {
         super.update();
@@ -245,25 +257,26 @@ export class FlareRocket extends Rocket {
 
 // Represents the player's interceptor missile
 export class Interceptor {
-    constructor(startX, startY, target, speed, blastRadius) {
+    constructor(startX, startY, target, speed, blastRadius, type = 'standard') {
         this.x = startX; this.y = startY;
         this.target = target;
-        this.radius = 3; this.speed = speed; this.blastRadius = blastRadius;
+        this.radius = type === 'nuke' ? 10 : 3;
+        this.speed = speed;
+        this.blastRadius = type === 'nuke' ? 150 : blastRadius;
+        this.type = type;
         this.trail = [];
         this.isHoming = !!target;
-        this.hasBeenDistracted = false; // Prevents being fooled multiple times
+        this.hasBeenDistracted = false;
     }
     update(rockets, flares) {
-        // If the current target no longer exists, stop homing
         if (this.isHoming && !rockets.find(r => r.id === this.target.id) && !flares.find(f => f.id === this.target.id)) {
             this.isHoming = false;
         }
 
-        // Decoy logic: Check for nearby flares
         if (this.isHoming && !this.hasBeenDistracted) {
             for (const flare of flares) {
                 if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
-                    this.target = flare; // Switch target to the flare!
+                    this.target = flare;
                     this.hasBeenDistracted = true;
                     break;
                 }
@@ -285,10 +298,13 @@ export class Interceptor {
             ctx.moveTo(this.trail[0].x, this.trail[0].y);
             for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
         }
-        ctx.strokeStyle = `rgba(0, 255, 255, 0.5)`; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = this.type === 'nuke' ? `rgba(255, 100, 0, 0.7)` :`rgba(0, 255, 255, 0.5)`; 
+        ctx.lineWidth = this.type === 'nuke' ? 5 : 2; 
+        ctx.stroke();
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = 'white'; ctx.fill();
-        ctx.shadowColor = 'cyan'; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
+        ctx.shadowColor = this.type === 'nuke' ? 'orange' : 'cyan'; 
+        ctx.shadowBlur = 20; ctx.fill(); ctx.shadowBlur = 0;
     }
 }
 
@@ -318,7 +334,9 @@ export class Particle {
 export class AutomatedTurret {
     constructor(x, y, range, fireRate) {
         this.x = x; this.y = y; this.range = range;
-        this.fireRate = fireRate; this.fireCooldown = 0; this.angle = -Math.PI / 2;
+        this.baseFireRate = fireRate;
+        this.fireRate = fireRate;
+        this.fireCooldown = 0; this.angle = -Math.PI / 2;
     }
     update(rockets) {
         if (this.fireCooldown > 0) { this.fireCooldown--; }

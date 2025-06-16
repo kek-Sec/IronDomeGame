@@ -107,8 +107,8 @@ canvas {
     left: 20px;
     right: 20px;
     display: flex;
-    justify-content: flex-start; /* Changed */
-    gap: 15px; /* Added */
+    justify-content: flex-start;
+    gap: 15px;
     align-items: center;
     z-index: 2;
     pointer-events: none;
@@ -185,7 +185,7 @@ canvas {
     padding: 40px;
     border-radius: 12px;
     text-align: center;
-    max-width: 550px;
+    max-width: 800px; /* Increased width for shop */
     width: 90%;
     box-shadow: 0 0 30px rgba(0, 221, 255, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
     animation: fadeIn 0.5s ease-out;
@@ -230,7 +230,7 @@ canvas {
     text-shadow: 0 0 8px var(--glow-color);
     box-shadow: 0 0 10px rgba(0, 221, 255, 0.3), inset 0 0 10px rgba(0, 221, 255, 0.2);
     pointer-events: all;
-    margin: 10px;
+    margin-top: 20px;
 }
 
 .modal-button:hover:not(:disabled) {
@@ -254,8 +254,71 @@ canvas {
     text-shadow: none;
 }
 
-.upgrade-options {
+/* --- NEW SHOP UI STYLES --- */
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.shop-card {
+    background: rgba(13, 17, 23, 0.9);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    justify-content: space-between;
+    transition: all 0.2s ease-in-out;
+}
+
+.shop-card:not(.disabled):not(.maxed) {
+    cursor: pointer;
+}
+
+.shop-card:not(.disabled):not(.maxed):hover {
+    border-color: var(--glow-color);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 25px rgba(0, 221, 255, 0.2);
+}
+
+.shop-card h3 {
+    color: var(--glow-color);
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.shop-card p {
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    flex-grow: 1;
+}
+
+.shop-card .cost {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.shop-card.disabled {
+    color: var(--disabled-color);
+    border-color: var(--disabled-color);
+}
+.shop-card.disabled h3 {
+    color: var(--disabled-color);
+}
+.shop-card.disabled .cost {
+    color: var(--disabled-color);
+}
+.shop-card.maxed {
+    border-color: gold;
+}
+.shop-card.maxed h3 {
+    color: gold;
+}
+.shop-card.maxed .cost {
+    color: gold;
+    font-size: 1.2em;
 }

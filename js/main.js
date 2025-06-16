@@ -8,7 +8,7 @@
 // --- Module Imports ---
 import { config, waveDefinitions, difficultySettings } from './config.js';
 import { random } from './utils.js';
-import { City, Rocket, MirvRocket, StealthRocket, SwarmerRocket, Interceptor, Particle, AutomatedTurret, EMP, Flare } from './classes.js';
+import { City, Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, Interceptor, Particle, AutomatedTurret, EMP, Flare } from './classes.js';
 import * as UI from './ui.js';
 
 // --- DOM & Canvas Setup ---
@@ -36,6 +36,9 @@ function getInitialState() {
         fps: 0, frameCount: 0, lastFpsUpdate: 0,
         mouse: { x: 0, y: 0 },
         targetedRocket: null,
+        nukeAvailable: false, // For the new Nuke upgrade
+        basesAreArmored: false, // For the new Armor upgrade
+        turretFireRateLevel: 0, // For turret speed upgrade
     };
 }
 
@@ -135,7 +138,12 @@ function updateRockets() {
             if(rocket.y > height - 100) {
                  state.cities.forEach(city => {
                    if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-                       city.isDestroyed = true; hitCity = true;
+                       if (city.isArmored) {
+                           city.isArmored = false;
+                       } else {
+                           city.isDestroyed = true;
+                       }
+                       hitCity = true;
                        createExplosion(rocket.x, rocket.y, 80, 0);
                        triggerScreenShake(15, 30);
                    }
@@ -186,12 +194,12 @@ function updateInterceptors() {
             const flare = state.flares[f];
             if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
                 state.flares.splice(f, 1);
-                createExplosion(interceptor.x, interceptor.y, 20, 50); // Small yellow explosion
+                createExplosion(interceptor.x, interceptor.y, 20, 50);
                 state.interceptors.splice(i, 1);
                 break;
             }
         }
-        if(!state.interceptors[i]) continue; // Interceptor was destroyed hitting a flare
+        if(!state.interceptors[i]) continue;
 
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
@@ -226,7 +234,8 @@ function checkWaveCompletion() {
     if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
         state.gameState = 'BETWEEN_WAVES';
         state.targetedRocket = null;
-        state.flares = []; // Clear leftover flares
+        state.flares = [];
+        state.nukeAvailable = false; // Reset nuke availability
         refreshUpgradeScreen();
     }
 }
@@ -366,7 +375,7 @@ function createCities() {
         const h = random(40, height * 0.2);
         const w = cityWidth * random(0.6, 0.8);
         const x = (i * cityWidth) + (cityWidth - w) / 2;
-        state.cities.push(new City(x, height - h, w, h));
+        state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
     }
 }
 
@@ -404,8 +413,13 @@ function handleClick(e) {
     }
     
     if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0 && state.targetedRocket) {
-        state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius));
-        state.remainingInterceptors--;
+        const interceptorType = state.nukeAvailable ? 'nuke' : 'standard';
+        state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius, interceptorType));
+        if (state.nukeAvailable) {
+            state.nukeAvailable = false;
+        } else {
+            state.remainingInterceptors--;
+        }
         UI.updateTopUI(state);
     }
 }
@@ -467,6 +481,30 @@ function handleUpgradeBlast() {
     }
 }
 
+function handleUpgradeNuke() {
+    if(state.score >= config.upgradeCosts.nuke && !state.nukeAvailable) {
+        state.score -= config.upgradeCosts.nuke;
+        state.nukeAvailable = true;
+        refreshUpgradeScreen();
+    }
+}
+function handleUpgradeBaseArmor() {
+    if(state.score >= config.upgradeCosts.baseArmor && !state.basesAreArmored) {
+        state.score -= config.upgradeCosts.baseArmor;
+        state.basesAreArmored = true;
+        state.cities.forEach(c => c.isArmored = true);
+        refreshUpgradeScreen();
+    }
+}
+function handleUpgradeTurretSpeed() {
+     if(state.score >= config.upgradeCosts.turretSpeed && state.turretFireRateLevel < 3) {
+        state.score -= config.upgradeCosts.turretSpeed;
+        state.turretFireRateLevel++;
+        state.turrets.forEach(t => t.fireRate *= 0.75); // 25% faster
+        refreshUpgradeScreen();
+    }
+}
+
 function refreshUpgradeScreen() {
     UI.updateTopUI(state);
     UI.showBetweenWaveScreen(state, {
@@ -475,6 +513,9 @@ function refreshUpgradeScreen() {
         upgradeTurretCallback: handleUpgradeTurret,
         upgradeSpeedCallback: handleUpgradeSpeed,
         upgradeBlastCallback: handleUpgradeBlast,
+        upgradeNukeCallback: handleUpgradeNuke,
+        upgradeBaseArmorCallback: handleUpgradeBaseArmor,
+        upgradeTurretSpeedCallback: handleUpgradeTurretSpeed,
         nextWaveCallback: startNextWave
     }, config);
 }
