@@ -10,16 +10,19 @@ export const difficultySettings = {
         name: 'Easy',
         initialInterceptors: 30,
         waveDelayMultiplier: 1.25, // Rockets spawn 25% slower
+        missileSizeMultiplier: 1.5, // NEW: Missiles are smaller
     },
     normal: {
         name: 'Normal',
         initialInterceptors: 20,
         waveDelayMultiplier: 1.0,  // Standard spawn rate
+        missileSizeMultiplier: 1.25, // NEW: Standard missile size
     },
     hard: {
         name: 'Hard',
         initialInterceptors: 15,
         waveDelayMultiplier: 0.8, // Rockets spawn 20% faster
+        missileSizeMultiplier: 1.0, // NEW: Missiles are larger
     }
 };
 

@@ -35,13 +35,13 @@ function getInitialState() {
         turrets: [],
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
-        gameTime: 0 // for time-based animations
+        gameTime: 0
     };
 }
 
 // --- Core Game Logic ---
 function update() {
-    state.gameTime++; // Increment game time for animations
+    state.gameTime++;
     if (state.gameState !== 'IN_WAVE') return;
     
     handleRocketSpawning();
@@ -55,17 +55,19 @@ function update() {
 
 function handleRocketSpawning() {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
-    const difficultyMod = difficultySettings[state.difficulty].waveDelayMultiplier;
-    const currentWaveDelay = waveDef.delay * difficultyMod;
+    const difficulty = difficultySettings[state.difficulty];
+    const currentWaveDelay = waveDef.delay * difficulty.waveDelayMultiplier;
     
     state.waveRocketSpawn.timer++;
     
     if (state.waveRocketSpawn.timer > currentWaveDelay && state.waveRocketSpawn.toSpawn.length > 0) {
         const rocketType = state.waveRocketSpawn.toSpawn.pop();
+        const sizeMultiplier = difficulty.missileSizeMultiplier; // Get multiplier
+        
         if (rocketType === 'standard') {
-            state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width));
+            state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier));
         } else if (rocketType === 'mirv') {
-            state.rockets.push(new MirvRocket(width, height));
+            state.rockets.push(new MirvRocket(width, height, sizeMultiplier));
         }
         state.waveRocketSpawn.timer = 0;
     }
@@ -127,7 +129,8 @@ function updateInterceptors() {
 
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
-            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < 15) {
+            // Use sum of radii for more accurate collision detection
+            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < rocket.radius + interceptor.radius) {
                 createExplosion(rocket.x, rocket.y, 100, 200);
                 state.score += (rocket.type === 'mirv') ? config.mirvPoints : config.rocketPoints;
                 state.rockets.splice(j, 1);
@@ -172,7 +175,6 @@ function draw() {
 
     ctx.clearRect(0, 0, width, height);
     
-    // Draw turret range indicators during upgrade phase for better UX
     if (state.gameState === 'BETWEEN_WAVES') {
         state.turrets.forEach(turret => {
             ctx.beginPath();
@@ -187,14 +189,12 @@ function draw() {
         });
     }
 
-    // Draw a faint ground line
     ctx.fillStyle = 'rgba(0, 221, 255, 0.3)';
     ctx.fillRect(0, height - 1, width, 1);
 
     state.cities.forEach(city => city.draw(ctx, height));
     state.turrets.forEach(turret => turret.draw(ctx));
 
-    // Player's main battery
     ctx.beginPath();
     ctx.moveTo(width / 2 - 20, height);
     ctx.lineTo(width / 2, height - 20);
@@ -258,7 +258,7 @@ function createCities() {
     state.cities = [];
     const cityWidth = width / config.cityCount;
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(80, height * 0.3); // Taller buildings
+        const h = random(40, height * 0.2); // Bases are shorter
         const w = cityWidth * random(0.6, 0.8);
         const x = (i * cityWidth) + (cityWidth - w) / 2;
         state.cities.push(new City(x, height - h, w, h));
