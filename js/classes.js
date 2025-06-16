@@ -10,16 +10,51 @@ export class City {
     constructor(x, y, w, h) {
         this.x = x; this.y = y; this.width = w; this.height = h;
         this.isDestroyed = false;
+        // Generate windows for the building for a more detailed look
+        this.windows = [];
+        for (let i = 0; i < 20; i++) {
+            this.windows.push({
+                x: random(0, w - 4),
+                y: random(0, h - 4),
+                alpha: random(0.3, 1)
+            });
+        }
     }
     draw(ctx, height) {
         if (this.isDestroyed) {
-            ctx.fillStyle = '#4a2a2a'; // Rubble color
-            ctx.fillRect(this.x, height - this.height / 3, this.width, this.height / 3);
+            // Draw more detailed rubble instead of a flat box
+            ctx.fillStyle = '#4a2a2a'; 
+            ctx.beginPath();
+            ctx.moveTo(this.x, height);
+            ctx.lineTo(this.x + this.width * 0.2, height - this.height * 0.3);
+            ctx.lineTo(this.x + this.width * 0.5, height);
+            ctx.lineTo(this.x + this.width * 0.6, height - this.height * 0.2);
+            ctx.lineTo(this.x + this.width, height);
+            ctx.closePath();
+            ctx.fill();
             return;
         };
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+
+        // Create a futuristic gradient for the building
+        const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+        gradient.addColorStop(0, '#0f3443');
+        gradient.addColorStop(0.5, '#34e89e');
+        gradient.addColorStop(1, '#0f3443');
+
+        ctx.fillStyle = gradient;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
+        
+        // Draw glowing windows that flicker
+        ctx.fillStyle = `rgba(0, 221, 255, 0.8)`;
+        this.windows.forEach(win => {
+            if (Math.random() < 0.995) { // Flicker effect
+                 ctx.globalAlpha = win.alpha;
+                 ctx.fillRect(this.x + win.x, this.y + win.y, 4, 4);
+            }
+        });
+        ctx.globalAlpha = 1; // Reset alpha
+        
+        ctx.strokeStyle = 'rgba(0, 221, 255, 0.7)';
         ctx.strokeRect(this.x, this.y, this.width, this.height);
     }
     repair() {
@@ -39,11 +74,13 @@ export class Rocket {
         this.type = 'standard';
         this.color = 'red';
         this.trailColor = 'rgba(255, 77, 77, 0.5)';
+        this.life = 0; // for time-based animations
     }
     update() {
         this.trail.push({ x: this.x, y: this.y });
         if (this.trail.length > 20) this.trail.shift();
         this.x += this.vx; this.y += this.vy;
+        this.life++;
     }
     draw(ctx) {
         this._drawTrail(ctx);
@@ -97,6 +134,17 @@ export class MirvRocket extends Rocket {
             childRockets.push(new Rocket(this.x, this.y, newVx, newVy, this.width));
         }
         return childRockets;
+    }
+    // Override trail drawing for a pulsating effect
+    _drawTrail(ctx) {
+        if (!this.trail[0]) return;
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0].x, this.trail[0].y);
+        for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
+        ctx.strokeStyle = this.trailColor;
+        // Pulsating line width using a sine wave
+        ctx.lineWidth = 3 + Math.sin(this.life * 0.5) * 2;
+        ctx.stroke();
     }
 }
 

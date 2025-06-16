@@ -24,9 +24,9 @@ let state = {};
 function getInitialState() {
     return {
         gameState: 'START_SCREEN', // START_SCREEN, IN_WAVE, BETWEEN_WAVES, GAME_OVER
-        difficulty: 'normal', // Default difficulty
+        difficulty: 'normal',
         score: 0,
-        remainingInterceptors: 0, // Will be set by difficulty
+        remainingInterceptors: 0,
         currentWave: 0,
         rockets: [],
         interceptors: [],
@@ -34,12 +34,14 @@ function getInitialState() {
         cities: [],
         turrets: [],
         screenShake: { intensity: 0, duration: 0 },
-        waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] }
+        waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
+        gameTime: 0 // for time-based animations
     };
 }
 
 // --- Core Game Logic ---
 function update() {
+    state.gameTime++; // Increment game time for animations
     if (state.gameState !== 'IN_WAVE') return;
     
     handleRocketSpawning();
@@ -169,9 +171,26 @@ function draw() {
     }
 
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, height - 10, width, 10);
     
+    // Draw turret range indicators during upgrade phase for better UX
+    if (state.gameState === 'BETWEEN_WAVES') {
+        state.turrets.forEach(turret => {
+            ctx.beginPath();
+            ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
+            const alpha = 0.2 + (Math.sin(state.gameTime * 0.05) * 0.1);
+            ctx.fillStyle = `rgba(0, 221, 255, ${alpha})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(0, 221, 255, ${alpha * 2})`;
+            ctx.setLineDash([15, 10]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        });
+    }
+
+    // Draw a faint ground line
+    ctx.fillStyle = 'rgba(0, 221, 255, 0.3)';
+    ctx.fillRect(0, height - 1, width, 1);
+
     state.cities.forEach(city => city.draw(ctx, height));
     state.turrets.forEach(turret => turret.draw(ctx));
 
@@ -192,10 +211,8 @@ function draw() {
 
 // --- Game Flow ---
 function gameLoop() {
-    if (state.gameState === 'IN_WAVE') {
-        update();
-        draw();
-    }
+    update();
+    draw();
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
@@ -241,7 +258,7 @@ function createCities() {
     state.cities = [];
     const cityWidth = width / config.cityCount;
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(40, 100);
+        const h = random(80, height * 0.3); // Taller buildings
         const w = cityWidth * random(0.6, 0.8);
         const x = (i * cityWidth) + (cityWidth - w) / 2;
         state.cities.push(new City(x, height - h, w, h));
@@ -293,7 +310,7 @@ function handleUpgradeTurret() {
     if (state.score >= config.upgradeCosts.automatedTurret && state.turrets.length < config.maxTurrets) {
         state.score -= config.upgradeCosts.automatedTurret;
         const turretX = state.turrets.length === 0 ? width * 0.25 : width * 0.75;
-        state.turrets.push(new AutomatedTurret(turretX, height - 15, config.turretRange, config.turretFireRate));
+        state.turrets.push(new AutomatedTurret(turretX, height - 10, config.turretRange, config.turretFireRate));
         draw();
         refreshUpgradeScreen();
     }

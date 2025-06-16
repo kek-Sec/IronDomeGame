@@ -40,6 +40,13 @@
     50% { text-shadow: 0 0 8px var(--glow-color), 0 0 15px var(--glow-color); }
 }
 
+/* NEW: Star twinkle animation */
+@keyframes twinkle {
+    0% { background-position: 0 0; }
+    100% { background-position: -10000px 5000px; }
+}
+
+
 /* --- General Resets and Body Styling --- */
 * {
     box-sizing: border-box;
@@ -54,7 +61,25 @@ html, body {
     background-color: var(--background-start);
     font-family: 'Orbitron', sans-serif;
     color: var(--text-color);
+    /* NEW: Add a static star layer */
+    background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/stars.png');
+    background-repeat: repeat;
+    background-position: 0 0;
 }
+
+/* NEW: Add a second, animated star layer for twinkling effect */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
+    background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/twinkling.png');
+    background-repeat: repeat;
+    background-position: 0 0;
+    animation: twinkle 200s linear infinite;
+    z-index: 0;
+}
+
 
 /* Optional Scanline Overlay for retro monitor effect */
 body::after {
@@ -74,7 +99,8 @@ body::after {
 /* --- Canvas and UI Styling --- */
 canvas {
     display: block;
-    background-image: radial-gradient(circle at 50% 0%, var(--background-end) 0%, var(--background-start) 70%);
+    /* UPDATED: Made canvas background transparent to see the star layers */
+    background: transparent; 
     position: absolute;
     top: 0;
     left: 0;
@@ -147,6 +173,13 @@ canvas {
     margin-bottom: 20px;
     animation: textFlicker 3s infinite;
 }
+
+/* NEW: Game Over specific H1 style */
+.modal-content.game-over h1 {
+    color: var(--rocket-color);
+    animation: pulseGlow 2s infinite ease-in-out;
+}
+
 
 .modal-content p {
     margin-bottom: 30px;
