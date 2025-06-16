@@ -67,6 +67,7 @@ export function draw(ctx, state, width, height) {
     state.turrets.forEach(turret => turret.draw(ctx));
     state.empPowerUps.forEach(emp => emp.draw(ctx));
     state.flares.forEach(flare => flare.draw(ctx));
+    state.tracerRounds.forEach(t => t.draw(ctx));
 
     if (state.targetedRocket) {
         drawReticle(ctx, state.targetedRocket, state.gameTime);

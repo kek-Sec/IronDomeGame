@@ -330,32 +330,67 @@ export class Particle {
     }
 }
 
+// NEW: C-RAM projectile
+export class TracerRound {
+    constructor(startX, startY, angle, speed) {
+        this.x = startX; this.y = startY;
+        this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+        this.radius = 2; this.life = 60; // short lifespan
+        this.color = 'rgba(255, 100, 0, 1)'; this.trail = [];
+    }
+    update() {
+        this.trail.push({ x: this.x, y: this.y }); if (this.trail.length > 5) this.trail.shift();
+        this.x += this.vx; this.y += this.vy; this.life--;
+    }
+    draw(ctx) {
+        if (this.trail.length > 0) {
+             ctx.beginPath(); ctx.moveTo(this.trail[0].x, this.trail[0].y);
+             for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
+             ctx.strokeStyle = 'rgba(255, 100, 0, 0.5)'; ctx.lineWidth = this.radius * 2; ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color; ctx.shadowColor = 'red'; ctx.shadowBlur = 10;
+        ctx.fill(); ctx.shadowBlur = 0;
+    }
+}
+
 // Represents an automated defense turret
 export class AutomatedTurret {
     constructor(x, y, range, fireRate) {
         this.x = x; this.y = y; this.range = range;
-        this.baseFireRate = fireRate;
-        this.fireRate = fireRate;
+        this.baseFireRate = fireRate; this.fireRate = fireRate;
         this.fireCooldown = 0; this.angle = -Math.PI / 2;
+        // C-RAM burst fire properties
+        this.isFiring = false; this.burstsLeft = 0;
+        this.timeInBurst = 0; this.shotsPerBurst = 5;
+        this.delayBetweenShots = 4; // Frames
     }
     update(rockets) {
         if (this.fireCooldown > 0) { this.fireCooldown--; }
-        const target = this.findTarget(rockets);
+        const newTracers = []; const target = this.findTarget(rockets);
         if (target) {
             this.angle = Math.atan2(target.y - this.y, target.x - this.x);
-            if (this.fireCooldown <= 0) {
-                this.fireCooldown = this.fireRate; return target;
+            if (!this.isFiring && this.fireCooldown <= 0) {
+                this.isFiring = true; this.burstsLeft = this.shotsPerBurst;
+                this.timeInBurst = 0; this.fireCooldown = this.fireRate;
             }
         }
-        return null;
+        if (this.isFiring) {
+            this.timeInBurst++;
+            if (this.timeInBurst % this.delayBetweenShots === 0 && this.burstsLeft > 0) {
+                const tracerSpeed = 15; const fireAngle = this.angle + (random(-0.5, 0.5) * 0.05);
+                newTracers.push(new TracerRound(this.x, this.y, fireAngle, tracerSpeed));
+                this.burstsLeft--;
+            }
+            if (this.burstsLeft <= 0) { this.isFiring = false; }
+        }
+        return newTracers;
     }
     findTarget(rockets) {
-        const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range);
+        const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
         if (inRange.length === 0) return null;
-
         const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv' || r.type === 'flare');
         if (highPriority.length > 0) return highPriority[0];
-        
         return inRange.reduce((closest, current) => {
             const closestDist = Math.hypot(this.x - closest.x, this.y - closest.y);
             const currentDist = Math.hypot(this.x - current.x, this.y - current.y);
@@ -367,7 +402,13 @@ export class AutomatedTurret {
         ctx.fillStyle = '#6c757d'; ctx.beginPath();
         ctx.moveTo(-15, 10); ctx.lineTo(15, 10); ctx.lineTo(10, 0); ctx.lineTo(-10, 0);
         ctx.closePath(); ctx.fill();
-        ctx.rotate(this.angle); ctx.fillStyle = '#adb5bd'; ctx.fillRect(0, -3, 20, 6);
+        ctx.rotate(this.angle);
+        if(this.isFiring && this.burstsLeft > 0 && this.timeInBurst % this.delayBetweenShots < 2) {
+            ctx.fillStyle = 'rgba(255, 200, 0, 0.8)'; ctx.beginPath();
+            ctx.moveTo(20, 0); ctx.lineTo(35, -5); ctx.lineTo(35, 5);
+            ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = '#adb5bd'; ctx.fillRect(0, -3, 20, 6);
         ctx.fillStyle = '#00ddff'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }

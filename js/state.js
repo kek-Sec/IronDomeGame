@@ -21,6 +21,7 @@ export function getInitialState() {
         particles: [],
         cities: [],
         turrets: [],
+        tracerRounds: [],
         empPowerUps: [],
         flares: [],
         empActiveTimer: 0,
