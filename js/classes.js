@@ -76,6 +76,7 @@ export class Rocket {
         this.radius = 4 * sizeMultiplier;
         this.trail = []; this.type = 'standard'; this.color = 'red';
         this.trailColor = 'rgba(255, 77, 77, 0.5)'; this.life = 0;
+        this.id = random(0, 1000000); // Unique ID for tracking
     }
     update() {
         this.trail.push({ x: this.x, y: this.y });
@@ -154,16 +155,26 @@ export class MirvRocket extends Rocket {
 
 // Represents the player's interceptor missile
 export class Interceptor {
-    constructor(startX, startY, targetX, targetY, speed, blastRadius) {
+    constructor(startX, startY, target, speed, blastRadius) {
         this.x = startX; this.y = startY;
-        this.targetX = targetX; this.targetY = targetY;
+        this.target = target; // NEW: The missile now tracks a target object
         this.radius = 3; this.speed = speed; this.blastRadius = blastRadius;
         this.trail = [];
-        const angle = Math.atan2(targetY - this.y, targetX - this.x);
-        this.vx = Math.cos(angle) * this.speed;
-        this.vy = Math.sin(angle) * this.speed;
+        this.isHoming = !!target;
     }
-    update() {
+    update(rockets) {
+        // If the target has been destroyed, stop homing
+        if (this.isHoming && !rockets.find(r => r.id === this.target.id)) {
+            this.isHoming = false;
+        }
+
+        // Homing logic: continuously adjust trajectory towards the target
+        if (this.isHoming) {
+            const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+            this.vx = Math.cos(angle) * this.speed;
+            this.vy = Math.sin(angle) * this.speed;
+        }
+
         this.trail.push({ x: this.x, y: this.y });
         if (this.trail.length > 25) this.trail.shift();
         this.x += this.vx; this.y += this.vy;
@@ -197,7 +208,7 @@ export class Particle {
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
         ctx.fillStyle = this.color.replace('1)', `${alpha})`);
         ctx.shadowColor = this.color;
-        ctx.shadowBlur = 5; // Reduced for performance
+        ctx.shadowBlur = 5;
         ctx.fill();
         ctx.shadowBlur = 0;
     }

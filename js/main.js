@@ -32,13 +32,18 @@ function getInitialState() {
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
         gameTime: 0,
         fps: 0, frameCount: 0, lastFpsUpdate: 0,
+        mouse: { x: 0, y: 0 }, // For mouse tracking
+        targetedRocket: null, // For the new lock-on system
     };
 }
 
 // --- Core Game Logic ---
 function update() {
     state.gameTime++;
-    if (state.gameState !== 'IN_WAVE') return;
+    if (state.gameState !== 'IN_WAVE') {
+        findTargetedRocket(); // Allow targeting even when wave hasn't started
+        return;
+    }
     
     if (state.comboTimer > 0) { state.comboTimer--; } 
     else { state.comboMultiplier = 1; }
@@ -54,10 +59,23 @@ function update() {
         emp.update();
         if (emp.life <= 0) state.empPowerUps.splice(i, 1);
     });
+    findTargetedRocket();
     
     checkWaveCompletion();
     checkGameOver();
     UI.updateTopUI(state);
+}
+
+function findTargetedRocket() {
+    let closestDist = 50; // Max distance to lock-on
+    state.targetedRocket = null;
+    for (const rocket of state.rockets) {
+        const dist = Math.hypot(rocket.x - state.mouse.x, rocket.y - state.mouse.y);
+        if (dist < closestDist) {
+            closestDist = dist;
+            state.targetedRocket = rocket;
+        }
+    }
 }
 
 function handleSpawning() {
@@ -119,7 +137,7 @@ function updateTurrets() {
     for (const turret of state.turrets) {
         const target = turret.update(state.rockets);
         if (target && state.remainingInterceptors > 0) {
-            state.interceptors.push(new Interceptor(turret.x, turret.y, target.x, target.y, state.interceptorSpeed, state.blastRadius));
+            state.interceptors.push(new Interceptor(turret.x, turret.y, target, state.interceptorSpeed, state.blastRadius));
             state.remainingInterceptors--;
         }
     }
@@ -128,16 +146,9 @@ function updateTurrets() {
 function updateInterceptors() {
     for (let i = state.interceptors.length - 1; i >= 0; i--) {
         const interceptor = state.interceptors[i];
-        interceptor.update();
+        interceptor.update(state.rockets);
 
         if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
-            state.interceptors.splice(i, 1);
-            continue;
-        }
-
-        const distToTarget = Math.hypot(interceptor.x - interceptor.targetX, interceptor.y - interceptor.targetY);
-        if (distToTarget < 20) {
-            createExplosion(interceptor.x, interceptor.y, 30, 200);
             state.interceptors.splice(i, 1);
             continue;
         }
@@ -180,6 +191,7 @@ function checkWaveCompletion() {
     if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
         state.gameState = 'BETWEEN_WAVES';
         state.comboMultiplier = 1;
+        state.targetedRocket = null;
         refreshUpgradeScreen();
     }
 }
@@ -224,12 +236,35 @@ function draw() {
     state.turrets.forEach(turret => turret.draw(ctx));
     state.empPowerUps.forEach(emp => emp.draw(ctx));
 
+    if (state.targetedRocket) {
+        drawReticle(state.targetedRocket);
+    }
+
     ctx.beginPath(); ctx.moveTo(width / 2 - 20, height); ctx.lineTo(width / 2, height - 20); ctx.lineTo(width / 2 + 20, height);
     ctx.closePath(); ctx.fillStyle = '#00ffff'; ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
 
     state.rockets.forEach(r => r.draw(ctx));
     state.interceptors.forEach(i => i.draw(ctx));
     state.particles.forEach(p => p.draw(ctx));
+    ctx.restore();
+}
+
+function drawReticle(rocket) {
+    const size = rocket.radius * 2;
+    ctx.save();
+    ctx.translate(rocket.x, rocket.y);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.rotate(state.gameTime * 0.05);
+
+    ctx.beginPath();
+    // Four corner brackets for the reticle
+    ctx.moveTo(-size, -size / 2); ctx.lineTo(-size, -size); ctx.lineTo(-size / 2, -size);
+    ctx.moveTo(size, -size / 2); ctx.lineTo(size, -size); ctx.lineTo(size / 2, -size);
+    ctx.moveTo(-size, size / 2); ctx.lineTo(-size, size); ctx.lineTo(-size / 2, size);
+    ctx.moveTo(size, size / 2); ctx.lineTo(size, size); ctx.lineTo(size / 2, size);
+    ctx.stroke();
+    
     ctx.restore();
 }
 
@@ -308,6 +343,12 @@ function triggerScreenShake(intensity, duration) {
     state.screenShake.duration = duration;
 }
 
+function handleMouseMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    state.mouse.x = e.clientX - rect.left;
+    state.mouse.y = e.clientY - rect.top;
+}
+
 function handleClick(e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -321,9 +362,10 @@ function handleClick(e) {
             return;
         }
     }
-
-    if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0) {
-        state.interceptors.push(new Interceptor(width / 2, height, x, y, state.interceptorSpeed, state.blastRadius));
+    
+    // Fire at the currently targeted rocket
+    if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0 && state.targetedRocket) {
+        state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius));
         state.remainingInterceptors--;
         UI.updateTopUI(state);
     }
@@ -391,10 +433,31 @@ function init() {
     state = getInitialState();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    canvas.addEventListener('mousemove', handleMouseMove); // NEW
     canvas.addEventListener('click', handleClick);
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        handleClick(e.touches[0]);
+        // Touch doesn't have a persistent hover, so we just fire at the point
+        const rect = canvas.getBoundingClientRect();
+        const x = e.touches[0].clientX - rect.left;
+        const y = e.touches[0].clientY - rect.top;
+        if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0) {
+            // Find closest rocket to touch point to simulate a quick "tap-to-target"
+            let closestDist = 100;
+            let touchTarget = null;
+            for (const rocket of state.rockets) {
+                const dist = Math.hypot(rocket.x - x, rocket.y - y);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    touchTarget = rocket;
+                }
+            }
+            if (touchTarget) {
+                 state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, state.blastRadius));
+                 state.remainingInterceptors--;
+                 UI.updateTopUI(state);
+            }
+        }
     });
 
     UI.showStartScreen(resetAndStartGame);
