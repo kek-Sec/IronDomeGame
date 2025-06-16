@@ -11,7 +11,7 @@ export class City {
         this.x = x; this.y = y; this.width = w; this.height = h;
         this.isDestroyed = false;
         this.structureType = Math.floor(random(0, 3));
-        this.isArmored = isArmored; // NEW
+        this.isArmored = isArmored;
     }
     draw(ctx, height) {
         ctx.save();
@@ -22,7 +22,6 @@ export class City {
                 case 1: this.drawDome(ctx, height); break;
                 case 2: this.drawCommsTower(ctx); break;
             }
-            // Draw armor shield if active
             if (this.isArmored) {
                 ctx.beginPath();
                 ctx.rect(this.x - 5, this.y - 5, this.width + 10, this.height + 5);
@@ -110,36 +109,50 @@ export class Rocket {
     }
 }
 
+// NEW: A rocket that requires multiple hits to destroy
+export class ArmoredRocket extends Rocket {
+    constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
+        super(undefined, undefined, random(-0.5, 0.5), random(1, 1.5), width, sizeMultiplier * 1.8, speedMultiplier * 0.7);
+        this.type = 'armored'; this.health = 3; this.maxHealth = 3;
+        this.color = '#c0c0c0'; this.trailColor = 'rgba(192, 192, 192, 0.5)';
+        this.radius *= 1.8;
+    }
+    takeDamage(amount) {
+        this.health -= amount;
+        return this.health <= 0;
+    }
+    draw(ctx) {
+        super.draw(ctx);
+        const barWidth = this.radius * 2; const barHeight = 5;
+        const barX = this.x - this.radius; const barY = this.y - this.radius - 10;
+        ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barWidth, barHeight);
+        const healthPercentage = this.health / this.maxHealth;
+        ctx.fillStyle = healthPercentage > 0.6 ? '#43a047' : healthPercentage > 0.3 ? '#fdd835' : '#e53935';
+        ctx.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(barX, barY, barWidth, barHeight);
+    }
+}
+
 // A rocket that flickers in and out of visibility
 export class StealthRocket extends Rocket {
     constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
-        this.type = 'stealth';
-        this.color = '#ae00ff';
-        this.trailColor = 'rgba(174, 0, 255, 0.4)';
-        this.isVisible = true;
+        this.type = 'stealth'; this.color = '#ae00ff';
+        this.trailColor = 'rgba(174, 0, 255, 0.4)'; this.isVisible = true;
     }
     update() {
         super.update();
-        if (this.life % 30 === 0) {
-            this.isVisible = !this.isVisible;
-        }
+        if (this.life % 30 === 0) { this.isVisible = !this.isVisible; }
     }
-    draw(ctx) {
-        if (this.isVisible) {
-            super.draw(ctx);
-        }
-    }
+    draw(ctx) { if (this.isVisible) { super.draw(ctx); } }
 }
 
 // A small, fast-moving projectile spawned by a Swarmer
 export class Drone extends Rocket {
     constructor(startX, startY, targetVx, targetVy, width, speedMultiplier = 1) {
         super(startX, startY, targetVx, targetVy, width, 0.6, speedMultiplier * 1.5);
-        this.type = 'drone';
-        this.radius = 2;
-        this.trailColor = 'rgba(255, 255, 0, 0.5)';
-        this.color = 'yellow';
+        this.type = 'drone'; this.radius = 2;
+        this.trailColor = 'rgba(255, 255, 0, 0.5)'; this.color = 'yellow';
     }
 }
 
@@ -147,13 +160,9 @@ export class Drone extends Rocket {
 export class SwarmerRocket extends Rocket {
     constructor(width, height, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier * 1.5, speedMultiplier * 0.8);
-        this.width = width;
-        this.type = 'swarmer';
-        this.radius *= 1.5;
-        this.color = '#32cd32';
-        this.trailColor = 'rgba(50, 205, 50, 0.5)';
-        this.splitHeight = random(height * 0.3, height * 0.6);
-        this.hasSplit = false;
+        this.width = width; this.type = 'swarmer'; this.radius *= 1.5;
+        this.color = '#32cd32'; this.trailColor = 'rgba(50, 205, 50, 0.5)';
+        this.splitHeight = random(height * 0.3, height * 0.6); this.hasSplit = false;
         this.speedMultiplier = speedMultiplier;
     }
     update() {
@@ -163,10 +172,8 @@ export class SwarmerRocket extends Rocket {
     split() {
         const childDrones = []; const childCount = 6;
         for (let i = 0; i < childCount; i++) {
-            const angle = random(0, Math.PI * 2);
-            const speed = random(1, 3);
-            const newVx = Math.cos(angle) * speed;
-            const newVy = Math.sin(angle) * speed;
+            const angle = random(0, Math.PI * 2); const speed = random(1, 3);
+            const newVx = Math.cos(angle) * speed; const newVy = Math.sin(angle) * speed;
             childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier));
         }
         return childDrones;
@@ -191,8 +198,7 @@ export class MirvRocket extends Rocket {
         const childRockets = []; const childCount = 3;
         const childSizeMultiplier = (this.radius / 7);
         for (let i = 0; i < childCount; i++) {
-            const newVx = this.vx + random(-1.5, 1.5);
-            const newVy = this.vy + random(-0.5, 0.5);
+            const newVx = this.vx + random(-1.5, 1.5); const newVy = this.vy + random(-0.5, 0.5);
             childRockets.push(new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier, this.speedMultiplier));
         }
         return childRockets;
@@ -210,27 +216,16 @@ export class MirvRocket extends Rocket {
 // A decoy projectile to confuse interceptors
 export class Flare {
     constructor(x, y) {
-        this.x = x; this.y = y;
-        this.vx = random(-2, 2);
-        this.vy = random(-1, 1);
-        this.radius = 5;
-        this.life = 120;
-        this.id = random(0, 1000000);
+        this.x = x; this.y = y; this.vx = random(-2, 2); this.vy = random(-1, 1);
+        this.radius = 5; this.life = 120; this.id = random(0, 1000000);
     }
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life--;
-    }
+    update() { this.x += this.vx; this.y += this.vy; this.life--; }
     draw(ctx) {
         const alpha = this.life / 120;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
-        ctx.shadowColor = `rgba(255, 215, 0, 1)`;
-        ctx.shadowBlur = 15;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = `rgba(255, 215, 0, 1)`; ctx.shadowBlur = 15;
+        ctx.fill(); ctx.shadowBlur = 0;
     }
 }
 
@@ -238,11 +233,8 @@ export class Flare {
 export class FlareRocket extends Rocket {
     constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
-        this.type = 'flare';
-        this.color = '#00ced1';
-        this.trailColor = 'rgba(0, 206, 209, 0.5)';
-        this.flareCooldown = 0;
-        this.flareDeployInterval = 90;
+        this.type = 'flare'; this.color = '#00ced1'; this.trailColor = 'rgba(0, 206, 209, 0.5)';
+        this.flareCooldown = 0; this.flareDeployInterval = 90;
     }
     update(flares) {
         super.update();
@@ -258,35 +250,24 @@ export class FlareRocket extends Rocket {
 // Represents the player's interceptor missile
 export class Interceptor {
     constructor(startX, startY, target, speed, blastRadius, type = 'standard') {
-        this.x = startX; this.y = startY;
-        this.target = target;
-        this.radius = type === 'nuke' ? 10 : 3;
-        this.speed = speed;
+        this.x = startX; this.y = startY; this.target = target;
+        this.radius = type === 'nuke' ? 10 : 3; this.speed = speed;
         this.blastRadius = type === 'nuke' ? 150 : blastRadius;
-        this.type = type;
-        this.trail = [];
-        this.isHoming = !!target;
+        this.type = type; this.trail = []; this.isHoming = !!target;
         this.hasBeenDistracted = false;
     }
     update(rockets, flares) {
-        if (this.isHoming && !rockets.find(r => r.id === this.target.id) && !flares.find(f => f.id === this.target.id)) {
-            this.isHoming = false;
-        }
-
+        if (this.isHoming && !rockets.find(r => r.id === this.target.id) && !flares.find(f => f.id === this.target.id)) { this.isHoming = false; }
         if (this.isHoming && !this.hasBeenDistracted) {
             for (const flare of flares) {
                 if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
-                    this.target = flare;
-                    this.hasBeenDistracted = true;
-                    break;
+                    this.target = flare; this.hasBeenDistracted = true; break;
                 }
             }
         }
-
         if (this.isHoming) {
             const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
-            this.vx = Math.cos(angle) * this.speed;
-            this.vy = Math.sin(angle) * this.speed;
+            this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
         }
         this.trail.push({ x: this.x, y: this.y });
         if (this.trail.length > 25) this.trail.shift();
@@ -299,8 +280,7 @@ export class Interceptor {
             for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
         }
         ctx.strokeStyle = this.type === 'nuke' ? `rgba(255, 100, 0, 0.7)` :`rgba(0, 255, 255, 0.5)`; 
-        ctx.lineWidth = this.type === 'nuke' ? 5 : 2; 
-        ctx.stroke();
+        ctx.lineWidth = this.type === 'nuke' ? 5 : 2; ctx.stroke();
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = 'white'; ctx.fill();
         ctx.shadowColor = this.type === 'nuke' ? 'orange' : 'cyan'; 
@@ -323,20 +303,17 @@ export class Particle {
         const alpha = this.life / this.initialLife;
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
         ctx.fillStyle = this.color.replace('1)', `${alpha})`);
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 5;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = this.color; ctx.shadowBlur = 5;
+        ctx.fill(); ctx.shadowBlur = 0;
     }
 }
 
-// NEW: C-RAM projectile
+// C-RAM projectile
 export class TracerRound {
     constructor(startX, startY, angle, speed) {
         this.x = startX; this.y = startY;
         this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
-        this.radius = 2; this.life = 60; // short lifespan
-        this.color = 'rgba(255, 100, 0, 1)'; this.trail = [];
+        this.radius = 2; this.life = 60; this.color = 'rgba(255, 100, 0, 1)'; this.trail = [];
     }
     update() {
         this.trail.push({ x: this.x, y: this.y }); if (this.trail.length > 5) this.trail.shift();
@@ -360,10 +337,9 @@ export class AutomatedTurret {
         this.x = x; this.y = y; this.range = range;
         this.baseFireRate = fireRate; this.fireRate = fireRate;
         this.fireCooldown = 0; this.angle = -Math.PI / 2;
-        // C-RAM burst fire properties
         this.isFiring = false; this.burstsLeft = 0;
         this.timeInBurst = 0; this.shotsPerBurst = 5;
-        this.delayBetweenShots = 4; // Frames
+        this.delayBetweenShots = 4;
     }
     update(rockets) {
         if (this.fireCooldown > 0) { this.fireCooldown--; }
@@ -389,7 +365,7 @@ export class AutomatedTurret {
     findTarget(rockets) {
         const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
         if (inRange.length === 0) return null;
-        const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv' || r.type === 'flare');
+        const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv' || r.type === 'flare' || r.type === 'armored');
         if (highPriority.length > 0) return highPriority[0];
         return inRange.reduce((closest, current) => {
             const closestDist = Math.hypot(this.x - closest.x, this.y - closest.y);
@@ -414,32 +390,75 @@ export class AutomatedTurret {
     }
 }
 
+// NEW: A defensive mine that launches to intercept a single rocket
+export class HomingMine {
+    constructor(x, y) {
+        this.x = x; this.y = y; this.vy = 0;
+        this.radius = 8; this.armingTime = 120; // 2 seconds to arm
+        this.isArmed = false; this.isLaunching = false;
+        this.target = null; this.range = 250;
+    }
+    update(rockets) {
+        if (!this.isArmed) {
+            this.armingTime--;
+            if (this.armingTime <= 0) { this.isArmed = true; }
+            return false; // Not destroyed
+        }
+        if (this.isArmed && !this.isLaunching) {
+            for (const rocket of rockets) {
+                if (Math.hypot(this.x - rocket.x, this.y - rocket.y) < this.range) {
+                    this.isLaunching = true;
+                    this.target = rocket;
+                    this.vy = -8; // Initial launch speed
+                    break;
+                }
+            }
+        }
+        if (this.isLaunching) {
+            this.y += this.vy;
+            this.vy *= 1.05; // Accelerate
+            if (Math.hypot(this.x - this.target.x, this.y - this.target.y) < this.radius + this.target.radius) {
+                return true; // Hit target
+            }
+        }
+        return this.y < 0; // Destroyed if it goes off-screen
+    }
+    draw(ctx) {
+        ctx.save();
+        if (this.isLaunching) {
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff9800'; ctx.fill();
+            ctx.shadowColor = '#ff9800'; ctx.shadowBlur = 15; ctx.fill();
+        } else {
+            ctx.fillStyle = '#424242'; ctx.fillRect(this.x - 10, this.y - 5, 20, 5);
+            ctx.beginPath(); ctx.arc(this.x, this.y - 5, this.radius, Math.PI, 0);
+            ctx.fillStyle = '#616161'; ctx.fill();
+            if (this.isArmed && Math.floor(this.armingTime / 15) % 2 === 0) {
+                ctx.beginPath(); ctx.arc(this.x, this.y - 8, 3, 0, Math.PI * 2);
+                ctx.fillStyle = '#e53935'; ctx.fill();
+                ctx.shadowColor = '#e53935'; ctx.shadowBlur = 10; ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+}
+
 // Represents the clickable EMP Power-up
 export class EMP {
     constructor(x, y, width, height) {
         this.x = x ?? random(width * 0.2, width * 0.8);
         this.y = y ?? random(height * 0.2, height * 0.6);
-        this.radius = 20;
-        this.life = 600;
-        this.time = 0;
+        this.radius = 20; this.life = 600; this.time = 0;
     }
-    update() {
-        this.life--;
-        this.time++;
-    }
+    update() { this.life--; this.time++; }
     draw(ctx) {
         ctx.save();
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 150, 255, 0.7)';
-        ctx.fill();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 150, 255, 0.7)'; ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 3; ctx.stroke();
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius + Math.sin(this.time * 0.1) * 5, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(0, 150, 255, 0.8)';
-        ctx.stroke();
+        ctx.strokeStyle = 'rgba(0, 150, 255, 0.8)'; ctx.stroke();
         ctx.restore();
     }
 }

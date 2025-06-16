@@ -22,6 +22,7 @@ export function getInitialState() {
         cities: [],
         turrets: [],
         tracerRounds: [],
+        homingMines: [],
         empPowerUps: [],
         flares: [],
         empActiveTimer: 0,
@@ -37,5 +38,7 @@ export function getInitialState() {
         nukeAvailable: false,
         basesAreArmored: false,
         turretFireRateLevel: 0,
+        turretRangeLevel: 0, // NEW
+        homingMinesAvailable: 0, // NEW
     };
 }

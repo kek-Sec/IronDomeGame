@@ -65,6 +65,7 @@ export function draw(ctx, state, width, height) {
 
     state.cities.forEach(city => city.draw(ctx, height));
     state.turrets.forEach(turret => turret.draw(ctx));
+    state.homingMines.forEach(mine => mine.draw(ctx));
     state.empPowerUps.forEach(emp => emp.draw(ctx));
     state.flares.forEach(flare => flare.draw(ctx));
     state.tracerRounds.forEach(t => t.draw(ctx));

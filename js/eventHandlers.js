@@ -3,7 +3,7 @@
  * * Manages all user input and UI-triggered events.
  */
 import { config, difficultySettings } from './config.js';
-import { Interceptor, AutomatedTurret } from './classes.js';
+import { Interceptor, AutomatedTurret, HomingMine } from './classes.js';
 import * as UI from './ui.js';
 
 export function handleMouseMove(state, canvas, e) {
@@ -17,6 +17,14 @@ export function handleClick(state, canvas, e) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const { width, height } = canvas;
+
+    // Deploy Homing Mine
+    if (state.homingMinesAvailable > 0 && y > height * 0.85 && state.gameState === 'IN_WAVE') {
+        state.homingMines.push(new HomingMine(x, height - 10));
+        state.homingMinesAvailable--;
+        UI.updateTopUI(state); // To show mine count decrease
+        return;
+    }
 
     for (let i = state.empPowerUps.length - 1; i >= 0; i--) {
         const emp = state.empPowerUps[i];
@@ -91,7 +99,8 @@ export function handleUpgradeTurret(state, canvas, refreshUpgradeScreen) {
         state.score -= config.upgradeCosts.automatedTurret;
         const turretX = state.turrets.length === 0 ? canvas.width * 0.25 : canvas.width * 0.75;
         const fireRate = config.turretFireRate * difficultySettings[state.difficulty].turretFireRateMultiplier;
-        state.turrets.push(new AutomatedTurret(turretX, canvas.height - 10, config.turretRange, fireRate));
+        const range = config.turretRange * (1 + state.turretRangeLevel * 0.15);
+        state.turrets.push(new AutomatedTurret(turretX, canvas.height - 10, range, fireRate));
         refreshUpgradeScreen();
     }
 }
@@ -134,6 +143,23 @@ export function handleUpgradeTurretSpeed(state, refreshUpgradeScreen) {
         state.score -= config.upgradeCosts.turretSpeed;
         state.turretFireRateLevel++;
         state.turrets.forEach(t => t.fireRate *= 0.75);
+        refreshUpgradeScreen();
+    }
+}
+
+export function handleUpgradeTurretRange(state, refreshUpgradeScreen) {
+    if (state.score >= config.upgradeCosts.turretRange && state.turretRangeLevel < 3) {
+        state.score -= config.upgradeCosts.turretRange;
+        state.turretRangeLevel++;
+        state.turrets.forEach(t => t.range *= 1.15);
+        refreshUpgradeScreen();
+    }
+}
+
+export function handleUpgradeHomingMine(state, refreshUpgradeScreen) {
+    if (state.score >= config.upgradeCosts.homingMine) {
+        state.score -= config.upgradeCosts.homingMine;
+        state.homingMinesAvailable++;
         refreshUpgradeScreen();
     }
 }
