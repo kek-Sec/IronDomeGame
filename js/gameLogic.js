@@ -1,0 +1,212 @@
+/**
+ * gameLogic.js
+ * * Contains the core game logic for updating the game state each frame.
+ */
+import { config, waveDefinitions, difficultySettings } from './config.js';
+import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, Interceptor, EMP } from './classes.js';
+import { createExplosion, triggerScreenShake } from './helpers.js';
+import * as UI from './ui.js';
+
+function findTargetedRocket(state) {
+    let closestDist = 50;
+    state.targetedRocket = null;
+
+    const potentialTargets = [...state.rockets, ...state.flares];
+
+    for (const target of potentialTargets) {
+        if (target.type === 'stealth' && !target.isVisible) continue;
+
+        const dist = Math.hypot(target.x - state.mouse.x, target.y - state.mouse.y);
+        if (dist < closestDist) {
+            closestDist = dist;
+            state.targetedRocket = target;
+        }
+    }
+}
+
+function handleSpawning(state, width, height) {
+    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    const difficulty = difficultySettings[state.difficulty];
+    const currentWaveDelay = waveDef.delay * difficulty.waveDelayMultiplier;
+    const speedMultiplier = 1 + (state.currentWave * 0.05);
+
+    state.waveRocketSpawn.timer++;
+
+    if (state.waveRocketSpawn.timer > currentWaveDelay && state.waveRocketSpawn.toSpawn.length > 0) {
+        const rocketType = state.waveRocketSpawn.toSpawn.pop();
+        const sizeMultiplier = difficulty.missileSizeMultiplier;
+
+        if (rocketType === 'standard') { state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'stealth') { state.rockets.push(new StealthRocket(width, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'swarmer') { state.rockets.push(new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'flare') { state.rockets.push(new FlareRocket(width, sizeMultiplier, speedMultiplier)); }
+
+        state.waveRocketSpawn.timer = 0;
+    }
+
+    if (Math.random() < config.empSpawnChance && state.empPowerUps.length < 1 && state.empActiveTimer <= 0) {
+        state.empPowerUps.push(new EMP(null, null, width, height));
+    }
+}
+
+function updateRockets(state, width, height) {
+    if (state.empActiveTimer > 0) return;
+
+    for (let i = state.rockets.length - 1; i >= 0; i--) {
+        const rocket = state.rockets[i];
+        if (rocket.type === 'flare') {
+            rocket.update(state.flares);
+        } else {
+            rocket.update();
+        }
+
+        if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
+            state.rockets.push(...rocket.split());
+            state.rockets.splice(i, 1);
+            continue;
+        }
+
+        if (rocket.y > height - 100 || rocket.x < 0 || rocket.x > width) {
+            let hitCity = false;
+            if (rocket.y > height - 100) {
+                state.cities.forEach(city => {
+                    if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
+                        if (city.isArmored) {
+                            city.isArmored = false;
+                        } else {
+                            city.isDestroyed = true;
+                        }
+                        hitCity = true;
+                        createExplosion(state, rocket.x, rocket.y, 80, 0);
+                        triggerScreenShake(state, 15, 30);
+                    }
+                });
+            }
+
+            if (hitCity || rocket.y >= height) {
+                if (!hitCity && rocket.y < height + rocket.radius) createExplosion(state, rocket.x, rocket.y, 40, 0);
+                state.rockets.splice(i, 1);
+            }
+        }
+    }
+}
+
+function updateFlares(state) {
+    for (let i = state.flares.length - 1; i >= 0; i--) {
+        const flare = state.flares[i];
+        flare.update();
+        if (flare.life <= 0) {
+            state.flares.splice(i, 1);
+        }
+    }
+}
+
+function updateTurrets(state) {
+    if (state.empActiveTimer > 0) return;
+    for (const turret of state.turrets) {
+        const target = turret.update(state.rockets);
+        if (target) {
+            state.interceptors.push(new Interceptor(turret.x, turret.y, target, state.interceptorSpeed, state.blastRadius));
+        }
+    }
+}
+
+function updateInterceptors(state, width) {
+    for (let i = state.interceptors.length - 1; i >= 0; i--) {
+        const interceptor = state.interceptors[i];
+        interceptor.update(state.rockets, state.flares);
+
+        if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
+            state.interceptors.splice(i, 1);
+            continue;
+        }
+
+        for (let f = state.flares.length - 1; f >= 0; f--) {
+            const flare = state.flares[f];
+            if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
+                state.flares.splice(f, 1);
+                createExplosion(state, interceptor.x, interceptor.y, 20, 50);
+                state.interceptors.splice(i, 1);
+                break;
+            }
+        }
+        if (!state.interceptors[i]) continue;
+
+        for (let j = state.rockets.length - 1; j >= 0; j--) {
+            const rocket = state.rockets[j];
+            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
+                let points = 0;
+                if (rocket.type === 'standard') points = config.rocketPoints;
+                else if (rocket.type === 'mirv') points = config.mirvPoints;
+                else if (rocket.type === 'stealth') points = config.stealthPoints;
+                else if (rocket.type === 'swarmer') points = config.swarmerPoints;
+                else if (rocket.type === 'flare') points = config.flareRocketPoints;
+                else if (rocket.type === 'drone') points = config.dronePoints;
+                state.score += points;
+
+                state.rockets.splice(j, 1);
+                createExplosion(state, rocket.x, rocket.y, 80, 200);
+                state.interceptors.splice(i, 1);
+                break;
+            }
+        }
+    }
+}
+
+function updateParticles(state) {
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+        const p = state.particles[i];
+        p.update();
+        if (p.life <= 0) state.particles.splice(i, 1);
+    }
+}
+
+/**
+ * The main update function, called every frame from the game loop.
+ * @param {object} state - The current game state.
+ * @param {number} width - The canvas width.
+ * @param {number} height - The canvas height.
+ * @param {function} refreshUpgradeScreen - Callback to show the upgrade screen.
+ * @param {function} init - Callback to re-initialize the game.
+ */
+export function update(state, width, height, refreshUpgradeScreen, init) {
+    state.gameTime++;
+    UI.updateTopUI(state);
+
+    if (state.gameState !== 'IN_WAVE') return;
+
+    if (state.empActiveTimer > 0) {
+        state.empActiveTimer--;
+        state.empShockwave.radius += 20;
+        state.empShockwave.alpha = Math.max(0, state.empShockwave.alpha - 0.01);
+    } else {
+        state.empShockwave = { radius: 0, alpha: 0 };
+    }
+
+    handleSpawning(state, width, height);
+    updateRockets(state, width, height);
+    updateFlares(state);
+    updateTurrets(state);
+    updateInterceptors(state, width);
+    updateParticles(state);
+    state.empPowerUps.forEach((emp, i) => {
+        emp.update();
+        if (emp.life <= 0) state.empPowerUps.splice(i, 1);
+    });
+    findTargetedRocket(state);
+
+    if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
+        state.gameState = 'BETWEEN_WAVES';
+        state.targetedRocket = null;
+        state.flares = [];
+        state.nukeAvailable = false;
+        refreshUpgradeScreen();
+    }
+    
+    const destroyedCities = state.cities.filter(c => c.isDestroyed).length;
+    if (destroyedCities === config.cityCount) {
+        state.gameState = 'GAME_OVER';
+        UI.showGameOverScreen(state, init);
+    }
+}
