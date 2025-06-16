@@ -25,7 +25,7 @@ function getInitialState() {
     return {
         gameState: 'START_SCREEN',
         difficulty: 'normal', score: 0,
-        remainingInterceptors: 0, currentWave: 0,
+        currentWave: 0,
         interceptorSpeed: config.initialInterceptorSpeed,
         blastRadius: config.initialBlastRadius,
         rockets: [], interceptors: [], particles: [], cities: [], turrets: [], empPowerUps: [], flares: [],
@@ -36,9 +36,9 @@ function getInitialState() {
         fps: 0, frameCount: 0, lastFpsUpdate: 0,
         mouse: { x: 0, y: 0 },
         targetedRocket: null,
-        nukeAvailable: false, // For the new Nuke upgrade
-        basesAreArmored: false, // For the new Armor upgrade
-        turretFireRateLevel: 0, // For turret speed upgrade
+        nukeAvailable: false,
+        basesAreArmored: false,
+        turretFireRateLevel: 0,
     };
 }
 
@@ -172,9 +172,8 @@ function updateTurrets() {
     if (state.empActiveTimer > 0) return;
     for (const turret of state.turrets) {
         const target = turret.update(state.rockets);
-        if (target && state.remainingInterceptors > 0) {
+        if (target) {
             state.interceptors.push(new Interceptor(turret.x, turret.y, target, state.interceptorSpeed, state.blastRadius));
-            state.remainingInterceptors--;
         }
     }
 }
@@ -235,14 +234,14 @@ function checkWaveCompletion() {
         state.gameState = 'BETWEEN_WAVES';
         state.targetedRocket = null;
         state.flares = [];
-        state.nukeAvailable = false; // Reset nuke availability
+        state.nukeAvailable = false;
         refreshUpgradeScreen();
     }
 }
 
 function checkGameOver() {
     const destroyedCities = state.cities.filter(c => c.isDestroyed).length;
-    if (destroyedCities === config.cityCount || (state.remainingInterceptors <= 0 && state.rockets.length > 0 && state.interceptors.length === 0)) {
+    if (destroyedCities === config.cityCount) {
         state.gameState = 'GAME_OVER';
         UI.showGameOverScreen(state, init);
     }
@@ -349,7 +348,6 @@ function startNextWave() {
 function resetAndStartGame(difficulty = 'normal') {
     state = getInitialState();
     state.difficulty = difficulty;
-    state.remainingInterceptors = difficultySettings[difficulty].initialInterceptors;
     state.currentWave = -1;
     createCities();
     startNextWave();
@@ -412,13 +410,11 @@ function handleClick(e) {
         }
     }
     
-    if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0 && state.targetedRocket) {
+    if (state.gameState === 'IN_WAVE' && state.targetedRocket) {
         const interceptorType = state.nukeAvailable ? 'nuke' : 'standard';
         state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius, interceptorType));
         if (state.nukeAvailable) {
             state.nukeAvailable = false;
-        } else {
-            state.remainingInterceptors--;
         }
         UI.updateTopUI(state);
     }
@@ -431,14 +427,6 @@ function togglePause() {
     } else if (state.gameState === 'PAUSED') {
         state.gameState = 'IN_WAVE';
         UI.hideModal();
-    }
-}
-
-
-function handleUpgradeInterceptors() {
-    if (state.score >= config.upgradeCosts.interceptors) {
-        state.score -= config.upgradeCosts.interceptors; state.remainingInterceptors += 5;
-        refreshUpgradeScreen();
     }
 }
 
@@ -500,7 +488,7 @@ function handleUpgradeTurretSpeed() {
      if(state.score >= config.upgradeCosts.turretSpeed && state.turretFireRateLevel < 3) {
         state.score -= config.upgradeCosts.turretSpeed;
         state.turretFireRateLevel++;
-        state.turrets.forEach(t => t.fireRate *= 0.75); // 25% faster
+        state.turrets.forEach(t => t.fireRate *= 0.75);
         refreshUpgradeScreen();
     }
 }
@@ -508,7 +496,6 @@ function handleUpgradeTurretSpeed() {
 function refreshUpgradeScreen() {
     UI.updateTopUI(state);
     UI.showBetweenWaveScreen(state, {
-        upgradeInterceptorsCallback: handleUpgradeInterceptors,
         upgradeRepairCallback: handleUpgradeRepair,
         upgradeTurretCallback: handleUpgradeTurret,
         upgradeSpeedCallback: handleUpgradeSpeed,
@@ -536,7 +523,7 @@ function init() {
         const rect = canvas.getBoundingClientRect();
         const x = e.touches[0].clientX - rect.left;
         const y = e.touches[0].clientY - rect.top;
-        if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0) {
+        if (state.gameState === 'IN_WAVE') {
             let closestDist = 100;
             let touchTarget = null;
             const potentialTargets = [...state.rockets, ...state.flares];
@@ -550,7 +537,6 @@ function init() {
             }
             if (touchTarget) {
                  state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, state.blastRadius));
-                 state.remainingInterceptors--;
                  UI.updateTopUI(state);
             }
         }

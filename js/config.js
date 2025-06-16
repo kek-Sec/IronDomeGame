@@ -8,21 +8,18 @@
 export const difficultySettings = {
     easy: {
         name: 'Easy',
-        initialInterceptors: 30,
         waveDelayMultiplier: 1.25,
         missileSizeMultiplier: 1.5,
         turretFireRateMultiplier: 0.8,
     },
     normal: {
         name: 'Normal',
-        initialInterceptors: 20,
         waveDelayMultiplier: 1.0,
         missileSizeMultiplier: 1.25,
         turretFireRateMultiplier: 1.0,
     },
     hard: {
         name: 'Hard',
-        initialInterceptors: 10,
         waveDelayMultiplier: 0.7,
         missileSizeMultiplier: 1.0,
         turretFireRateMultiplier: 1.5,
@@ -34,7 +31,7 @@ export const config = {
     cityCount: 5,
     initialInterceptorSpeed: 7,
     initialBlastRadius: 15,
-    nukeBlastRadius: 150, // NEW: Nuke size
+    nukeBlastRadius: 150,
     rocketPoints: 100,
     mirvPoints: 200,
     stealthPoints: 300,
@@ -48,14 +45,13 @@ export const config = {
     empDuration: 300,
     maxParticles: 300,
     upgradeCosts: {
-        interceptors: 500,
         repairCity: 1000,
         automatedTurret: 2500,
         interceptorSpeed: 750,
         blastRadius: 1200,
-        nuke: 3000, // NEW: Nuke cost
-        baseArmor: 2000, // NEW: Base armor cost
-        turretSpeed: 1500 // NEW: Turret fire rate upgrade
+        nuke: 3000,
+        baseArmor: 2000,
+        turretSpeed: 1500
     }
 };
 
