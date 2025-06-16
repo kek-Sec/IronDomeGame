@@ -1,14 +1,43 @@
 /* --- CSS Custom Properties (Variables) --- */
 :root {
-    --glow-color: #00ffff;
+    --glow-color: #00ddff;
+    --glow-color-transparent: rgba(0, 221, 255, 0);
     --rocket-color: #ff4d4d;
     --mirv-color: #f0f;
-    --interceptor-color: #00ffff;
-    --explosion-base-color: 200; /* HSL Hue for explosions */
-    --background-start: #010409;
-    --background-end: #0d1117;
-    --text-color: #c9d1d9;
+    --background-start: #02040a;
+    --background-end: #0a0c10;
+    --text-color: #e6edf3;
     --border-color: #30363d;
+    --border-highlight: rgba(0, 221, 255, 0.5);
+    --disabled-color: #484f58;
+}
+
+/* --- Keyframe Animations --- */
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px var(--glow-color-transparent), 0 0 10px var(--glow-color-transparent), inset 0 0 8px var(--glow-color-transparent);
+        text-shadow: 0 0 4px var(--glow-color-transparent);
+    }
+    50% {
+        box-shadow: 0 0 8px var(--glow-color), 0 0 15px var(--glow-color), inset 0 0 10px var(--glow-color);
+        text-shadow: 0 0 7px var(--glow-color);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes textFlicker {
+    0%, 100% { text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color); }
+    50% { text-shadow: 0 0 8px var(--glow-color), 0 0 15px var(--glow-color); }
 }
 
 /* --- General Resets and Body Styling --- */
@@ -27,10 +56,25 @@ html, body {
     color: var(--text-color);
 }
 
+/* Optional Scanline Overlay for retro monitor effect */
+body::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.03));
+    background-size: 100% 4px, 6px 100%;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.4;
+}
+
 /* --- Canvas and UI Styling --- */
 canvas {
     display: block;
-    background-image: radial-gradient(circle at top, var(--background-end) 0%, var(--background-start) 70%);
+    background-image: radial-gradient(circle at 50% 0%, var(--background-end) 0%, var(--background-start) 70%);
     position: absolute;
     top: 0;
     left: 0;
@@ -47,21 +91,25 @@ canvas {
     align-items: center;
     z-index: 2;
     pointer-events: none;
-    text-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color);
 }
 
 .ui-box {
-    background: rgba(13, 17, 23, 0.7);
+    background: rgba(13, 17, 23, 0.8);
     border: 1px solid var(--border-color);
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 8px;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
 }
 
-#ui-container h2 {
-    font-size: 1.5em;
+.ui-box h2 {
+    font-size: 1.6em;
     font-weight: 700;
+    color: var(--text-color);
+    text-shadow: 0 0 5px var(--glow-color);
+    animation: pulseGlow 4s infinite ease-in-out;
 }
 
 /* --- Modal (Pop-up) Styling --- */
@@ -83,31 +131,34 @@ canvas {
 
 .modal-content {
     background: var(--background-start);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-highlight);
     padding: 40px;
     border-radius: 12px;
     text-align: center;
-    max-width: 500px;
+    max-width: 550px;
     width: 90%;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 30px rgba(0, 221, 255, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
+    animation: fadeIn 0.5s ease-out;
 }
 
 .modal-content h1 {
-    font-size: 2.5em;
+    font-size: 3em;
     color: var(--glow-color);
     margin-bottom: 20px;
-    text-shadow: 0 0 10px var(--glow-color);
+    animation: textFlicker 3s infinite;
 }
 
 .modal-content p {
     margin-bottom: 30px;
-    line-height: 1.6;
-    font-size: 1.1em;
+    line-height: 1.7;
+    font-size: 1.2em;
 }
 
 .modal-content p.game-over-stats {
-     font-size: 1.3em;
+     font-size: 1.4em;
      font-weight: bold;
+     color: var(--glow-color);
+     text-shadow: 0 0 5px var(--glow-color);
 }
 
 /* --- Button Styling --- */
@@ -116,26 +167,33 @@ canvas {
     font-size: 1.5em;
     font-family: 'Orbitron', sans-serif;
     cursor: pointer;
-    border: 2px solid var(--glow-color);
-    background: transparent;
+    border: 2px solid var(--border-highlight);
+    background-image: linear-gradient(rgba(0, 221, 255, 0.1), rgba(0, 221, 255, 0));
     color: var(--glow-color);
     border-radius: 8px;
-    transition: all 0.3s ease;
-    text-shadow: 0 0 5px var(--glow-color);
-    box-shadow: 0 0 10px var(--glow-color) inset, 0 0 10px var(--glow-color);
+    transition: all 0.2s ease-in-out;
+    text-shadow: 0 0 8px var(--glow-color);
+    box-shadow: 0 0 10px rgba(0, 221, 255, 0.3), inset 0 0 10px rgba(0, 221, 255, 0.2);
     pointer-events: all;
     margin: 10px;
 }
 
 .modal-button:hover:not(:disabled) {
-    background: var(--glow-color);
-    color: var(--background-start);
+    background-color: rgba(0, 221, 255, 0.2);
+    color: white;
     box-shadow: 0 0 20px var(--glow-color), 0 0 30px var(--glow-color);
+    transform: scale(1.05);
+}
+
+.modal-button:active:not(:disabled) {
+    transform: scale(1.02);
 }
 
 .modal-button:disabled {
-    border-color: var(--border-color);
-    color: var(--border-color);
+    border-color: var(--disabled-color);
+    background-image: none;
+    background-color: rgba(30,30,30,0.5);
+    color: var(--disabled-color);
     cursor: not-allowed;
     box-shadow: none;
     text-shadow: none;
