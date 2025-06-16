@@ -88,7 +88,6 @@ export class MirvRocket extends Rocket {
             this.hasSplit = true;
         }
     }
-    // This now returns an array of new rockets to be added by the main game loop
     split() {
         const childRockets = [];
         const childCount = 3;
@@ -103,9 +102,11 @@ export class MirvRocket extends Rocket {
 
 // Represents the player's interceptor missile
 export class Interceptor {
-    constructor(targetX, targetY, width, height, speed) {
-        this.x = width / 2; this.y = height;
-        this.targetX = targetX; this.targetY = targetY;
+    constructor(startX, startY, targetX, targetY, width, height, speed) {
+        this.x = startX; 
+        this.y = startY;
+        this.targetX = targetX; 
+        this.targetY = targetY;
         this.radius = 3;
         this.speed = speed;
         this.trail = [];
@@ -167,5 +168,73 @@ export class Particle {
         ctx.shadowBlur = 10;
         ctx.fill();
         ctx.shadowBlur = 0;
+    }
+}
+
+// Represents an automated defense turret
+export class AutomatedTurret {
+    constructor(x, y, range, fireRate) {
+        this.x = x;
+        this.y = y;
+        this.range = range;
+        this.fireRate = fireRate;
+        this.fireCooldown = 0;
+        this.angle = -Math.PI / 2; // Pointing up initially
+    }
+
+    update(rockets) {
+        if (this.fireCooldown > 0) {
+            this.fireCooldown--;
+        }
+
+        const target = this.findTarget(rockets);
+        if (target) {
+            this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+            if (this.fireCooldown <= 0) {
+                this.fireCooldown = this.fireRate;
+                return target; // Return the target to fire at
+            }
+        }
+        return null; // No target or still on cooldown
+    }
+
+    findTarget(rockets) {
+        let closestTarget = null;
+        let minDistance = this.range;
+
+        for (const rocket of rockets) {
+            const distance = Math.hypot(this.x - rocket.x, this.y - rocket.y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestTarget = rocket;
+            }
+        }
+        return closestTarget;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Draw base
+        ctx.fillStyle = '#6c757d';
+        ctx.beginPath();
+        ctx.moveTo(-15, 10);
+        ctx.lineTo(15, 10);
+        ctx.lineTo(10, 0);
+        ctx.lineTo(-10, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw turret barrel
+        ctx.rotate(this.angle);
+        ctx.fillStyle = '#adb5bd';
+        ctx.fillRect(0, -3, 20, 6);
+        ctx.fillStyle = '#00ddff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     }
 }

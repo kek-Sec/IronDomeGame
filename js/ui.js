@@ -42,9 +42,9 @@ export function showStartScreen(startGameCallback) {
  * @param {object} config - The game's configuration object.
  */
 export function showBetweenWaveScreen(state, callbacks, config) {
-    const { score, currentWave, cities } = state;
-    const { upgradeInterceptorsCallback, upgradeRepairCallback, nextWaveCallback } = callbacks;
-    const { upgradeCosts } = config;
+    const { score, currentWave, cities, turrets } = state;
+    const { upgradeInterceptorsCallback, upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback } = callbacks;
+    const { upgradeCosts, maxTurrets } = config;
 
     const destroyedCitiesCount = cities.filter(c => c.isDestroyed).length;
     modalContainer.style.display = 'flex';
@@ -58,12 +58,16 @@ export function showBetweenWaveScreen(state, callbacks, config) {
             <button id="upgrade-repair" class="modal-button" ${score < upgradeCosts.repairCity || destroyedCitiesCount === 0 ? 'disabled' : ''}>
                 Repair City (Cost: ${upgradeCosts.repairCity})
             </button>
+            <button id="upgrade-turret" class="modal-button" ${score < upgradeCosts.automatedTurret || turrets.length >= maxTurrets ? 'disabled' : ''}>
+                Build Turret (Cost: ${upgradeCosts.automatedTurret})
+            </button>
             <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
         </div>
     `;
 
     document.getElementById('upgrade-interceptors').addEventListener('click', upgradeInterceptorsCallback);
     document.getElementById('upgrade-repair').addEventListener('click', upgradeRepairCallback);
+    document.getElementById('upgrade-turret').addEventListener('click', upgradeTurretCallback);
     document.getElementById('next-wave-button').addEventListener('click', nextWaveCallback);
 }
 

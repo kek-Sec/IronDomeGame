@@ -8,7 +8,7 @@
 // --- Module Imports ---
 import { config, waveDefinitions } from './config.js';
 import { random } from './utils.js';
-import { City, Rocket, MirvRocket, Interceptor, Particle } from './classes.js';
+import { City, Rocket, MirvRocket, Interceptor, Particle, AutomatedTurret } from './classes.js';
 import * as UI from './ui.js';
 
 // --- DOM & Canvas Setup ---
@@ -31,6 +31,7 @@ function getInitialState() {
         interceptors: [],
         particles: [],
         cities: [],
+        turrets: [], // for automated turrets
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] }
     };
@@ -42,6 +43,7 @@ function update() {
     
     handleRocketSpawning();
     updateRockets();
+    updateTurrets();
     updateInterceptors();
     updateParticles();
     checkWaveCompletion();
@@ -68,7 +70,6 @@ function updateRockets() {
         const rocket = state.rockets[i];
         rocket.update();
         
-        // Handle MIRV splitting
         if (rocket.type === 'mirv' && rocket.hasSplit) {
             const childRockets = rocket.split();
             state.rockets.push(...childRockets);
@@ -76,7 +77,6 @@ function updateRockets() {
             continue;
         }
 
-        // Check for collision with ground or cities
         if (rocket.y > height - 100) {
             let hitCity = false;
             state.cities.forEach(city => {
@@ -92,6 +92,17 @@ function updateRockets() {
                 if (!hitCity) createExplosion(rocket.x, rocket.y, 50, 0);
                 state.rockets.splice(i, 1);
             }
+        }
+    }
+}
+
+function updateTurrets() {
+    for (const turret of state.turrets) {
+        const target = turret.update(state.rockets);
+        if (target && state.remainingInterceptors > 0) {
+            state.interceptors.push(new Interceptor(turret.x, turret.y, target.x, target.y, width, height, config.interceptorSpeed));
+            state.remainingInterceptors--;
+            UI.updateTopUI(state);
         }
     }
 }
@@ -133,11 +144,7 @@ function updateParticles() {
 function checkWaveCompletion() {
     if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
         state.gameState = 'BETWEEN_WAVES';
-        UI.showBetweenWaveScreen(state, {
-            upgradeInterceptorsCallback: handleUpgradeInterceptors,
-            upgradeRepairCallback: handleUpgradeRepair,
-            nextWaveCallback: startNextWave
-        }, config);
+        refreshUpgradeScreen();
     }
 }
 
@@ -162,7 +169,9 @@ function draw() {
     ctx.fillRect(0, height - 10, width, 10);
     
     state.cities.forEach(city => city.draw(ctx, height));
+    state.turrets.forEach(turret => turret.draw(ctx));
 
+    // Player's main battery
     ctx.beginPath();
     ctx.moveTo(width / 2 - 20, height);
     ctx.lineTo(width / 2, height - 20);
@@ -193,7 +202,7 @@ function startNextWave() {
     let spawnList = [];
     for(let i=0; i<waveDef.standard; i++) spawnList.push('standard');
     for(let i=0; i<waveDef.mirv; i++) spawnList.push('mirv');
-    state.waveRocketSpawn.toSpawn = spawnList.sort(() => Math.random() - 0.5); // Shuffle the spawn order
+    state.waveRocketSpawn.toSpawn = spawnList.sort(() => Math.random() - 0.5);
 
     state.waveRocketSpawn.timer = 0;
     
@@ -204,7 +213,7 @@ function startNextWave() {
 
 function resetAndStartGame() {
     state = getInitialState();
-    state.currentWave = -1; // Will be incremented to 0
+    state.currentWave = -1;
     createCities();
     startNextWave();
 }
@@ -213,9 +222,12 @@ function resetAndStartGame() {
 const resizeCanvas = () => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-    if (state.gameState === 'START_SCREEN' || state.gameState === 'GAME_OVER') {
+    if (state.gameState !== 'IN_WAVE') {
         createCities();
-        draw(); // Draw the initial state after resize
+        state.turrets.forEach((turret, index) => {
+            turret.x = index === 0 ? width * 0.25 : width * 0.75;
+        });
+        draw();
     }
 };
 
@@ -246,7 +258,7 @@ function launchInterceptor(e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    state.interceptors.push(new Interceptor(x, y, width, height, config.interceptorSpeed));
+    state.interceptors.push(new Interceptor(width / 2, height, x, y, width, height, config.interceptorSpeed));
     state.remainingInterceptors--;
     UI.updateTopUI(state);
 }
@@ -255,12 +267,7 @@ function handleUpgradeInterceptors() {
     if (state.score >= config.upgradeCosts.interceptors) {
         state.score -= config.upgradeCosts.interceptors;
         state.remainingInterceptors += 5;
-        UI.updateTopUI(state);
-        UI.showBetweenWaveScreen(state, {
-            upgradeInterceptorsCallback: handleUpgradeInterceptors,
-            upgradeRepairCallback: handleUpgradeRepair,
-            nextWaveCallback: startNextWave
-        }, config);
+        refreshUpgradeScreen();
     }
 }
 
@@ -271,14 +278,29 @@ function handleUpgradeRepair() {
             state.score -= config.upgradeCosts.repairCity;
             cityToRepair.repair();
             draw();
-            UI.updateTopUI(state);
-            UI.showBetweenWaveScreen(state, {
-                upgradeInterceptorsCallback: handleUpgradeInterceptors,
-                upgradeRepairCallback: handleUpgradeRepair,
-                nextWaveCallback: startNextWave
-            }, config);
+            refreshUpgradeScreen();
         }
     }
+}
+
+function handleUpgradeTurret() {
+    if (state.score >= config.upgradeCosts.automatedTurret && state.turrets.length < config.maxTurrets) {
+        state.score -= config.upgradeCosts.automatedTurret;
+        const turretX = state.turrets.length === 0 ? width * 0.25 : width * 0.75;
+        state.turrets.push(new AutomatedTurret(turretX, height - 15, config.turretRange, config.turretFireRate));
+        draw();
+        refreshUpgradeScreen();
+    }
+}
+
+function refreshUpgradeScreen() {
+    UI.updateTopUI(state);
+    UI.showBetweenWaveScreen(state, {
+        upgradeInterceptorsCallback: handleUpgradeInterceptors,
+        upgradeRepairCallback: handleUpgradeRepair,
+        upgradeTurretCallback: handleUpgradeTurret,
+        nextWaveCallback: startNextWave
+    }, config);
 }
 
 // --- Initialization ---

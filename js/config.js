@@ -12,9 +12,14 @@ export const config = {
     interceptorSpeed: 7,
     rocketPoints: 100,
     mirvPoints: 300,
+    // Turret properties
+    maxTurrets: 2,
+    turretFireRate: 90, // Cooldown in frames (90 frames = 1.5s at 60fps)
+    turretRange: 350,   // Firing range in pixels
     upgradeCosts: {
         interceptors: 500, // Cost per 5 interceptors
-        repairCity: 1000   // Cost to repair one city
+        repairCity: 1000,  // Cost to repair one city
+        automatedTurret: 2500 // Cost to build one turret
     }
 };
 
