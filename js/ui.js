@@ -3,6 +3,7 @@
  * * Manages all DOM manipulations and UI updates.
  * This includes updating the top info bar and showing/hiding modals.
  */
+import { difficultySettings } from './config.js';
 
 // --- DOM Element References ---
 const scoreEl = document.getElementById('score');
@@ -22,17 +23,32 @@ export function updateTopUI(state) {
 }
 
 /**
- * Displays the initial start screen.
- * @param {function} startGameCallback - The function to call when the start button is clicked.
+ * Displays the initial start screen with difficulty options.
+ * @param {function} startGameCallback - The function to call with the selected difficulty.
  */
 export function showStartScreen(startGameCallback) {
     modalContainer.style.display = 'flex';
+    
+    // Generate difficulty buttons dynamically
+    let difficultyButtonsHTML = '<div class="upgrade-options">';
+    for (const key in difficultySettings) {
+        difficultyButtonsHTML += `<button id="start-${key}" class="modal-button" data-difficulty="${key}">${difficultySettings[key].name}</button>`;
+    }
+    difficultyButtonsHTML += '</div>';
+
     modalContent.innerHTML = `
         <h1>IRON DOME</h1>
-        <p>Enemy rockets are attacking. Click to launch interceptors from the central battery. Survive the waves. Protect the cities.</p>
-        <button id="start-button" class="modal-button">START MISSION</button>
+        <p>Enemy rockets are attacking. Survive the waves and protect the cities. Please select a difficulty to begin.</p>
+        ${difficultyButtonsHTML}
     `;
-    document.getElementById('start-button').addEventListener('click', startGameCallback);
+
+    // Add event listeners to the new buttons
+    for (const key in difficultySettings) {
+        document.getElementById(`start-${key}`).addEventListener('click', (e) => {
+            const selectedDifficulty = e.target.getAttribute('data-difficulty');
+            startGameCallback(selectedDifficulty);
+        });
+    }
 }
 
 /**

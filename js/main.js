@@ -6,7 +6,7 @@
  */
 
 // --- Module Imports ---
-import { config, waveDefinitions } from './config.js';
+import { config, waveDefinitions, difficultySettings } from './config.js';
 import { random } from './utils.js';
 import { City, Rocket, MirvRocket, Interceptor, Particle, AutomatedTurret } from './classes.js';
 import * as UI from './ui.js';
@@ -24,14 +24,15 @@ let state = {};
 function getInitialState() {
     return {
         gameState: 'START_SCREEN', // START_SCREEN, IN_WAVE, BETWEEN_WAVES, GAME_OVER
+        difficulty: 'normal', // Default difficulty
         score: 0,
-        remainingInterceptors: config.initialInterceptors,
+        remainingInterceptors: 0, // Will be set by difficulty
         currentWave: 0,
         rockets: [],
         interceptors: [],
         particles: [],
         cities: [],
-        turrets: [], // for automated turrets
+        turrets: [],
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] }
     };
@@ -52,9 +53,12 @@ function update() {
 
 function handleRocketSpawning() {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    const difficultyMod = difficultySettings[state.difficulty].waveDelayMultiplier;
+    const currentWaveDelay = waveDef.delay * difficultyMod;
+    
     state.waveRocketSpawn.timer++;
     
-    if (state.waveRocketSpawn.timer > waveDef.delay && state.waveRocketSpawn.toSpawn.length > 0) {
+    if (state.waveRocketSpawn.timer > currentWaveDelay && state.waveRocketSpawn.toSpawn.length > 0) {
         const rocketType = state.waveRocketSpawn.toSpawn.pop();
         if (rocketType === 'standard') {
             state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width));
@@ -152,7 +156,7 @@ function checkGameOver() {
     const destroyedCities = state.cities.filter(c => c.isDestroyed).length;
     if (destroyedCities === config.cityCount || (state.remainingInterceptors <= 0 && state.rockets.length > 0 && state.interceptors.length === 0)) {
         state.gameState = 'GAME_OVER';
-        UI.showGameOverScreen(state, resetAndStartGame);
+        UI.showGameOverScreen(state, init);
     }
 }
 
@@ -211,8 +215,10 @@ function startNextWave() {
     UI.updateTopUI(state);
 }
 
-function resetAndStartGame() {
+function resetAndStartGame(difficulty = 'normal') {
     state = getInitialState();
+    state.difficulty = difficulty;
+    state.remainingInterceptors = difficultySettings[difficulty].initialInterceptors;
     state.currentWave = -1;
     createCities();
     startNextWave();
