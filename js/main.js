@@ -8,7 +8,7 @@
 // --- Module Imports ---
 import { config, waveDefinitions, difficultySettings } from './config.js';
 import { random } from './utils.js';
-import { City, Rocket, MirvRocket, Interceptor, Particle, AutomatedTurret } from './classes.js';
+import { City, Rocket, MirvRocket, ArmoredRocket, Interceptor, Particle, AutomatedTurret, EMP } from './classes.js';
 import * as UI from './ui.js';
 
 // --- DOM & Canvas Setup ---
@@ -17,22 +17,17 @@ const ctx = canvas.getContext('2d');
 let width, height;
 
 // --- Game State ---
-let animationFrameId;
-let state = {};
+let animationFrameId; let state = {};
 
 // --- Game State Functions ---
 function getInitialState() {
     return {
-        gameState: 'START_SCREEN', // START_SCREEN, IN_WAVE, BETWEEN_WAVES, GAME_OVER
-        difficulty: 'normal',
-        score: 0,
-        remainingInterceptors: 0,
-        currentWave: 0,
-        rockets: [],
-        interceptors: [],
-        particles: [],
-        cities: [],
-        turrets: [],
+        gameState: 'START_SCREEN', difficulty: 'normal', score: 0,
+        remainingInterceptors: 0, currentWave: 0,
+        interceptorSpeed: config.initialInterceptorSpeed,
+        blastRadius: config.initialBlastRadius,
+        rockets: [], interceptors: [], particles: [], cities: [], turrets: [], empPowerUps: [],
+        empActiveTimer: 0, comboMultiplier: 1, comboTimer: 0,
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
         gameTime: 0
@@ -44,16 +39,24 @@ function update() {
     state.gameTime++;
     if (state.gameState !== 'IN_WAVE') return;
     
-    handleRocketSpawning();
+    if (state.comboTimer > 0) { state.comboTimer--; } 
+    else { state.comboMultiplier = 1; }
+
+    if (state.empActiveTimer > 0) { state.empActiveTimer--; }
+
+    handleSpawning();
     updateRockets();
     updateTurrets();
     updateInterceptors();
     updateParticles();
+    state.empPowerUps.forEach(emp => emp.update());
+    
     checkWaveCompletion();
     checkGameOver();
+    UI.updateTopUI(state);
 }
 
-function handleRocketSpawning() {
+function handleSpawning() {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
     const difficulty = difficultySettings[state.difficulty];
     const currentWaveDelay = waveDef.delay * difficulty.waveDelayMultiplier;
@@ -62,25 +65,29 @@ function handleRocketSpawning() {
     
     if (state.waveRocketSpawn.timer > currentWaveDelay && state.waveRocketSpawn.toSpawn.length > 0) {
         const rocketType = state.waveRocketSpawn.toSpawn.pop();
-        const sizeMultiplier = difficulty.missileSizeMultiplier; // Get multiplier
+        const sizeMultiplier = difficulty.missileSizeMultiplier;
         
-        if (rocketType === 'standard') {
-            state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier));
-        } else if (rocketType === 'mirv') {
-            state.rockets.push(new MirvRocket(width, height, sizeMultiplier));
-        }
+        if (rocketType === 'standard') { state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier)); } 
+        else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier)); }
+        else if (rocketType === 'armored') { state.rockets.push(new ArmoredRocket(width, sizeMultiplier)); }
+        
         state.waveRocketSpawn.timer = 0;
+    }
+
+    if (Math.random() < config.empSpawnChance && state.empPowerUps.length < 1 && state.empActiveTimer <= 0) {
+        state.empPowerUps.push(new EMP(null, null, width, height));
     }
 }
 
 function updateRockets() {
+    if (state.empActiveTimer > 0) return;
+
     for (let i = state.rockets.length - 1; i >= 0; i--) {
         const rocket = state.rockets[i];
         rocket.update();
         
         if (rocket.type === 'mirv' && rocket.hasSplit) {
-            const childRockets = rocket.split();
-            state.rockets.push(...childRockets);
+            state.rockets.push(...rocket.split());
             state.rockets.splice(i, 1);
             continue;
         }
@@ -89,8 +96,7 @@ function updateRockets() {
             let hitCity = false;
             state.cities.forEach(city => {
                if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-                   city.isDestroyed = true;
-                   hitCity = true;
+                   city.isDestroyed = true; hitCity = true;
                    createExplosion(rocket.x, rocket.y, 100, 0);
                    triggerScreenShake(15, 30);
                }
@@ -105,12 +111,12 @@ function updateRockets() {
 }
 
 function updateTurrets() {
+    if (state.empActiveTimer > 0) return;
     for (const turret of state.turrets) {
         const target = turret.update(state.rockets);
         if (target && state.remainingInterceptors > 0) {
-            state.interceptors.push(new Interceptor(turret.x, turret.y, target.x, target.y, width, height, config.interceptorSpeed));
+            state.interceptors.push(new Interceptor(turret.x, turret.y, target.x, target.y, state.interceptorSpeed, state.blastRadius));
             state.remainingInterceptors--;
-            UI.updateTopUI(state);
         }
     }
 }
@@ -129,13 +135,24 @@ function updateInterceptors() {
 
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
-            // Use sum of radii for more accurate collision detection
-            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < rocket.radius + interceptor.radius) {
-                createExplosion(rocket.x, rocket.y, 100, 200);
-                state.score += (rocket.type === 'mirv') ? config.mirvPoints : config.rocketPoints;
-                state.rockets.splice(j, 1);
+            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
+                let destroyed = false;
+                if (rocket.type === 'armored' && rocket.health > 1) {
+                    rocket.health--;
+                    rocket.color = '#ff0000';
+                } else {
+                    let points = 0;
+                    if (rocket.type === 'standard') points = config.rocketPoints;
+                    else if (rocket.type === 'mirv') points = config.mirvPoints;
+                    else if (rocket.type === 'armored') points = config.armoredRocketPoints;
+                    state.score += points * state.comboMultiplier;
+                    state.rockets.splice(j, 1);
+                    state.comboTimer = config.comboTimeout;
+                    state.comboMultiplier++;
+                    destroyed = true;
+                }
+                createExplosion(rocket.x, rocket.y, destroyed ? 100 : 30, destroyed ? 200 : 100);
                 state.interceptors.splice(i, 1);
-                UI.updateTopUI(state);
                 break;
             }
         }
@@ -153,6 +170,7 @@ function updateParticles() {
 function checkWaveCompletion() {
     if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
         state.gameState = 'BETWEEN_WAVES';
+        state.comboMultiplier = 1;
         refreshUpgradeScreen();
     }
 }
@@ -175,33 +193,30 @@ function draw() {
 
     ctx.clearRect(0, 0, width, height);
     
+    if (state.empActiveTimer > 0) {
+        const alpha = state.empActiveTimer / config.empDuration;
+        ctx.fillStyle = `rgba(0, 180, 255, ${alpha * 0.2})`;
+        ctx.fillRect(0, 0, width, height);
+    }
+    
     if (state.gameState === 'BETWEEN_WAVES') {
         state.turrets.forEach(turret => {
-            ctx.beginPath();
-            ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
+            ctx.beginPath(); ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
             const alpha = 0.2 + (Math.sin(state.gameTime * 0.05) * 0.1);
-            ctx.fillStyle = `rgba(0, 221, 255, ${alpha})`;
-            ctx.fill();
-            ctx.strokeStyle = `rgba(0, 221, 255, ${alpha * 2})`;
-            ctx.setLineDash([15, 10]);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            ctx.fillStyle = `rgba(0, 221, 255, ${alpha})`; ctx.fill();
+            ctx.strokeStyle = `rgba(0, 221, 255, ${alpha * 2})`; ctx.setLineDash([15, 10]);
+            ctx.stroke(); ctx.setLineDash([]);
         });
     }
 
-    ctx.fillStyle = 'rgba(0, 221, 255, 0.3)';
-    ctx.fillRect(0, height - 1, width, 1);
+    ctx.fillStyle = 'rgba(0, 221, 255, 0.3)'; ctx.fillRect(0, height - 1, width, 1);
 
     state.cities.forEach(city => city.draw(ctx, height));
     state.turrets.forEach(turret => turret.draw(ctx));
+    state.empPowerUps.forEach(emp => emp.draw(ctx));
 
-    ctx.beginPath();
-    ctx.moveTo(width / 2 - 20, height);
-    ctx.lineTo(width / 2, height - 20);
-    ctx.lineTo(width / 2 + 20, height);
-    ctx.closePath();
-    ctx.fillStyle = '#00ffff'; ctx.shadowColor = '#00ffff';
-    ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.moveTo(width / 2 - 20, height); ctx.lineTo(width / 2, height - 20); ctx.lineTo(width / 2 + 20, height);
+    ctx.closePath(); ctx.fillStyle = '#00ffff'; ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
 
     state.rockets.forEach(r => r.draw(ctx));
     state.interceptors.forEach(i => i.draw(ctx));
@@ -211,8 +226,7 @@ function draw() {
 
 // --- Game Flow ---
 function gameLoop() {
-    update();
-    draw();
+    update(); draw();
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
@@ -223,10 +237,10 @@ function startNextWave() {
     let spawnList = [];
     for(let i=0; i<waveDef.standard; i++) spawnList.push('standard');
     for(let i=0; i<waveDef.mirv; i++) spawnList.push('mirv');
+    for(let i=0; i<waveDef.armored; i++) spawnList.push('armored');
     state.waveRocketSpawn.toSpawn = spawnList.sort(() => Math.random() - 0.5);
 
     state.waveRocketSpawn.timer = 0;
-    
     state.gameState = 'IN_WAVE';
     UI.hideModal();
     UI.updateTopUI(state);
@@ -258,7 +272,7 @@ function createCities() {
     state.cities = [];
     const cityWidth = width / config.cityCount;
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(40, height * 0.2); // Bases are shorter
+        const h = random(40, height * 0.2);
         const w = cityWidth * random(0.6, 0.8);
         const x = (i * cityWidth) + (cityWidth - w) / 2;
         state.cities.push(new City(x, height - h, w, h));
@@ -276,20 +290,30 @@ function triggerScreenShake(intensity, duration) {
     state.screenShake.duration = duration;
 }
 
-function launchInterceptor(e) {
-    if (state.gameState !== 'IN_WAVE' || state.remainingInterceptors <= 0) return;
+function handleClick(e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    state.interceptors.push(new Interceptor(width / 2, height, x, y, width, height, config.interceptorSpeed));
-    state.remainingInterceptors--;
-    UI.updateTopUI(state);
+
+    for (let i = state.empPowerUps.length - 1; i >= 0; i--) {
+        const emp = state.empPowerUps[i];
+        if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
+            state.empActiveTimer = config.empDuration;
+            state.empPowerUps.splice(i, 1);
+            return;
+        }
+    }
+
+    if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0) {
+        state.interceptors.push(new Interceptor(width / 2, height, x, y, state.interceptorSpeed, state.blastRadius));
+        state.remainingInterceptors--;
+        UI.updateTopUI(state);
+    }
 }
 
 function handleUpgradeInterceptors() {
     if (state.score >= config.upgradeCosts.interceptors) {
-        state.score -= config.upgradeCosts.interceptors;
-        state.remainingInterceptors += 5;
+        state.score -= config.upgradeCosts.interceptors; state.remainingInterceptors += 5;
         refreshUpgradeScreen();
     }
 }
@@ -316,12 +340,30 @@ function handleUpgradeTurret() {
     }
 }
 
+function handleUpgradeSpeed() {
+    if (state.score >= config.upgradeCosts.interceptorSpeed) {
+        state.score -= config.upgradeCosts.interceptorSpeed;
+        state.interceptorSpeed *= 1.2; // 20% speed increase
+        refreshUpgradeScreen();
+    }
+}
+
+function handleUpgradeBlast() {
+    if (state.score >= config.upgradeCosts.blastRadius) {
+        state.score -= config.upgradeCosts.blastRadius;
+        state.blastRadius *= 1.3; // 30% blast radius increase
+        refreshUpgradeScreen();
+    }
+}
+
 function refreshUpgradeScreen() {
     UI.updateTopUI(state);
     UI.showBetweenWaveScreen(state, {
         upgradeInterceptorsCallback: handleUpgradeInterceptors,
         upgradeRepairCallback: handleUpgradeRepair,
         upgradeTurretCallback: handleUpgradeTurret,
+        upgradeSpeedCallback: handleUpgradeSpeed,
+        upgradeBlastCallback: handleUpgradeBlast,
         nextWaveCallback: startNextWave
     }, config);
 }
@@ -331,10 +373,10 @@ function init() {
     state = getInitialState();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('click', launchInterceptor);
+    canvas.addEventListener('click', handleClick);
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        launchInterceptor(e.touches[0]);
+        handleClick(e.touches[0]);
     });
 
     UI.showStartScreen(resetAndStartGame);

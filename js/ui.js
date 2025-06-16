@@ -9,17 +9,25 @@ import { difficultySettings } from './config.js';
 const scoreEl = document.getElementById('score');
 const interceptorCountEl = document.getElementById('interceptor-count');
 const waveEl = document.getElementById('wave');
+const comboDisplay = document.getElementById('combo-display');
+const comboMultiplierEl = document.getElementById('combo-multiplier');
 const modalContainer = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-content-main');
 
 /**
  * Updates the top UI bar with the current game state.
- * @param {object} state - The current game state (score, interceptors, wave).
+ * @param {object} state - The current game state.
  */
 export function updateTopUI(state) {
     scoreEl.textContent = state.score;
     interceptorCountEl.textContent = state.remainingInterceptors;
     waveEl.textContent = state.currentWave + 1;
+    if (state.comboMultiplier > 1) {
+        comboMultiplierEl.textContent = `x${state.comboMultiplier}`;
+        comboDisplay.style.display = 'block';
+    } else {
+        comboDisplay.style.display = 'none';
+    }
 }
 
 /**
@@ -28,25 +36,15 @@ export function updateTopUI(state) {
  */
 export function showStartScreen(startGameCallback) {
     modalContainer.style.display = 'flex';
-    
-    // Generate difficulty buttons dynamically
     let difficultyButtonsHTML = '<div class="upgrade-options">';
     for (const key in difficultySettings) {
         difficultyButtonsHTML += `<button id="start-${key}" class="modal-button" data-difficulty="${key}">${difficultySettings[key].name}</button>`;
     }
     difficultyButtonsHTML += '</div>';
-
-    modalContent.innerHTML = `
-        <h1>IRON DOME</h1>
-        <p>Enemy rockets are attacking. Survive the waves and protect the cities. Please select a difficulty to begin.</p>
-        ${difficultyButtonsHTML}
-    `;
-
-    // Add event listeners to the new buttons
+    modalContent.innerHTML = `<h1>IRON DOME</h1><p>Enemy rockets are attacking. Survive the waves and protect the bases. Please select a difficulty to begin.</p>${difficultyButtonsHTML}`;
     for (const key in difficultySettings) {
         document.getElementById(`start-${key}`).addEventListener('click', (e) => {
-            const selectedDifficulty = e.target.getAttribute('data-difficulty');
-            startGameCallback(selectedDifficulty);
+            startGameCallback(e.target.getAttribute('data-difficulty'));
         });
     }
 }
@@ -59,7 +57,7 @@ export function showStartScreen(startGameCallback) {
  */
 export function showBetweenWaveScreen(state, callbacks, config) {
     const { score, currentWave, cities, turrets } = state;
-    const { upgradeInterceptorsCallback, upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback } = callbacks;
+    const { upgradeInterceptorsCallback, upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback, upgradeSpeedCallback, upgradeBlastCallback } = callbacks;
     const { upgradeCosts, maxTurrets } = config;
 
     const destroyedCitiesCount = cities.filter(c => c.isDestroyed).length;
@@ -68,15 +66,11 @@ export function showBetweenWaveScreen(state, callbacks, config) {
         <h1>WAVE ${currentWave + 1} COMPLETE</h1>
         <p class="game-over-stats">Score: ${score}</p>
         <div class="upgrade-options">
-            <button id="upgrade-interceptors" class="modal-button" ${score < upgradeCosts.interceptors ? 'disabled' : ''}>
-                +5 Interceptors (Cost: ${upgradeCosts.interceptors})
-            </button>
-            <button id="upgrade-repair" class="modal-button" ${score < upgradeCosts.repairCity || destroyedCitiesCount === 0 ? 'disabled' : ''}>
-                Repair City (Cost: ${upgradeCosts.repairCity})
-            </button>
-            <button id="upgrade-turret" class="modal-button" ${score < upgradeCosts.automatedTurret || turrets.length >= maxTurrets ? 'disabled' : ''}>
-                Build Turret (Cost: ${upgradeCosts.automatedTurret})
-            </button>
+            <button id="upgrade-interceptors" class="modal-button" ${score < upgradeCosts.interceptors ? 'disabled' : ''}>+5 Interceptors (Cost: ${upgradeCosts.interceptors})</button>
+            <button id="upgrade-repair" class="modal-button" ${score < upgradeCosts.repairCity || destroyedCitiesCount === 0 ? 'disabled' : ''}>Repair Base (Cost: ${upgradeCosts.repairCity})</button>
+            <button id="upgrade-turret" class="modal-button" ${score < upgradeCosts.automatedTurret || turrets.length >= maxTurrets ? 'disabled' : ''}>Build Turret (Cost: ${upgradeCosts.automatedTurret})</button>
+            <button id="upgrade-speed" class="modal-button" ${score < upgradeCosts.interceptorSpeed ? 'disabled' : ''}>Upgrade Speed (Cost: ${upgradeCosts.interceptorSpeed})</button>
+            <button id="upgrade-blast" class="modal-button" ${score < upgradeCosts.blastRadius ? 'disabled' : ''}>Upgrade Blast (Cost: ${upgradeCosts.blastRadius})</button>
             <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
         </div>
     `;
@@ -84,6 +78,8 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     document.getElementById('upgrade-interceptors').addEventListener('click', upgradeInterceptorsCallback);
     document.getElementById('upgrade-repair').addEventListener('click', upgradeRepairCallback);
     document.getElementById('upgrade-turret').addEventListener('click', upgradeTurretCallback);
+    document.getElementById('upgrade-speed').addEventListener('click', upgradeSpeedCallback);
+    document.getElementById('upgrade-blast').addEventListener('click', upgradeBlastCallback);
     document.getElementById('next-wave-button').addEventListener('click', nextWaveCallback);
 }
 
@@ -95,19 +91,12 @@ export function showBetweenWaveScreen(state, callbacks, config) {
 export function showGameOverScreen(state, restartCallback) {
     const { score, currentWave } = state;
     modalContainer.style.display = 'flex';
-    modalContent.innerHTML = `
-        <h1>MISSION FAILED</h1>
-        <p class="game-over-stats">FINAL SCORE: ${score}</p>
-        <p class="game-over-stats">WAVES SURVIVED: ${currentWave}</p>
-        <p>The city has fallen. The war is not over.</p>
-        <button id="restart-button" class="modal-button">TRY AGAIN</button>
-    `;
-    document.getElementById('restart-button').addEventListener('click', restartCallback);
+    modalContent.classList.add('game-over');
+    modalContent.innerHTML = `<h1>MISSION FAILED</h1><p class="game-over-stats">FINAL SCORE: ${score}</p><p class="game-over-stats">WAVES SURVIVED: ${currentWave}</p><p>The defense has fallen. The war is not over.</p><button id="restart-button" class="modal-button">TRY AGAIN</button>`;
+    document.getElementById('restart-button').addEventListener('click', () => {
+        modalContent.classList.remove('game-over');
+        restartCallback();
+    });
 }
 
-/**
- * Hides the main modal container.
- */
-export function hideModal() {
-    modalContainer.style.display = 'none';
-}
+export function hideModal() { modalContainer.style.display = 'none'; }
