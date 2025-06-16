@@ -40,6 +40,7 @@ export const config = {
     empSpawnChance: 0.001,        // Chance per frame to spawn an EMP
     empDuration: 300,             // How long the freeze effect lasts in frames
     comboTimeout: 180,            // Time in frames before a combo resets
+    maxParticles: 300, // Performance cap for particles
     upgradeCosts: {
         interceptors: 500,
         repairCity: 1000,

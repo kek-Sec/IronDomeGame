@@ -196,7 +196,10 @@ export class Particle {
         const alpha = this.life / this.initialLife;
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
         ctx.fillStyle = this.color.replace('1)', `${alpha})`);
-        ctx.shadowColor = this.color; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 5; // Reduced for performance
+        ctx.fill();
+        ctx.shadowBlur = 0;
     }
 }
 
@@ -244,7 +247,7 @@ export class EMP {
         this.x = x ?? random(width * 0.2, width * 0.8);
         this.y = y ?? random(height * 0.2, height * 0.6);
         this.radius = 20;
-        this.life = 600; // Lasts for 10 seconds on screen
+        this.life = 600;
         this.time = 0;
     }
     update() {
@@ -260,7 +263,6 @@ export class EMP {
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 3;
         ctx.stroke();
-        // Pulsating outer ring
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius + Math.sin(this.time * 0.1) * 5, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(0, 150, 255, 0.8)';

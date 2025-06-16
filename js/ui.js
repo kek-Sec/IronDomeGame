@@ -6,6 +6,7 @@
 import { difficultySettings } from './config.js';
 
 // --- DOM Element References ---
+const fpsCounterEl = document.getElementById('fps-counter');
 const scoreEl = document.getElementById('score');
 const interceptorCountEl = document.getElementById('interceptor-count');
 const waveEl = document.getElementById('wave');
@@ -19,6 +20,7 @@ const modalContent = document.getElementById('modal-content-main');
  * @param {object} state - The current game state.
  */
 export function updateTopUI(state) {
+    fpsCounterEl.textContent = state.fps;
     scoreEl.textContent = state.score;
     interceptorCountEl.textContent = state.remainingInterceptors;
     waveEl.textContent = state.currentWave + 1;

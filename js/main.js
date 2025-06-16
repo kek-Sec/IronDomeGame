@@ -30,7 +30,8 @@ function getInitialState() {
         empActiveTimer: 0, comboMultiplier: 1, comboTimer: 0,
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
-        gameTime: 0
+        gameTime: 0,
+        fps: 0, frameCount: 0, lastFpsUpdate: 0,
     };
 }
 
@@ -49,7 +50,10 @@ function update() {
     updateTurrets();
     updateInterceptors();
     updateParticles();
-    state.empPowerUps.forEach(emp => emp.update());
+    state.empPowerUps.forEach((emp, i) => {
+        emp.update();
+        if (emp.life <= 0) state.empPowerUps.splice(i, 1);
+    });
     
     checkWaveCompletion();
     checkGameOver();
@@ -97,13 +101,13 @@ function updateRockets() {
             state.cities.forEach(city => {
                if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
                    city.isDestroyed = true; hitCity = true;
-                   createExplosion(rocket.x, rocket.y, 100, 0);
+                   createExplosion(rocket.x, rocket.y, 80, 0);
                    triggerScreenShake(15, 30);
                }
             });
 
             if (hitCity || rocket.y >= height) {
-                if (!hitCity) createExplosion(rocket.x, rocket.y, 50, 0);
+                if (!hitCity) createExplosion(rocket.x, rocket.y, 40, 0);
                 state.rockets.splice(i, 1);
             }
         }
@@ -126,9 +130,14 @@ function updateInterceptors() {
         const interceptor = state.interceptors[i];
         interceptor.update();
 
+        if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
+            state.interceptors.splice(i, 1);
+            continue;
+        }
+
         const distToTarget = Math.hypot(interceptor.x - interceptor.targetX, interceptor.y - interceptor.targetY);
-        if (distToTarget < 20 || interceptor.y < 0) {
-            createExplosion(interceptor.x, interceptor.y, 50, 200);
+        if (distToTarget < 20) {
+            createExplosion(interceptor.x, interceptor.y, 30, 200);
             state.interceptors.splice(i, 1);
             continue;
         }
@@ -151,7 +160,7 @@ function updateInterceptors() {
                     state.comboMultiplier++;
                     destroyed = true;
                 }
-                createExplosion(rocket.x, rocket.y, destroyed ? 100 : 30, destroyed ? 200 : 100);
+                createExplosion(rocket.x, rocket.y, destroyed ? 80 : 25, destroyed ? 200 : 100);
                 state.interceptors.splice(i, 1);
                 break;
             }
@@ -225,8 +234,16 @@ function draw() {
 }
 
 // --- Game Flow ---
-function gameLoop() {
-    update(); draw();
+function gameLoop(timestamp) {
+    state.frameCount++;
+    if (timestamp - state.lastFpsUpdate > 1000) {
+        state.fps = state.frameCount;
+        state.frameCount = 0;
+        state.lastFpsUpdate = timestamp;
+    }
+
+    update(); 
+    draw();
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
@@ -280,6 +297,7 @@ function createCities() {
 }
 
 function createExplosion(x, y, count, baseColor) {
+    if (state.particles.length > config.maxParticles) return;
     for (let i = 0; i < count; i++) {
         state.particles.push(new Particle(x, y, baseColor + random(-20, 20)));
     }
@@ -343,7 +361,7 @@ function handleUpgradeTurret() {
 function handleUpgradeSpeed() {
     if (state.score >= config.upgradeCosts.interceptorSpeed) {
         state.score -= config.upgradeCosts.interceptorSpeed;
-        state.interceptorSpeed *= 1.2; // 20% speed increase
+        state.interceptorSpeed *= 1.2;
         refreshUpgradeScreen();
     }
 }
@@ -351,7 +369,7 @@ function handleUpgradeSpeed() {
 function handleUpgradeBlast() {
     if (state.score >= config.upgradeCosts.blastRadius) {
         state.score -= config.upgradeCosts.blastRadius;
-        state.blastRadius *= 1.3; // 30% blast radius increase
+        state.blastRadius *= 1.3;
         refreshUpgradeScreen();
     }
 }
@@ -380,7 +398,7 @@ function init() {
     });
 
     UI.showStartScreen(resetAndStartGame);
-    gameLoop();
+    animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 init();
