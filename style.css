@@ -1,0 +1,148 @@
+/* --- CSS Custom Properties (Variables) --- */
+:root {
+    --glow-color: #00ffff;
+    --rocket-color: #ff4d4d;
+    --mirv-color: #f0f;
+    --interceptor-color: #00ffff;
+    --explosion-base-color: 200; /* HSL Hue for explosions */
+    --background-start: #010409;
+    --background-end: #0d1117;
+    --text-color: #c9d1d9;
+    --border-color: #30363d;
+}
+
+/* --- General Resets and Body Styling --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--background-start);
+    font-family: 'Orbitron', sans-serif;
+    color: var(--text-color);
+}
+
+/* --- Canvas and UI Styling --- */
+canvas {
+    display: block;
+    background-image: radial-gradient(circle at top, var(--background-end) 0%, var(--background-start) 70%);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+    pointer-events: none;
+    text-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color);
+}
+
+.ui-box {
+    background: rgba(13, 17, 23, 0.7);
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+#ui-container h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+/* --- Modal (Pop-up) Styling --- */
+#modal-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: opacity 0.3s ease;
+}
+
+.modal-content {
+    background: var(--background-start);
+    border: 1px solid var(--border-color);
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.modal-content h1 {
+    font-size: 2.5em;
+    color: var(--glow-color);
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px var(--glow-color);
+}
+
+.modal-content p {
+    margin-bottom: 30px;
+    line-height: 1.6;
+    font-size: 1.1em;
+}
+
+.modal-content p.game-over-stats {
+     font-size: 1.3em;
+     font-weight: bold;
+}
+
+/* --- Button Styling --- */
+.modal-button {
+    padding: 15px 30px;
+    font-size: 1.5em;
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    border: 2px solid var(--glow-color);
+    background: transparent;
+    color: var(--glow-color);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px var(--glow-color);
+    box-shadow: 0 0 10px var(--glow-color) inset, 0 0 10px var(--glow-color);
+    pointer-events: all;
+    margin: 10px;
+}
+
+.modal-button:hover:not(:disabled) {
+    background: var(--glow-color);
+    color: var(--background-start);
+    box-shadow: 0 0 20px var(--glow-color), 0 0 30px var(--glow-color);
+}
+
+.modal-button:disabled {
+    border-color: var(--border-color);
+    color: var(--border-color);
+    cursor: not-allowed;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+.upgrade-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
