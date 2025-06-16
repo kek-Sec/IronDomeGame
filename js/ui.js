@@ -14,6 +14,8 @@ const comboDisplay = document.getElementById('combo-display');
 const comboMultiplierEl = document.getElementById('combo-multiplier');
 const modalContainer = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-content-main');
+const pauseButton = document.getElementById('pause-button');
+const pauseIcon = document.getElementById('pause-icon');
 
 /**
  * Updates the top UI bar with the current game state.
@@ -29,6 +31,14 @@ export function updateTopUI(state) {
         comboDisplay.style.display = 'block';
     } else {
         comboDisplay.style.display = 'none';
+    }
+    
+    // Show/hide pause button based on game state
+    if (state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED') {
+        pauseButton.style.display = 'flex';
+        pauseIcon.innerHTML = state.gameState === 'PAUSED' ? '▶' : '||';
+    } else {
+        pauseButton.style.display = 'none';
     }
 }
 
@@ -91,7 +101,6 @@ export function showBetweenWaveScreen(state, callbacks, config) {
  * @param {function} restartCallback - The function to call when the restart button is clicked.
  */
 export function showGameOverScreen(state, restartCallback) {
-    const { score, currentWave } = state;
     modalContainer.style.display = 'flex';
     modalContent.classList.add('game-over');
     modalContent.innerHTML = `<h1>MISSION FAILED</h1><p class="game-over-stats">FINAL SCORE: ${score}</p><p class="game-over-stats">WAVES SURVIVED: ${currentWave}</p><p>The defense has fallen. The war is not over.</p><button id="restart-button" class="modal-button">TRY AGAIN</button>`;
@@ -100,5 +109,25 @@ export function showGameOverScreen(state, restartCallback) {
         restartCallback();
     });
 }
+
+/**
+ * Displays the pause screen.
+ * @param {function} resumeCallback 
+ * @param {function} restartCallback 
+ */
+export function showPauseScreen(resumeCallback, restartCallback) {
+    modalContainer.style.display = 'flex';
+    modalContent.classList.remove('game-over');
+    modalContent.innerHTML = `
+        <h1>PAUSED</h1>
+        <div class="upgrade-options">
+            <button id="resume-button" class="modal-button">RESUME</button>
+            <button id="restart-button-pause" class="modal-button">RESTART</button>
+        </div>
+    `;
+    document.getElementById('resume-button').addEventListener('click', resumeCallback);
+    document.getElementById('restart-button-pause').addEventListener('click', restartCallback);
+}
+
 
 export function hideModal() { modalContainer.style.display = 'none'; }

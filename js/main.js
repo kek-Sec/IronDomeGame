@@ -14,6 +14,7 @@ import * as UI from './ui.js';
 // --- DOM & Canvas Setup ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const pauseButton = document.getElementById('pause-button');
 let width, height;
 
 // --- Game State ---
@@ -22,7 +23,8 @@ let animationFrameId; let state = {};
 // --- Game State Functions ---
 function getInitialState() {
     return {
-        gameState: 'START_SCREEN', difficulty: 'normal', score: 0,
+        gameState: 'START_SCREEN', // START_SCREEN, IN_WAVE, BETWEEN_WAVES, GAME_OVER, PAUSED
+        difficulty: 'normal', score: 0,
         remainingInterceptors: 0, currentWave: 0,
         interceptorSpeed: config.initialInterceptorSpeed,
         blastRadius: config.initialBlastRadius,
@@ -41,33 +43,34 @@ function getInitialState() {
 // --- Core Game Logic ---
 function update() {
     state.gameTime++;
-    if (state.gameState === 'IN_WAVE') {
-        if (state.comboTimer > 0) { state.comboTimer--; } 
-        else { state.comboMultiplier = 1; }
+    UI.updateTopUI(state); // Update UI every frame
 
-        if (state.empActiveTimer > 0) {
-            state.empActiveTimer--;
-            state.empShockwave.radius += 20;
-            state.empShockwave.alpha = Math.max(0, state.empShockwave.alpha - 0.01);
-        } else {
-            state.empShockwave = { radius: 0, alpha: 0 };
-        }
-
-        handleSpawning();
-        updateRockets();
-        updateTurrets();
-        updateInterceptors();
-        updateParticles();
-        state.empPowerUps.forEach((emp, i) => {
-            emp.update();
-            if (emp.life <= 0) state.empPowerUps.splice(i, 1);
-        });
-        checkWaveCompletion();
-        checkGameOver();
-    }
+    if (state.gameState !== 'IN_WAVE') return; // Do not update game logic if not in wave
     
+    if (state.comboTimer > 0) { state.comboTimer--; } 
+    else { state.comboMultiplier = 1; }
+
+    if (state.empActiveTimer > 0) {
+        state.empActiveTimer--;
+        state.empShockwave.radius += 20;
+        state.empShockwave.alpha = Math.max(0, state.empShockwave.alpha - 0.01);
+    } else {
+        state.empShockwave = { radius: 0, alpha: 0 };
+    }
+
+    handleSpawning();
+    updateRockets();
+    updateTurrets();
+    updateInterceptors();
+    updateParticles();
+    state.empPowerUps.forEach((emp, i) => {
+        emp.update();
+        if (emp.life <= 0) state.empPowerUps.splice(i, 1);
+    });
     findTargetedRocket();
-    UI.updateTopUI(state);
+    
+    checkWaveCompletion();
+    checkGameOver();
 }
 
 function findTargetedRocket() {
@@ -86,7 +89,7 @@ function handleSpawning() {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
     const difficulty = difficultySettings[state.difficulty];
     const currentWaveDelay = waveDef.delay * difficulty.waveDelayMultiplier;
-    const speedMultiplier = 1 + (state.currentWave * 0.05); // Rockets get 5% faster each wave
+    const speedMultiplier = 1 + (state.currentWave * 0.05);
     
     state.waveRocketSpawn.timer++;
     
@@ -364,7 +367,7 @@ function handleClick(e) {
         const emp = state.empPowerUps[i];
         if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
             state.empActiveTimer = config.empDuration;
-            state.empShockwave = { radius: 0, alpha: 1 }; // Trigger shockwave
+            state.empShockwave = { radius: 0, alpha: 1 };
             state.empPowerUps.splice(i, 1);
             return;
         }
@@ -376,6 +379,17 @@ function handleClick(e) {
         UI.updateTopUI(state);
     }
 }
+
+function togglePause() {
+    if (state.gameState === 'IN_WAVE') {
+        state.gameState = 'PAUSED';
+        UI.showPauseScreen(togglePause, init);
+    } else if (state.gameState === 'PAUSED') {
+        state.gameState = 'IN_WAVE';
+        UI.hideModal();
+    }
+}
+
 
 function handleUpgradeInterceptors() {
     if (state.score >= config.upgradeCosts.interceptors) {
@@ -437,11 +451,15 @@ function refreshUpgradeScreen() {
 
 // --- Initialization ---
 function init() {
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
     state = getInitialState();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('click', handleClick);
+    pauseButton.addEventListener('click', togglePause);
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const rect = canvas.getBoundingClientRect();

@@ -40,7 +40,6 @@
     50% { text-shadow: 0 0 8px var(--glow-color), 0 0 15px var(--glow-color); }
 }
 
-/* NEW: Star twinkle animation */
 @keyframes twinkle {
     0% { background-position: 0 0; }
     100% { background-position: -10000px 5000px; }
@@ -61,13 +60,11 @@ html, body {
     background-color: var(--background-start);
     font-family: 'Orbitron', sans-serif;
     color: var(--text-color);
-    /* NEW: Add a static star layer */
     background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/stars.png');
     background-repeat: repeat;
     background-position: 0 0;
 }
 
-/* NEW: Add a second, animated star layer for twinkling effect */
 body::before {
     content: '';
     position: absolute;
@@ -80,8 +77,6 @@ body::before {
     z-index: 0;
 }
 
-
-/* Optional Scanline Overlay for retro monitor effect */
 body::after {
     content: '';
     position: absolute;
@@ -99,7 +94,6 @@ body::after {
 /* --- Canvas and UI Styling --- */
 canvas {
     display: block;
-    /* UPDATED: Made canvas background transparent to see the star layers */
     background: transparent; 
     position: absolute;
     top: 0;
@@ -113,7 +107,8 @@ canvas {
     left: 20px;
     right: 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Changed */
+    gap: 15px; /* Added */
     align-items: center;
     z-index: 2;
     pointer-events: none;
@@ -136,6 +131,35 @@ canvas {
     color: var(--text-color);
     text-shadow: 0 0 5px var(--glow-color);
     animation: pulseGlow 4s infinite ease-in-out;
+}
+
+/* --- Pause Button Styling --- */
+.pause-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    color: var(--glow-color);
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.2s ease-in-out;
+}
+.pause-btn:hover {
+    border-color: var(--glow-color);
+    box-shadow: 0 0 10px var(--glow-color);
+}
+#pause-icon {
+    transform: translateY(-2px);
+    font-weight: bold;
+    letter-spacing: 2px;
 }
 
 /* --- Modal (Pop-up) Styling --- */
@@ -174,12 +198,10 @@ canvas {
     animation: textFlicker 3s infinite;
 }
 
-/* NEW: Game Over specific H1 style */
 .modal-content.game-over h1 {
     color: var(--rocket-color);
     animation: pulseGlow 2s infinite ease-in-out;
 }
-
 
 .modal-content p {
     margin-bottom: 30px;
