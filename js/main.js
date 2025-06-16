@@ -27,47 +27,51 @@ function getInitialState() {
         interceptorSpeed: config.initialInterceptorSpeed,
         blastRadius: config.initialBlastRadius,
         rockets: [], interceptors: [], particles: [], cities: [], turrets: [], empPowerUps: [],
-        empActiveTimer: 0, comboMultiplier: 1, comboTimer: 0,
+        empActiveTimer: 0, empShockwave: { radius: 0, alpha: 0 },
+        comboMultiplier: 1, comboTimer: 0,
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
         gameTime: 0,
         fps: 0, frameCount: 0, lastFpsUpdate: 0,
-        mouse: { x: 0, y: 0 }, // For mouse tracking
-        targetedRocket: null, // For the new lock-on system
+        mouse: { x: 0, y: 0 },
+        targetedRocket: null,
     };
 }
 
 // --- Core Game Logic ---
 function update() {
     state.gameTime++;
-    if (state.gameState !== 'IN_WAVE') {
-        findTargetedRocket(); // Allow targeting even when wave hasn't started
-        return;
+    if (state.gameState === 'IN_WAVE') {
+        if (state.comboTimer > 0) { state.comboTimer--; } 
+        else { state.comboMultiplier = 1; }
+
+        if (state.empActiveTimer > 0) {
+            state.empActiveTimer--;
+            state.empShockwave.radius += 20;
+            state.empShockwave.alpha = Math.max(0, state.empShockwave.alpha - 0.01);
+        } else {
+            state.empShockwave = { radius: 0, alpha: 0 };
+        }
+
+        handleSpawning();
+        updateRockets();
+        updateTurrets();
+        updateInterceptors();
+        updateParticles();
+        state.empPowerUps.forEach((emp, i) => {
+            emp.update();
+            if (emp.life <= 0) state.empPowerUps.splice(i, 1);
+        });
+        checkWaveCompletion();
+        checkGameOver();
     }
     
-    if (state.comboTimer > 0) { state.comboTimer--; } 
-    else { state.comboMultiplier = 1; }
-
-    if (state.empActiveTimer > 0) { state.empActiveTimer--; }
-
-    handleSpawning();
-    updateRockets();
-    updateTurrets();
-    updateInterceptors();
-    updateParticles();
-    state.empPowerUps.forEach((emp, i) => {
-        emp.update();
-        if (emp.life <= 0) state.empPowerUps.splice(i, 1);
-    });
     findTargetedRocket();
-    
-    checkWaveCompletion();
-    checkGameOver();
     UI.updateTopUI(state);
 }
 
 function findTargetedRocket() {
-    let closestDist = 50; // Max distance to lock-on
+    let closestDist = 50;
     state.targetedRocket = null;
     for (const rocket of state.rockets) {
         const dist = Math.hypot(rocket.x - state.mouse.x, rocket.y - state.mouse.y);
@@ -82,6 +86,7 @@ function handleSpawning() {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
     const difficulty = difficultySettings[state.difficulty];
     const currentWaveDelay = waveDef.delay * difficulty.waveDelayMultiplier;
+    const speedMultiplier = 1 + (state.currentWave * 0.05); // Rockets get 5% faster each wave
     
     state.waveRocketSpawn.timer++;
     
@@ -89,9 +94,9 @@ function handleSpawning() {
         const rocketType = state.waveRocketSpawn.toSpawn.pop();
         const sizeMultiplier = difficulty.missileSizeMultiplier;
         
-        if (rocketType === 'standard') { state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier)); } 
-        else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier)); }
-        else if (rocketType === 'armored') { state.rockets.push(new ArmoredRocket(width, sizeMultiplier)); }
+        if (rocketType === 'standard') { state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier)); } 
+        else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'armored') { state.rockets.push(new ArmoredRocket(width, sizeMultiplier, speedMultiplier)); }
         
         state.waveRocketSpawn.timer = 0;
     }
@@ -214,10 +219,12 @@ function draw() {
 
     ctx.clearRect(0, 0, width, height);
     
-    if (state.empActiveTimer > 0) {
-        const alpha = state.empActiveTimer / config.empDuration;
-        ctx.fillStyle = `rgba(0, 180, 255, ${alpha * 0.2})`;
-        ctx.fillRect(0, 0, width, height);
+    if (state.empShockwave.alpha > 0) {
+        ctx.beginPath();
+        ctx.arc(width / 2, height / 2, state.empShockwave.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0, 180, 255, ${state.empShockwave.alpha})`;
+        ctx.lineWidth = 15;
+        ctx.stroke();
     }
     
     if (state.gameState === 'BETWEEN_WAVES') {
@@ -258,7 +265,6 @@ function drawReticle(rocket) {
     ctx.rotate(state.gameTime * 0.05);
 
     ctx.beginPath();
-    // Four corner brackets for the reticle
     ctx.moveTo(-size, -size / 2); ctx.lineTo(-size, -size); ctx.lineTo(-size / 2, -size);
     ctx.moveTo(size, -size / 2); ctx.lineTo(size, -size); ctx.lineTo(size / 2, -size);
     ctx.moveTo(-size, size / 2); ctx.lineTo(-size, size); ctx.lineTo(-size / 2, size);
@@ -358,12 +364,12 @@ function handleClick(e) {
         const emp = state.empPowerUps[i];
         if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
             state.empActiveTimer = config.empDuration;
+            state.empShockwave = { radius: 0, alpha: 1 }; // Trigger shockwave
             state.empPowerUps.splice(i, 1);
             return;
         }
     }
     
-    // Fire at the currently targeted rocket
     if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0 && state.targetedRocket) {
         state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius));
         state.remainingInterceptors--;
@@ -394,7 +400,8 @@ function handleUpgradeTurret() {
     if (state.score >= config.upgradeCosts.automatedTurret && state.turrets.length < config.maxTurrets) {
         state.score -= config.upgradeCosts.automatedTurret;
         const turretX = state.turrets.length === 0 ? width * 0.25 : width * 0.75;
-        state.turrets.push(new AutomatedTurret(turretX, height - 10, config.turretRange, config.turretFireRate));
+        const fireRate = config.turretFireRate * difficultySettings[state.difficulty].turretFireRateMultiplier;
+        state.turrets.push(new AutomatedTurret(turretX, height - 10, config.turretRange, fireRate));
         draw();
         refreshUpgradeScreen();
     }
@@ -433,16 +440,14 @@ function init() {
     state = getInitialState();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('mousemove', handleMouseMove); // NEW
+    canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('click', handleClick);
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        // Touch doesn't have a persistent hover, so we just fire at the point
         const rect = canvas.getBoundingClientRect();
         const x = e.touches[0].clientX - rect.left;
         const y = e.touches[0].clientY - rect.top;
         if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0) {
-            // Find closest rocket to touch point to simulate a quick "tap-to-target"
             let closestDist = 100;
             let touchTarget = null;
             for (const rocket of state.rockets) {

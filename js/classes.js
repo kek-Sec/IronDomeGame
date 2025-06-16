@@ -68,15 +68,15 @@ export class City {
 
 // Base class for all enemy rockets
 export class Rocket {
-    constructor(startX, startY, targetVx, targetVy, width, sizeMultiplier = 1) {
+    constructor(startX, startY, targetVx, targetVy, width, sizeMultiplier = 1, speedMultiplier = 1) {
         this.x = startX ?? random(width * 0.1, width * 0.9);
         this.y = startY ?? 0;
-        this.vx = targetVx ?? random(-1, 1);
-        this.vy = targetVy ?? random(1.5, 2.5);
+        this.vx = (targetVx ?? random(-1, 1)) * speedMultiplier;
+        this.vy = (targetVy ?? random(1.5, 2.5)) * speedMultiplier;
         this.radius = 4 * sizeMultiplier;
         this.trail = []; this.type = 'standard'; this.color = 'red';
         this.trailColor = 'rgba(255, 77, 77, 0.5)'; this.life = 0;
-        this.id = random(0, 1000000); // Unique ID for tracking
+        this.id = random(0, 1000000);
     }
     update() {
         this.trail.push({ x: this.x, y: this.y });
@@ -100,8 +100,8 @@ export class Rocket {
 
 // A tougher rocket that requires multiple hits.
 export class ArmoredRocket extends Rocket {
-    constructor(width, sizeMultiplier = 1) {
-        super(undefined, undefined, undefined, undefined, width, sizeMultiplier);
+    constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
+        super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
         this.type = 'armored';
         this.radius = 6 * sizeMultiplier;
         this.health = 2;
@@ -123,11 +123,12 @@ export class ArmoredRocket extends Rocket {
 
 // A special rocket that splits into multiple smaller rockets
 export class MirvRocket extends Rocket {
-    constructor(width, height, sizeMultiplier = 1) {
-        super(undefined, undefined, undefined, undefined, width, sizeMultiplier);
+    constructor(width, height, sizeMultiplier = 1, speedMultiplier = 1) {
+        super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
         this.width = width; this.type = 'mirv'; this.radius = 7 * sizeMultiplier;
         this.color = 'magenta'; this.trailColor = 'rgba(255, 0, 255, 0.5)';
         this.splitHeight = random(height * 0.2, height * 0.5); this.hasSplit = false;
+        this.speedMultiplier = speedMultiplier; // Store for children
     }
     update() {
         super.update();
@@ -139,7 +140,7 @@ export class MirvRocket extends Rocket {
         for (let i = 0; i < childCount; i++) {
             const newVx = this.vx + random(-1.5, 1.5);
             const newVy = this.vy + random(-0.5, 0.5);
-            childRockets.push(new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier));
+            childRockets.push(new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier, this.speedMultiplier));
         }
         return childRockets;
     }
@@ -157,18 +158,16 @@ export class MirvRocket extends Rocket {
 export class Interceptor {
     constructor(startX, startY, target, speed, blastRadius) {
         this.x = startX; this.y = startY;
-        this.target = target; // NEW: The missile now tracks a target object
+        this.target = target;
         this.radius = 3; this.speed = speed; this.blastRadius = blastRadius;
         this.trail = [];
         this.isHoming = !!target;
     }
     update(rockets) {
-        // If the target has been destroyed, stop homing
         if (this.isHoming && !rockets.find(r => r.id === this.target.id)) {
             this.isHoming = false;
         }
 
-        // Homing logic: continuously adjust trajectory towards the target
         if (this.isHoming) {
             const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
             this.vx = Math.cos(angle) * this.speed;
@@ -232,14 +231,22 @@ export class AutomatedTurret {
         return null;
     }
     findTarget(rockets) {
-        let closestTarget = null; let minDistance = this.range;
-        for (const rocket of rockets) {
-            const distance = Math.hypot(this.x - rocket.x, this.y - rocket.y);
-            if (distance < minDistance) {
-                minDistance = distance; closestTarget = rocket;
-            }
-        }
-        return closestTarget;
+        const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range);
+        if (inRange.length === 0) return null;
+
+        // Prioritize more dangerous rockets
+        const armored = inRange.filter(r => r.type === 'armored');
+        if (armored.length > 0) return armored[0];
+
+        const mirvs = inRange.filter(r => r.type === 'mirv');
+        if (mirvs.length > 0) return mirvs[0];
+        
+        // Otherwise, target the closest one
+        return inRange.reduce((closest, current) => {
+            const closestDist = Math.hypot(this.x - closest.x, this.y - closest.y);
+            const currentDist = Math.hypot(this.x - current.x, this.y - current.y);
+            return currentDist < closestDist ? current : closest;
+        });
     }
     draw(ctx) {
         ctx.save(); ctx.translate(this.x, this.y);
