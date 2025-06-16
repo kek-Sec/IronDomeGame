@@ -8,7 +8,7 @@
 // --- Module Imports ---
 import { config, waveDefinitions, difficultySettings } from './config.js';
 import { random } from './utils.js';
-import { City, Rocket, MirvRocket, StealthRocket, SwarmerRocket, Interceptor, Particle, AutomatedTurret, EMP } from './classes.js';
+import { City, Rocket, MirvRocket, StealthRocket, SwarmerRocket, Interceptor, Particle, AutomatedTurret, EMP, Flare } from './classes.js';
 import * as UI from './ui.js';
 
 // --- DOM & Canvas Setup ---
@@ -28,7 +28,7 @@ function getInitialState() {
         remainingInterceptors: 0, currentWave: 0,
         interceptorSpeed: config.initialInterceptorSpeed,
         blastRadius: config.initialBlastRadius,
-        rockets: [], interceptors: [], particles: [], cities: [], turrets: [], empPowerUps: [],
+        rockets: [], interceptors: [], particles: [], cities: [], turrets: [], empPowerUps: [], flares: [],
         empActiveTimer: 0, empShockwave: { radius: 0, alpha: 0 },
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
@@ -56,6 +56,7 @@ function update() {
 
     handleSpawning();
     updateRockets();
+    updateFlares();
     updateTurrets();
     updateInterceptors();
     updateParticles();
@@ -72,14 +73,16 @@ function update() {
 function findTargetedRocket() {
     let closestDist = 50;
     state.targetedRocket = null;
-    for (const rocket of state.rockets) {
-        // Can't target invisible stealth rockets
-        if (rocket.type === 'stealth' && !rocket.isVisible) continue;
+    
+    const potentialTargets = [...state.rockets, ...state.flares];
+
+    for (const target of potentialTargets) {
+        if (target.type === 'stealth' && !target.isVisible) continue;
         
-        const dist = Math.hypot(rocket.x - state.mouse.x, rocket.y - state.mouse.y);
+        const dist = Math.hypot(target.x - state.mouse.x, target.y - state.mouse.y);
         if (dist < closestDist) {
             closestDist = dist;
-            state.targetedRocket = rocket;
+            state.targetedRocket = target;
         }
     }
 }
@@ -100,6 +103,7 @@ function handleSpawning() {
         else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier, speedMultiplier)); }
         else if (rocketType === 'stealth') { state.rockets.push(new StealthRocket(width, sizeMultiplier, speedMultiplier)); }
         else if (rocketType === 'swarmer') { state.rockets.push(new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier)); }
+        else if (rocketType === 'flare') { state.rockets.push(new FlareRocket(width, sizeMultiplier, speedMultiplier)); }
         
         state.waveRocketSpawn.timer = 0;
     }
@@ -114,7 +118,11 @@ function updateRockets() {
 
     for (let i = state.rockets.length - 1; i >= 0; i--) {
         const rocket = state.rockets[i];
-        rocket.update();
+        if(rocket.type === 'flare') {
+            rocket.update(state.flares);
+        } else {
+            rocket.update();
+        }
         
         if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
             state.rockets.push(...rocket.split());
@@ -122,20 +130,32 @@ function updateRockets() {
             continue;
         }
 
-        if (rocket.y > height - 100) {
+        if (rocket.y > height - 100 || rocket.x < 0 || rocket.x > width) {
             let hitCity = false;
-            state.cities.forEach(city => {
-               if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-                   city.isDestroyed = true; hitCity = true;
-                   createExplosion(rocket.x, rocket.y, 80, 0);
-                   triggerScreenShake(15, 30);
-               }
-            });
+            if(rocket.y > height - 100) {
+                 state.cities.forEach(city => {
+                   if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
+                       city.isDestroyed = true; hitCity = true;
+                       createExplosion(rocket.x, rocket.y, 80, 0);
+                       triggerScreenShake(15, 30);
+                   }
+                });
+            }
 
             if (hitCity || rocket.y >= height) {
-                if (!hitCity) createExplosion(rocket.x, rocket.y, 40, 0);
+                if (!hitCity && rocket.y < height + rocket.radius) createExplosion(rocket.x, rocket.y, 40, 0);
                 state.rockets.splice(i, 1);
             }
+        }
+    }
+}
+
+function updateFlares() {
+    for (let i = state.flares.length - 1; i >= 0; i--) {
+        const flare = state.flares[i];
+        flare.update();
+        if (flare.life <= 0) {
+            state.flares.splice(i, 1);
         }
     }
 }
@@ -154,12 +174,24 @@ function updateTurrets() {
 function updateInterceptors() {
     for (let i = state.interceptors.length - 1; i >= 0; i--) {
         const interceptor = state.interceptors[i];
-        interceptor.update(state.rockets);
+        interceptor.update(state.rockets, state.flares);
 
         if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
             state.interceptors.splice(i, 1);
             continue;
         }
+
+        // Check collision with flares first
+        for (let f = state.flares.length - 1; f >= 0; f--) {
+            const flare = state.flares[f];
+            if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
+                state.flares.splice(f, 1);
+                createExplosion(interceptor.x, interceptor.y, 20, 50); // Small yellow explosion
+                state.interceptors.splice(i, 1);
+                break;
+            }
+        }
+        if(!state.interceptors[i]) continue; // Interceptor was destroyed hitting a flare
 
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
@@ -169,6 +201,7 @@ function updateInterceptors() {
                 else if (rocket.type === 'mirv') points = config.mirvPoints;
                 else if (rocket.type === 'stealth') points = config.stealthPoints;
                 else if (rocket.type === 'swarmer') points = config.swarmerPoints;
+                else if (rocket.type === 'flare') points = config.flareRocketPoints;
                 else if (rocket.type === 'drone') points = config.dronePoints;
                 state.score += points;
                 
@@ -193,6 +226,7 @@ function checkWaveCompletion() {
     if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
         state.gameState = 'BETWEEN_WAVES';
         state.targetedRocket = null;
+        state.flares = []; // Clear leftover flares
         refreshUpgradeScreen();
     }
 }
@@ -238,6 +272,7 @@ function draw() {
     state.cities.forEach(city => city.draw(ctx, height));
     state.turrets.forEach(turret => turret.draw(ctx));
     state.empPowerUps.forEach(emp => emp.draw(ctx));
+    state.flares.forEach(flare => flare.draw(ctx));
 
     if (state.targetedRocket) {
         drawReticle(state.targetedRocket);
@@ -293,6 +328,7 @@ function startNextWave() {
     for(let i=0; i<waveDef.mirv; i++) spawnList.push('mirv');
     for(let i=0; i<waveDef.stealth; i++) spawnList.push('stealth');
     for(let i=0; i<waveDef.swarmer; i++) spawnList.push('swarmer');
+    for(let i=0; i<waveDef.flare; i++) spawnList.push('flare');
     state.waveRocketSpawn.toSpawn = spawnList.sort(() => Math.random() - 0.5);
 
     state.waveRocketSpawn.timer = 0;
@@ -462,11 +498,13 @@ function init() {
         if (state.gameState === 'IN_WAVE' && state.remainingInterceptors > 0) {
             let closestDist = 100;
             let touchTarget = null;
-            for (const rocket of state.rockets) {
-                const dist = Math.hypot(rocket.x - x, rocket.y - y);
+            const potentialTargets = [...state.rockets, ...state.flares];
+            for (const target of potentialTargets) {
+                 if(target.type === 'stealth' && !target.isVisible) continue;
+                const dist = Math.hypot(target.x - x, target.y - y);
                 if (dist < closestDist) {
                     closestDist = dist;
-                    touchTarget = rocket;
+                    touchTarget = target;
                 }
             }
             if (touchTarget) {

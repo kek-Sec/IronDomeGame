@@ -103,13 +103,12 @@ export class StealthRocket extends Rocket {
     constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
         this.type = 'stealth';
-        this.color = '#ae00ff'; // Purple color
+        this.color = '#ae00ff';
         this.trailColor = 'rgba(174, 0, 255, 0.4)';
         this.isVisible = true;
     }
     update() {
         super.update();
-        // Flicker every 30 frames
         if (this.life % 30 === 0) {
             this.isVisible = !this.isVisible;
         }
@@ -138,8 +137,8 @@ export class SwarmerRocket extends Rocket {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier * 1.5, speedMultiplier * 0.8);
         this.width = width;
         this.type = 'swarmer';
-        this.radius *= 1.5; // Swarmers are bigger
-        this.color = '#32cd32'; // Lime green
+        this.radius *= 1.5;
+        this.color = '#32cd32';
         this.trailColor = 'rgba(50, 205, 50, 0.5)';
         this.splitHeight = random(height * 0.3, height * 0.6);
         this.hasSplit = false;
@@ -150,7 +149,7 @@ export class SwarmerRocket extends Rocket {
         if (this.y > this.splitHeight && !this.hasSplit) { this.hasSplit = true; }
     }
     split() {
-        const childDrones = []; const childCount = 6; // Releases more projectiles
+        const childDrones = []; const childCount = 6;
         for (let i = 0; i < childCount; i++) {
             const angle = random(0, Math.PI * 2);
             const speed = random(1, 3);
@@ -196,6 +195,54 @@ export class MirvRocket extends Rocket {
     }
 }
 
+// A decoy projectile to confuse interceptors
+export class Flare {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.vx = random(-2, 2);
+        this.vy = random(-1, 1);
+        this.radius = 5;
+        this.life = 120; // Lasts 2 seconds
+        this.id = random(0, 1000000); // For tracking
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+    }
+    draw(ctx) {
+        const alpha = this.life / 120;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
+        ctx.shadowColor = `rgba(255, 215, 0, 1)`;
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+// A rocket that deploys flares to act as decoys
+export class FlareRocket extends Rocket {
+    constructor(width, sizeMultiplier = 1, speedMultiplier = 1) {
+        super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
+        this.type = 'flare';
+        this.color = '#00ced1'; // Dark turquoise
+        this.trailColor = 'rgba(0, 206, 209, 0.5)';
+        this.flareCooldown = 0;
+        this.flareDeployInterval = 90; // Deploys a flare every 1.5 seconds
+    }
+    update(flares) {
+        super.update();
+        this.flareCooldown--;
+        if (this.flareCooldown <= 0) {
+            flares.push(new Flare(this.x, this.y));
+            this.flareCooldown = this.flareDeployInterval;
+        }
+    }
+}
+
+
 // Represents the player's interceptor missile
 export class Interceptor {
     constructor(startX, startY, target, speed, blastRadius) {
@@ -204,11 +251,25 @@ export class Interceptor {
         this.radius = 3; this.speed = speed; this.blastRadius = blastRadius;
         this.trail = [];
         this.isHoming = !!target;
+        this.hasBeenDistracted = false; // Prevents being fooled multiple times
     }
-    update(rockets) {
-        if (this.isHoming && !rockets.find(r => r.id === this.target.id)) {
+    update(rockets, flares) {
+        // If the current target no longer exists, stop homing
+        if (this.isHoming && !rockets.find(r => r.id === this.target.id) && !flares.find(f => f.id === this.target.id)) {
             this.isHoming = false;
         }
+
+        // Decoy logic: Check for nearby flares
+        if (this.isHoming && !this.hasBeenDistracted) {
+            for (const flare of flares) {
+                if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
+                    this.target = flare; // Switch target to the flare!
+                    this.hasBeenDistracted = true;
+                    break;
+                }
+            }
+        }
+
         if (this.isHoming) {
             const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
             this.vx = Math.cos(angle) * this.speed;
@@ -274,11 +335,9 @@ export class AutomatedTurret {
         const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range);
         if (inRange.length === 0) return null;
 
-        // Prioritize more dangerous rockets
-        const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv');
+        const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv' || r.type === 'flare');
         if (highPriority.length > 0) return highPriority[0];
         
-        // Otherwise, target the closest one
         return inRange.reduce((closest, current) => {
             const closestDist = Math.hypot(this.x - closest.x, this.y - closest.y);
             const currentDist = Math.hypot(this.x - current.x, this.y - current.y);

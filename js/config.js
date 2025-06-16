@@ -22,10 +22,10 @@ export const difficultySettings = {
     },
     hard: {
         name: 'Hard',
-        initialInterceptors: 15,
-        waveDelayMultiplier: 0.8,
+        initialInterceptors: 10, // Reduced from 15
+        waveDelayMultiplier: 0.7, // Reduced from 0.8 (faster spawns)
         missileSizeMultiplier: 1.0,
-        turretFireRateMultiplier: 1.25,
+        turretFireRateMultiplier: 1.5, // Reduced from 1.25 (slower turrets)
     }
 };
 
@@ -36,9 +36,10 @@ export const config = {
     initialBlastRadius: 15,
     rocketPoints: 100,
     mirvPoints: 200,
-    stealthPoints: 300,   // Points for stealth rockets
-    swarmerPoints: 150,   // Points for the main swarmer
-    dronePoints: 25,      // Points per small drone
+    stealthPoints: 300,
+    swarmerPoints: 150,
+    dronePoints: 25,
+    flareRocketPoints: 200, // Points for the flare rocket
     maxTurrets: 2,
     turretFireRate: 90, 
     turretRange: 350,
@@ -56,11 +57,11 @@ export const config = {
 
 // Defines the base composition of enemy rockets for each wave with new types
 export const waveDefinitions = [
-    /* Wave 1 */ { standard: 6, mirv: 0, stealth: 0, swarmer: 0, delay: 120 },
-    /* Wave 2 */ { standard: 8, mirv: 1, stealth: 0, swarmer: 0, delay: 115 },
-    /* Wave 3 */ { standard: 10, mirv: 0, stealth: 1, swarmer: 0, delay: 110 },
-    /* Wave 4 */ { standard: 8, mirv: 2, stealth: 0, swarmer: 1, delay: 100 },
-    /* Wave 5 */ { standard: 10, mirv: 1, stealth: 2, swarmer: 1, delay: 95 },
-    /* Wave 6 */ { standard: 5, mirv: 3, stealth: 1, swarmer: 2, delay: 90 },
-    /* Wave 7+ */{ standard: 8, mirv: 2, stealth: 2, swarmer: 2, delay: 85 }
+    /* Wave 1 */ { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare: 0, delay: 120 },
+    /* Wave 2 */ { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare: 0, delay: 115 },
+    /* Wave 3 */ { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare: 1, delay: 110 },
+    /* Wave 4 */ { standard: 8, mirv: 2, stealth: 0, swarmer: 1, flare: 0, delay: 100 },
+    /* Wave 5 */ { standard: 10, mirv: 1, stealth: 2, swarmer: 1, flare: 1, delay: 95 },
+    /* Wave 6 */ { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, delay: 90 },
+    /* Wave 7+ */{ standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, delay: 85 }
 ];
