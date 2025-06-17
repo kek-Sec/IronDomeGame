@@ -9,6 +9,7 @@ import { savePlayerData } from './saveManager.js';
 // --- DOM Element References ---
 const fpsCounterEl = document.getElementById('fps-counter');
 const scoreEl = document.getElementById('score');
+const coinsEl = document.getElementById('coins');
 const waveEl = document.getElementById('wave');
 const modalContainer = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-content-main');
@@ -22,6 +23,7 @@ const bossHealthBarEl = document.getElementById('boss-health-bar');
 export function updateTopUI(state) {
     fpsCounterEl.textContent = state.fps;
     scoreEl.textContent = state.score;
+    coinsEl.textContent = state.coins;
     waveEl.textContent = state.currentWave + 1;
     
     if (state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED') {
@@ -113,7 +115,7 @@ export function showArmoryScreen(playerData) {
 
 
 export function showBetweenWaveScreen(state, callbacks, config) {
-    const { score, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks } = state;
+    const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks } = state;
     const { upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback, upgradeSpeedCallback, upgradeBlastCallback, upgradeBaseArmorCallback, upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback, upgradeHomingMineCallback } = callbacks;
     const { upgradeCosts, maxTurrets } = config;
 
@@ -140,10 +142,10 @@ export function showBetweenWaveScreen(state, callbacks, config) {
             currentCost = Math.ceil(currentCost * 0.75);
         }
 
-        const affordable = score >= currentCost;
+        const affordable = coins >= currentCost;
         const disabled = !affordable || !item.available;
         const maxed = item.maxed;
-        let statusText = `<div class="cost">Cost: ${currentCost}</div>`;
+        let statusText = `<div class="cost">Cost: ${currentCost} Coins</div>`;
         if (maxed) statusText = `<div class="cost">${item.id === 'baseArmor' ? 'APPLIED' : (item.id === 'nuke' ? 'OWNED' : 'MAXED')}</div>`;
 
         shopHTML += `
@@ -159,7 +161,10 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     modalContainer.style.display = 'flex';
     modalContent.innerHTML = `
         <h1>WAVE ${currentWave + 1} COMPLETE</h1>
-        <p class="game-over-stats">SCORE: ${score}</p>
+        <div class="end-wave-stats">
+            <p class="game-over-stats">SCORE: ${score}</p>
+            <p class="game-over-stats">COINS: ${coins}</p>
+        </div>
         ${shopHTML}
         <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
     `;

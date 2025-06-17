@@ -124,10 +124,12 @@ export function updateTracerRounds(state) {
         if (state.boss && Math.hypot(tracer.x - state.boss.x, tracer.y - state.boss.y) < state.boss.radius) {
             const isDestroyed = state.boss.takeDamage(1);
             state.score += 10;
+            state.coins += 10;
             state.tracerRounds.splice(i, 1);
             createExplosion(state, tracer.x, tracer.y, 10, 30);
              if (isDestroyed) {
                 state.score += config.bosses.hiveCarrier.points;
+                state.coins += config.bosses.hiveCarrier.points;
                 createExplosion(state, state.boss.x, state.boss.y, 500, 0);
                 triggerScreenShake(state, 50, 120);
                 state.boss = null;
@@ -157,6 +159,7 @@ export function updateTracerRounds(state) {
                     else if (rocket.type === 'drone') points = config.dronePoints;
                     else if (rocket.type === 'armored') points = config.armoredPoints;
                     state.score += points;
+                    state.coins += points;
                     state.rockets.splice(j, 1);
                     createExplosion(state, rocket.x, rocket.y, 40, 0);
                 }
@@ -185,10 +188,12 @@ export function updateInterceptors(state, width) {
         if (state.boss && Math.hypot(interceptor.x - state.boss.x, interceptor.y - state.boss.y) < state.boss.radius) {
             const isDestroyed = state.boss.takeDamage(damage);
             state.score += damage * 10;
+            state.coins += damage * 10;
             createExplosion(state, interceptor.x, interceptor.y, interceptor.blastRadius, 0);
             state.interceptors.splice(i, 1);
             if (isDestroyed) {
                 state.score += config.bosses.hiveCarrier.points;
+                state.coins += config.bosses.hiveCarrier.points;
                 createExplosion(state, state.boss.x, state.boss.y, 500, 0);
                 triggerScreenShake(state, 50, 120);
                 state.boss = null;
@@ -227,6 +232,7 @@ export function updateInterceptors(state, width) {
                     else if (rocket.type === 'drone') points = config.dronePoints;
                     else if (rocket.type === 'armored') points = config.armoredPoints;
                     state.score += points;
+                    state.coins += points;
                     state.rockets.splice(j, 1);
                 }
 
@@ -243,6 +249,9 @@ export function updateHomingMines(state) {
         const mine = state.homingMines[i];
         if (mine.update(state.rockets)) {
             if (mine.target) {
+                // Award points/coins for mine kills
+                state.score += config.rocketPoints; 
+                state.coins += config.rocketPoints;
                 state.rockets = state.rockets.filter(r => r.id !== mine.target.id);
                 createExplosion(state, mine.x, mine.y, 60, 30);
             }
