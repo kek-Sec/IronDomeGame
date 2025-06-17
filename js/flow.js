@@ -20,6 +20,7 @@ export function startNextWave(state) {
     for(let i=0; i<waveDef.stealth; i++) spawnList.push('stealth');
     for(let i=0; i<waveDef.swarmer; i++) spawnList.push('swarmer');
     for(let i=0; i<waveDef.flare; i++) spawnList.push('flare');
+    for(let i=0; i<waveDef.armored; i++) spawnList.push('armored');
     state.waveRocketSpawn.toSpawn = spawnList.sort(() => Math.random() - 0.5);
 
     state.waveRocketSpawn.timer = 0;
@@ -35,14 +36,17 @@ export function startNextWave(state) {
  */
 export function refreshUpgradeScreen(state, canvas) {
     UI.updateTopUI(state);
+    const refreshCallback = () => refreshUpgradeScreen(state, canvas);
     UI.showBetweenWaveScreen(state, {
-        upgradeRepairCallback: () => events.handleUpgradeRepair(state, () => refreshUpgradeScreen(state, canvas)),
-        upgradeTurretCallback: () => events.handleUpgradeTurret(state, canvas, () => refreshUpgradeScreen(state, canvas)),
-        upgradeSpeedCallback: () => events.handleUpgradeSpeed(state, () => refreshUpgradeScreen(state, canvas)),
-        upgradeBlastCallback: () => events.handleUpgradeBlast(state, () => refreshUpgradeScreen(state, canvas)),
-        upgradeNukeCallback: () => events.handleUpgradeNuke(state, () => refreshUpgradeScreen(state, canvas)),
-        upgradeBaseArmorCallback: () => events.handleUpgradeBaseArmor(state, () => refreshUpgradeScreen(state, canvas)),
-        upgradeTurretSpeedCallback: () => events.handleUpgradeTurretSpeed(state, () => refreshUpgradeScreen(state, canvas)),
+        upgradeRepairCallback: () => events.handleUpgradeRepair(state, refreshCallback),
+        upgradeTurretCallback: () => events.handleUpgradeTurret(state, canvas, refreshCallback),
+        upgradeSpeedCallback: () => events.handleUpgradeSpeed(state, refreshCallback),
+        upgradeBlastCallback: () => events.handleUpgradeBlast(state, refreshCallback),
+        upgradeNukeCallback: () => events.handleUpgradeNuke(state, refreshCallback),
+        upgradeBaseArmorCallback: () => events.handleUpgradeBaseArmor(state, refreshCallback),
+        upgradeTurretSpeedCallback: () => events.handleUpgradeTurretSpeed(state, refreshCallback),
+        upgradeTurretRangeCallback: () => events.handleUpgradeTurretRange(state, refreshCallback),
+        upgradeHomingMineCallback: () => events.handleUpgradeHomingMine(state, refreshCallback),
         nextWaveCallback: () => startNextWave(state)
     }, config);
 }

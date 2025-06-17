@@ -63,7 +63,7 @@ export const waveDefinitions = [
     /* Wave 1 */ { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 120 },
     /* Wave 2 */ { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 115 },
     /* Wave 3 */ { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare: 1, armored: 0, delay: 110 },
-    /* Wave 4 */ { standard: 8, mirv: 2, stealth: 0, swarmer: 1, flare: 0, armored: 0, delay: 100 },
+    /* Wave 4 */ { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
     /* Wave 5 */ { standard: 10, mirv: 1, stealth: 2, swarmer: 1, flare: 1, armored: 0, delay: 95 },
     /* Wave 6 */ { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, armored: 1, delay: 90 },
     /* Wave 7+ */{ standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, delay: 85 }
