@@ -70,7 +70,6 @@ export function draw(ctx, state, width, height) {
     state.flares.forEach(flare => flare.draw(ctx));
     state.tracerRounds.forEach(t => t.draw(ctx));
     
-    // NEW: Draw the boss if it exists
     if (state.boss) {
         state.boss.draw(ctx);
     }

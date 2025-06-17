@@ -7,7 +7,7 @@
 // --- Module Imports ---
 import { config } from './config.js';
 import { random } from './utils.js';
-import { City } from './classes.js';
+import { City } from './entities/structures.js';
 import * as UI from './ui.js';
 import { getInitialState } from './state.js';
 import { update } from './gameLogic.js';

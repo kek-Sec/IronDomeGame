@@ -4,8 +4,8 @@
  */
 import { waveDefinitions, config } from './config.js';
 import * as UI from './ui.js';
-import * as events from './eventHandlers.js';
-import { HiveCarrier } from './classes.js';
+import * as upgradeHandlers from './logic/upgradeHandlers.js';
+import { HiveCarrier } from './entities/bosses.js';
 
 /**
  * Starts the next wave of enemies.
@@ -52,16 +52,15 @@ export function refreshUpgradeScreen(state, canvas) {
     UI.updateTopUI(state);
     const refreshCallback = () => refreshUpgradeScreen(state, canvas);
     UI.showBetweenWaveScreen(state, {
-        upgradeRepairCallback: () => events.handleUpgradeRepair(state, refreshCallback),
-        upgradeTurretCallback: () => events.handleUpgradeTurret(state, canvas, refreshCallback),
-        upgradeSpeedCallback: () => events.handleUpgradeSpeed(state, refreshCallback),
-        upgradeBlastCallback: () => events.handleUpgradeBlast(state, refreshCallback),
-        upgradeNukeCallback: () => events.handleUpgradeNuke(state, refreshCallback),
-        upgradeBaseArmorCallback: () => events.handleUpgradeBaseArmor(state, refreshCallback),
-        upgradeTurretSpeedCallback: () => events.handleUpgradeTurretSpeed(state, refreshCallback),
-        upgradeTurretRangeCallback: () => events.handleUpgradeTurretRange(state, refreshCallback),
-        upgradeHomingMineCallback: () => events.handleUpgradeHomingMine(state, refreshCallback),
-        // FIX: Pass the canvas object to the startNextWave function.
+        upgradeRepairCallback: () => upgradeHandlers.handleUpgradeRepair(state, refreshCallback),
+        upgradeTurretCallback: () => upgradeHandlers.handleUpgradeTurret(state, canvas, refreshCallback),
+        upgradeSpeedCallback: () => upgradeHandlers.handleUpgradeSpeed(state, refreshCallback),
+        upgradeBlastCallback: () => upgradeHandlers.handleUpgradeBlast(state, refreshCallback),
+        upgradeNukeCallback: () => upgradeHandlers.handleUpgradeNuke(state, refreshCallback),
+        upgradeBaseArmorCallback: () => upgradeHandlers.handleUpgradeBaseArmor(state, refreshCallback),
+        upgradeTurretSpeedCallback: () => upgradeHandlers.handleUpgradeTurretSpeed(state, refreshCallback),
+        upgradeTurretRangeCallback: () => upgradeHandlers.handleUpgradeTurretRange(state, refreshCallback),
+        upgradeHomingMineCallback: () => upgradeHandlers.handleUpgradeHomingMine(state, refreshCallback),
         nextWaveCallback: () => startNextWave(state, canvas)
     }, config);
 }
