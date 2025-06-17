@@ -15,7 +15,8 @@ import {
     updateInterceptors, 
     updateTracerRounds, 
     updateHomingMines, 
-    updateParticles 
+    updateParticles,
+    updateCityEffects
 } from './logic/updateLogic.js';
 
 export function update(state, width, height, refreshUpgradeScreen, init) {
@@ -49,8 +50,8 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     updateTracerRounds(state);
     updateHomingMines(state);
     updateParticles(state);
+    updateCityEffects(state, height); // For smouldering rubble
     
-    // Update new visual effects
     for (let i = state.flashes.length - 1; i >= 0; i--) {
         const flash = state.flashes[i];
         flash.update();

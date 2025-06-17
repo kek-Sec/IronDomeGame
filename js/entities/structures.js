@@ -8,6 +8,8 @@ export class City {
         this.isDestroyed = false;
         this.structureType = Math.floor(random(0, 3));
         this.isArmored = isArmored;
+        this.rubbleShape = null; // To hold the static shape of the rubble
+        this.isSmoking = false; // To trigger the smoke effect
     }
     draw(ctx, height) {
         ctx.save();
@@ -146,26 +148,49 @@ export class City {
     }
 
     drawRubble(ctx, height) {
-        const rubbleColors = ['#495057', '#343a40', '#6c757d'];
-        ctx.fillStyle = '#4a2a2a';
-        for (let i = 0; i < 5; i++) {
-            ctx.fillStyle = rubbleColors[i % rubbleColors.length];
-            const w = random(this.width * 0.2, this.width * 0.5);
-            const h = random(this.height * 0.1, this.height * 0.4);
-            const x = this.x + random(0, this.width - w);
-            const y = height - h - random(0, this.height * 0.3);
+        if (!this.rubbleShape) return;
+
+        this.rubbleShape.forEach(shape => {
+            ctx.fillStyle = shape.color;
+            const x = this.x + shape.xOffset;
+            const y = height - shape.h - shape.yOffset;
             
             ctx.beginPath();
-            ctx.moveTo(x, y + h);
-            ctx.lineTo(x + random(-10, 10), y);
-            ctx.lineTo(x + w + random(-10, 10), y);
-            ctx.lineTo(x + w, y + h);
+            ctx.moveTo(x + shape.points[0].x * shape.w, y + shape.points[0].y * shape.h);
+            for(let i = 1; i < shape.points.length; i++) {
+                ctx.lineTo(x + shape.points[i].x * shape.w, y + shape.points[i].y * shape.h);
+            }
             ctx.closePath();
             ctx.fill();
+        });
+    }
+
+    destroy() {
+        this.isDestroyed = true;
+        this.isSmoking = true;
+        this.rubbleShape = []; // Initialize the array
+        const rubbleColors = ['#495057', '#343a40', '#6c757d', '#5a5a5a'];
+
+        for (let i = 0; i < 8; i++) {
+            this.rubbleShape.push({
+                w: random(this.width * 0.2, this.width * 0.6),
+                h: random(this.height * 0.1, this.height * 0.5),
+                xOffset: random(0, this.width * 0.4),
+                yOffset: random(-this.height * 0.1, this.height * 0.2),
+                color: rubbleColors[i % rubbleColors.length],
+                points: [ // Pre-calculate jagged points for a static shape
+                    {x: 0, y: 1}, {x: random(0.1, 0.3), y: random(0.1, 0.3)},
+                    {x: random(0.7, 0.9), y: random(0.1, 0.3)}, {x: 1, y: 1}
+                ]
+            });
         }
     }
 
-    repair() { this.isDestroyed = false; }
+    repair() { 
+        this.isDestroyed = false; 
+        this.isSmoking = false;
+        this.rubbleShape = null;
+    }
 }
 
 // Represents an automated defense turret (C-RAM)

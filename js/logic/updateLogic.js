@@ -4,9 +4,9 @@ import { EMP } from '../entities/playerAbilities.js';
 import { HiveCarrier } from '../entities/bosses.js';
 import { createAdvancedExplosion, triggerScreenShake } from '../utils.js';
 import { random } from '../utils.js';
-import { Flash } from '../entities/effects.js';
+import { Flash, Particle } from '../entities/effects.js';
 
-// findTargetedRocket, handleSpawning, updateBoss, updateFlares, updateTurrets - (unchanged from previous correct version)
+// --- (findTargetedRocket, handleSpawning, updateBoss, updateFlares, updateTurrets remain the same) ---
 export function findTargetedRocket(state) {
     let closestDist = Infinity;
     state.targetedRocket = null;
@@ -81,12 +81,13 @@ export function updateRockets(state, width, height) {
     for (let i = state.rockets.length - 1; i >= 0; i--) {
         const rocket = state.rockets[i];
 
-        // --- ROCKET UPDATE ---
-        rocket.update();
+        if (rocket.type === 'flare') {
+            rocket.update(state.flares);
+        } else {
+            rocket.update();
+        }
 
-        // --- SAFEGUARDS & REMOVAL LOGIC ---
         if (rocket.life > config.rocketMaxLifetime) {
-            console.warn('Safeguard triggered: Removed rocket due to max lifetime.', rocket);
             state.rockets.splice(i, 1);
             continue; 
         }
@@ -100,8 +101,11 @@ export function updateRockets(state, width, height) {
         let hitCity = false;
         for (const city of state.cities) {
             if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-                if (city.isArmored) { city.isArmored = false; } 
-                else { city.isDestroyed = true; }
+                if (city.isArmored) { 
+                    city.isArmored = false; 
+                } else { 
+                    city.destroy(); // Use the new destroy method
+                }
                 
                 hitCity = true;
                 createAdvancedExplosion(state, rocket.x, rocket.y);
@@ -114,7 +118,6 @@ export function updateRockets(state, width, height) {
             continue;
         }
 
-        // --- ROCKET BEHAVIOR LOGIC ---
         if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
             state.rockets.push(...rocket.split());
             state.rockets.splice(i, 1);
@@ -193,7 +196,6 @@ export function updateTracerRounds(state) {
                     state.rockets.splice(j, 1);
                     createAdvancedExplosion(state, rocket.x, rocket.y);
                 } else {
-                    // Create a small impact flash if not destroyed
                     state.flashes.push(new Flash(tracer.x, tracer.y, 20, '255, 255, 255'));
                 }
                 break; 
@@ -318,4 +320,14 @@ export function updateParticles(state) {
         p.update();
         if (p.life <= 0) state.particles.splice(i, 1);
     }
+}
+
+export function updateCityEffects(state, height) {
+    state.cities.forEach(city => {
+        if (city.isSmoking && Math.random() < 0.03) {
+            const smokeX = city.x + random(0, city.width);
+            const smokeY = height - random(0, city.height * 0.5);
+            state.particles.push(new Particle(smokeX, smokeY, null, 'smoke'));
+        }
+    });
 }

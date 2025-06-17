@@ -3,24 +3,34 @@ import { random } from '../utils.js';
 // Represents a single particle in an explosion effect
 export class Particle {
     constructor(x, y, color, type = 'debris') {
-        this.x = x; this.y = y; this.radius = random(1, 4);
+        this.x = x; this.y = y;
         this.life = random(60, 100); this.initialLife = this.life;
         this.type = type;
 
-        const angle = random(0, Math.PI * 2);
-        const speed = this.type === 'spark' ? random(3, 7) : random(1, 6);
-        
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        
-        this.color = `hsla(${color}, 100%, ${random(60, 80)}%, 1)`;
-        this.gravity = this.type === 'spark' ? 0.01 : 0.05;
+        if (this.type === 'smoke') {
+            this.radius = random(3, 8);
+            this.vy = -random(0.2, 0.5);
+            this.vx = random(-0.2, 0.2);
+            this.gravity = 0;
+            this.color = `rgba(120, 120, 120, 1)`;
+        } else {
+            this.radius = random(1, 4);
+            const angle = random(0, Math.PI * 2);
+            const speed = this.type === 'spark' ? random(3, 7) : random(1, 6);
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.gravity = this.type === 'spark' ? 0.01 : 0.05;
+            this.color = `hsla(${color}, 100%, ${random(60, 80)}%, 1)`;
+        }
     }
     update() { 
         this.life--; 
         this.vy += this.gravity; 
         this.x += this.vx; 
-        this.y += this.vy; 
+        this.y += this.vy;
+        if (this.type === 'smoke') {
+            this.radius *= 1.015; // Smoke particle expands as it rises
+        }
     }
     draw(ctx) {
         const alpha = Math.max(0, this.life / this.initialLife);
@@ -32,8 +42,9 @@ export class Particle {
             ctx.lineWidth = this.radius * 0.8;
             ctx.stroke();
         } else {
-            ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
-            ctx.fillStyle = this.color.replace('1)', `${alpha})`);
+            const color = this.type === 'smoke' ? this.color.replace('1)', `${alpha * 0.5})`) : this.color.replace('1)', `${alpha})`);
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
             ctx.fill();
         }
     }
