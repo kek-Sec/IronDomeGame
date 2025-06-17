@@ -100,7 +100,7 @@ const perkIcons = {
     extraMine: '💣'
 };
 
-export function showArmoryScreen(playerData) {
+export function showArmoryScreen(playerData, startGameCallback) {
     modalContainer.style.display = 'flex';
     modalContent.classList.add('armory');
 
@@ -151,13 +151,13 @@ export function showArmoryScreen(playerData) {
                         playerData.prestigePoints -= perk.cost;
                         playerData.unlockedPerks[key] = true;
                         savePlayerData(playerData);
-                        showArmoryScreen(playerData); // Re-render the screen
+                        showArmoryScreen(playerData, startGameCallback); // Pass callback again on re-render
                     }
                 });
             }
         }
     }
-    document.getElementById('back-to-menu-button').addEventListener('click', () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData)));
+    document.getElementById('back-to-menu-button').addEventListener('click', () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData, startGameCallback)));
 }
 
 

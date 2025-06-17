@@ -132,7 +132,7 @@ function init() {
     canvas.addEventListener('touchstart', (e) => events.handleTouchStart(state, canvas, e));
     
     const playerData = loadPlayerData();
-    UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData));
+    UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData, resetAndStartGame));
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
