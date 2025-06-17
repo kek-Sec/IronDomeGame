@@ -6,6 +6,15 @@ import { config, difficultySettings } from './config.js';
 import { Interceptor, AutomatedTurret, HomingMine } from './classes.js';
 import * as UI from './ui.js';
 
+// Helper to apply discount and manage the one-time flag
+function applyCost(state, baseCost) {
+    if (state.activePerks.rapidDeployment && !state.firstUpgradePurchased) {
+        state.firstUpgradePurchased = true;
+        return Math.ceil(baseCost * 0.75);
+    }
+    return baseCost;
+}
+
 export function handleMouseMove(state, canvas, e) {
     const rect = canvas.getBoundingClientRect();
     state.mouse.x = e.clientX - rect.left;
@@ -22,7 +31,7 @@ export function handleClick(state, canvas, e) {
     if (state.homingMinesAvailable > 0 && y > height * 0.85 && state.gameState === 'IN_WAVE') {
         state.homingMines.push(new HomingMine(x, height - 10));
         state.homingMinesAvailable--;
-        UI.updateTopUI(state); // To show mine count decrease
+        UI.updateTopUI(state);
         return;
     }
 
@@ -37,9 +46,12 @@ export function handleClick(state, canvas, e) {
     }
     
     if (state.gameState === 'IN_WAVE' && state.targetedRocket) {
-        const interceptorType = state.nukeAvailable ? 'nuke' : 'standard';
+        // Perk check for Nuke availability
+        const nukeIsAvailable = state.nukeAvailable || state.activePerks.surplusValue;
+        const interceptorType = nukeIsAvailable ? 'nuke' : 'standard';
+
         state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius, interceptorType));
-        if (state.nukeAvailable) {
+        if (nukeIsAvailable) {
             state.nukeAvailable = false;
         }
         UI.updateTopUI(state);
@@ -84,10 +96,11 @@ export function togglePause(state, init) {
 
 // --- Upgrade Handlers ---
 export function handleUpgradeRepair(state, refreshUpgradeScreen) {
-    if (state.score >= config.upgradeCosts.repairCity) {
+    const cost = applyCost(state, config.upgradeCosts.repairCity);
+    if (state.score >= cost) {
         const cityToRepair = state.cities.find(c => c.isDestroyed);
         if (cityToRepair) {
-            state.score -= config.upgradeCosts.repairCity;
+            state.score -= cost;
             cityToRepair.repair();
             refreshUpgradeScreen();
         }
@@ -95,8 +108,9 @@ export function handleUpgradeRepair(state, refreshUpgradeScreen) {
 }
 
 export function handleUpgradeTurret(state, canvas, refreshUpgradeScreen) {
-    if (state.score >= config.upgradeCosts.automatedTurret && state.turrets.length < config.maxTurrets) {
-        state.score -= config.upgradeCosts.automatedTurret;
+    const cost = applyCost(state, config.upgradeCosts.automatedTurret);
+    if (state.score >= cost && state.turrets.length < config.maxTurrets) {
+        state.score -= cost;
         const turretX = state.turrets.length === 0 ? canvas.width * 0.25 : canvas.width * 0.75;
         const fireRate = config.turretFireRate * difficultySettings[state.difficulty].turretFireRateMultiplier;
         const range = config.turretRange * (1 + state.turretRangeLevel * 0.15);
@@ -106,32 +120,37 @@ export function handleUpgradeTurret(state, canvas, refreshUpgradeScreen) {
 }
 
 export function handleUpgradeSpeed(state, refreshUpgradeScreen) {
-    if (state.score >= config.upgradeCosts.interceptorSpeed) {
-        state.score -= config.upgradeCosts.interceptorSpeed;
+    const cost = applyCost(state, config.upgradeCosts.interceptorSpeed);
+    if (state.score >= cost) {
+        state.score -= cost;
         state.interceptorSpeed *= 1.2;
         refreshUpgradeScreen();
     }
 }
 
 export function handleUpgradeBlast(state, refreshUpgradeScreen) {
-    if (state.score >= config.upgradeCosts.blastRadius) {
-        state.score -= config.upgradeCosts.blastRadius;
+    const cost = applyCost(state, config.upgradeCosts.blastRadius);
+    if (state.score >= cost) {
+        state.score -= cost;
         state.blastRadius *= 1.3;
         refreshUpgradeScreen();
     }
 }
 
 export function handleUpgradeNuke(state, refreshUpgradeScreen) {
-    if(state.score >= config.upgradeCosts.nuke && !state.nukeAvailable) {
-        state.score -= config.upgradeCosts.nuke;
+    const cost = applyCost(state, config.upgradeCosts.nuke);
+    const nukeIsAvailable = state.nukeAvailable || state.activePerks.surplusValue;
+    if(state.score >= cost && !nukeIsAvailable) {
+        state.score -= cost;
         state.nukeAvailable = true;
         refreshUpgradeScreen();
     }
 }
 
 export function handleUpgradeBaseArmor(state, refreshUpgradeScreen) {
-    if(state.score >= config.upgradeCosts.baseArmor && !state.basesAreArmored) {
-        state.score -= config.upgradeCosts.baseArmor;
+    const cost = applyCost(state, config.upgradeCosts.baseArmor);
+    if(state.score >= cost && !state.basesAreArmored) {
+        state.score -= cost;
         state.basesAreArmored = true;
         state.cities.forEach(c => c.isArmored = true);
         refreshUpgradeScreen();
@@ -139,8 +158,9 @@ export function handleUpgradeBaseArmor(state, refreshUpgradeScreen) {
 }
 
 export function handleUpgradeTurretSpeed(state, refreshUpgradeScreen) {
-     if(state.score >= config.upgradeCosts.turretSpeed && state.turretFireRateLevel < 3) {
-        state.score -= config.upgradeCosts.turretSpeed;
+    const cost = applyCost(state, config.upgradeCosts.turretSpeed);
+     if(state.score >= cost && state.turretFireRateLevel < 3) {
+        state.score -= cost;
         state.turretFireRateLevel++;
         state.turrets.forEach(t => t.fireRate *= 0.75);
         refreshUpgradeScreen();
@@ -148,8 +168,9 @@ export function handleUpgradeTurretSpeed(state, refreshUpgradeScreen) {
 }
 
 export function handleUpgradeTurretRange(state, refreshUpgradeScreen) {
-    if (state.score >= config.upgradeCosts.turretRange && state.turretRangeLevel < 3) {
-        state.score -= config.upgradeCosts.turretRange;
+    const cost = applyCost(state, config.upgradeCosts.turretRange);
+    if (state.score >= cost && state.turretRangeLevel < 3) {
+        state.score -= cost;
         state.turretRangeLevel++;
         state.turrets.forEach(t => t.range *= 1.15);
         refreshUpgradeScreen();
@@ -157,8 +178,9 @@ export function handleUpgradeTurretRange(state, refreshUpgradeScreen) {
 }
 
 export function handleUpgradeHomingMine(state, refreshUpgradeScreen) {
-    if (state.score >= config.upgradeCosts.homingMine) {
-        state.score -= config.upgradeCosts.homingMine;
+    const cost = applyCost(state, config.upgradeCosts.homingMine);
+    if (state.score >= cost) {
+        state.score -= cost;
         state.homingMinesAvailable++;
         refreshUpgradeScreen();
     }

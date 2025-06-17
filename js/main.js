@@ -14,6 +14,7 @@ import { update } from './gameLogic.js';
 import { draw } from './drawing.js';
 import * as events from './eventHandlers.js';
 import { startNextWave, refreshUpgradeScreen } from './flow.js';
+import { loadPlayerData } from './saveManager.js';
 
 // --- DOM & Canvas Setup ---
 const canvas = document.getElementById('gameCanvas');
@@ -45,7 +46,6 @@ function resetAndStartGame(difficulty = 'normal') {
     state.difficulty = difficulty;
     state.currentWave = -1; // Will be incremented to 0 by startNextWave
     createCities();
-    // FIX: Pass the canvas to startNextWave to ensure boss waves can be created correctly from the start.
     startNextWave(state, canvas);
 }
 
@@ -53,12 +53,11 @@ function resetAndStartGame(difficulty = 'normal') {
 function createCities() {
     state.cities = [];
     const cityWidth = width / config.cityCount;
-    // Responsive city height calculation
     const minHeight = 30;
-    const maxHeight = Math.min(height * 0.15, 120); // Cap height at 15% of screen or 120px, whichever is smaller
+    const maxHeight = Math.min(height * 0.15, 120);
 
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(minHeight, maxHeight); // Use the new responsive bounds
+        const h = random(minHeight, maxHeight);
         const w = cityWidth * random(0.6, 0.8);
         const x = (i * cityWidth) + (cityWidth - w) / 2;
         state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
@@ -93,7 +92,8 @@ function init() {
     document.getElementById('pause-button').addEventListener('click', () => events.togglePause(state, init));
     canvas.addEventListener('touchstart', (e) => events.handleTouchStart(state, canvas, e));
     
-    UI.showStartScreen(resetAndStartGame);
+    const playerData = loadPlayerData();
+    UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData));
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 

@@ -6,9 +6,10 @@ import { config, waveDefinitions, difficultySettings } from './config.js';
 import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, Interceptor, EMP, ArmoredRocket, HomingMine, HiveCarrier } from './classes.js';
 import { createExplosion, triggerScreenShake } from './helpers.js';
 import * as UI from './ui.js';
+import { savePlayerData } from './saveManager.js';
 
 function findTargetedRocket(state) {
-    let closestDist = Infinity; // Start with infinity to find the true closest
+    let closestDist = Infinity;
     state.targetedRocket = null;
     const potentialTargets = [...state.rockets, ...state.flares];
     if (state.boss) {
@@ -19,11 +20,8 @@ function findTargetedRocket(state) {
         if (target.type === 'stealth' && !target.isVisible) continue;
 
         const dist = Math.hypot(target.x - state.mouse.x, target.y - state.mouse.y);
-        
-        // Use a larger click area for the boss, 50 for rockets/flares
         const targetableRadius = (target instanceof HiveCarrier) ? target.radius : 50; 
 
-        // Check if the mouse is within the object's targeting radius AND if this target is closer than the previously found one.
         if (dist < targetableRadius && dist < closestDist) {
             closestDist = dist;
             state.targetedRocket = target;
@@ -33,7 +31,7 @@ function findTargetedRocket(state) {
 
 function handleSpawning(state, width, height) {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
-    if (waveDef.isBossWave) return; // Boss spawning is handled in flow.js
+    if (waveDef.isBossWave) return;
 
     const difficulty = difficultySettings[state.difficulty];
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
@@ -127,10 +125,9 @@ function updateTracerRounds(state) {
             continue;
         }
 
-        // Check for collision with boss
         if (state.boss && Math.hypot(tracer.x - state.boss.x, tracer.y - state.boss.y) < state.boss.radius) {
-            const isDestroyed = state.boss.takeDamage(1); // Tracers do 1 damage
-            state.score += 10; // Points for hitting the boss
+            const isDestroyed = state.boss.takeDamage(1);
+            state.score += 10;
             state.tracerRounds.splice(i, 1);
             createExplosion(state, tracer.x, tracer.y, 10, 30);
              if (isDestroyed) {
@@ -183,11 +180,15 @@ function updateInterceptors(state, width) {
             continue;
         }
 
-        // Check for collision with boss
+        // Perk: Efficient Interceptors
+        let damage = interceptor.type === 'nuke' ? 100 : 3;
+        if (state.activePerks.efficientInterceptors && Math.random() < 0.10) {
+            damage *= 3; // Critical Hit!
+        }
+
         if (state.boss && Math.hypot(interceptor.x - state.boss.x, interceptor.y - state.boss.y) < state.boss.radius) {
-            const damage = interceptor.type === 'nuke' ? 100 : 3;
             const isDestroyed = state.boss.takeDamage(damage);
-            state.score += damage * 10; // Points for hitting boss
+            state.score += damage * 10;
             createExplosion(state, interceptor.x, interceptor.y, interceptor.blastRadius, 0);
             state.interceptors.splice(i, 1);
             if (isDestroyed) {
@@ -215,7 +216,6 @@ function updateInterceptors(state, width) {
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
             if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
-                const damage = interceptor.type === 'nuke' ? 100 : 3;
                 let isDestroyed = true;
                  if (typeof rocket.takeDamage === 'function') {
                     isDestroyed = rocket.takeDamage(damage);
@@ -248,7 +248,7 @@ function updateHomingMines(state) {
         if (mine.update(state.rockets)) {
             if (mine.target) {
                 state.rockets = state.rockets.filter(r => r.id !== mine.target.id);
-                createExplosion(state, mine.x, mine.y, 60, 30); // Orange explosion
+                createExplosion(state, mine.x, mine.y, 60, 30);
             }
             state.homingMines.splice(i, 1);
         }
@@ -271,12 +271,9 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
 
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
 
-    // --- Failsafe Timer Logic ---
-    // If it's a normal wave, no rockets are on screen, but we are still expecting more to spawn, start the timer.
     if (!waveDef.isBossWave && state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length > 0) {
         state.timeSinceLastRocket++;
     } else {
-        // Otherwise, reset the timer.
         state.timeSinceLastRocket = 0;
     }
     
@@ -303,14 +300,11 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     });
     findTargetedRocket(state);
     
-    // --- Wave End Condition ---
     let waveIsOver = false;
 
-    // Failsafe Trigger: If the timer exceeds 20 seconds (at 60fps), force the wave to end.
     if (state.timeSinceLastRocket > 1200) {
         waveIsOver = true;
         console.warn("Failsafe triggered: Wave ended due to timeout.");
-        // Clear the spawn list to prevent this wave's rockets from spawning in the next one.
         state.waveRocketSpawn.toSpawn = []; 
     }
 
@@ -329,12 +323,19 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
         state.targetedRocket = null;
         state.flares = [];
         state.nukeAvailable = false;
+        state.firstUpgradePurchased = false; // Reset for Rapid Deployment perk
         refreshUpgradeScreen();
     }
     
     const destroyedCities = state.cities.filter(c => c.isDestroyed).length;
     if (destroyedCities === config.cityCount) {
         state.gameState = 'GAME_OVER';
-        UI.showGameOverScreen(state, init);
+
+        // Award Prestige Points and save data
+        const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
+        state.playerData.prestigePoints += pointsEarned;
+        savePlayerData(state.playerData);
+
+        UI.showGameOverScreen(state, init, pointsEarned);
     }
 }
