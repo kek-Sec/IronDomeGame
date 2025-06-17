@@ -11,65 +11,160 @@ export class City {
     }
     draw(ctx, height) {
         ctx.save();
-        if (this.isDestroyed) { this.drawRubble(ctx, height); } 
-        else {
+        if (this.isDestroyed) {
+            this.drawRubble(ctx, height);
+        } else {
+            // Draw the structure based on its type
             switch (this.structureType) {
                 case 0: this.drawBunker(ctx); break;
                 case 1: this.drawDome(ctx, height); break;
                 case 2: this.drawCommsTower(ctx); break;
             }
+            // Draw the energy shield if armored
             if (this.isArmored) {
-                ctx.beginPath();
-                ctx.rect(this.x - 5, this.y - 5, this.width + 10, this.height + 5);
-                ctx.strokeStyle = 'rgba(0, 221, 255, 0.8)';
-                ctx.lineWidth = 3;
-                ctx.shadowColor = 'cyan';
-                ctx.shadowBlur = 10;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
+                this.drawEnergyShield(ctx);
             }
         }
         ctx.restore();
     }
+
     drawBunker(ctx) {
-        const h = this.height * 0.6;
+        const h = this.height * 0.7;
         const y = this.y + (this.height - h);
-        ctx.fillStyle = '#6c757d'; ctx.fillRect(this.x, y, this.width, h);
-        ctx.fillStyle = '#495057'; ctx.fillRect(this.x, y, this.width, h * 0.3);
-        ctx.strokeStyle = '#343a40'; ctx.lineWidth = 2; ctx.strokeRect(this.x, y, this.width, h);
+        
+        // Main structure with gradient
+        const gradient = ctx.createLinearGradient(this.x, y, this.x, y + h);
+        gradient.addColorStop(0, '#8d99ae');
+        gradient.addColorStop(1, '#6c757d');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x, y, this.width, h);
+
+        // Details - vents, panels
+        ctx.fillStyle = '#343a40';
+        ctx.fillRect(this.x + this.width * 0.1, y + h * 0.2, this.width * 0.8, h * 0.1);
+        ctx.fillRect(this.x + this.width * 0.3, y + h * 0.5, this.width * 0.4, h * 0.15);
+        
+        // Border
+        ctx.strokeStyle = '#212529';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.x, y, this.width, h);
     }
+
     drawDome(ctx, height) {
+        const centerX = this.x + this.width / 2;
+        const radius = this.width / 1.8;
+
+        // Dome structure with a glowing gradient
         ctx.beginPath();
-        ctx.arc(this.x + this.width / 2, height, this.width / 2, Math.PI, 0);
-        const gradient = ctx.createRadialGradient(this.x + this.width/2, height, 5, this.x + this.width/2, height, this.width/2);
-        gradient.addColorStop(0, '#e0e0e0'); gradient.addColorStop(1, '#686868');
-        ctx.fillStyle = gradient; ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.arc(centerX, height, radius, Math.PI, 0);
+        const gradient = ctx.createRadialGradient(centerX, height - radius * 0.5, radius * 0.2, centerX, height, radius);
+        gradient.addColorStop(0, 'rgba(173, 216, 230, 0.8)'); // Light blue center
+        gradient.addColorStop(0.7, 'rgba(0, 191, 255, 0.6)');   // Deep sky blue
+        gradient.addColorStop(1, 'rgba(70, 130, 180, 0.3)');    // Steel blue transparent
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Geodesic pattern
+        ctx.save();
+        ctx.strokeStyle = 'rgba(173, 216, 230, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 1; i < 7; i++) {
+            // Vertical lines
+            ctx.moveTo(centerX + (i * radius / 4) - radius, height);
+            ctx.lineTo(centerX + (i * radius / 4) - radius, height - 100);
+            ctx.moveTo(centerX - (i * radius / 4) + radius, height);
+            ctx.lineTo(centerX - (i * radius / 4) + radius, height - 100);
+            // Diagonal lines
+            ctx.moveTo(this.x, height);
+            ctx.lineTo(this.x + this.width, height - 20 * i);
+            ctx.moveTo(this.x + this.width, height);
+            ctx.lineTo(this.x, height - 20 * i);
+        }
+        ctx.clip(); // Clip the lines to the dome shape
+        ctx.stroke();
+        ctx.restore();
     }
+
     drawCommsTower(ctx) {
-        const towerWidth = this.width * 0.3;
+        const towerWidth = this.width * 0.2;
         const towerX = this.x + (this.width - towerWidth) / 2;
-        ctx.fillStyle = '#8d99ae'; ctx.fillRect(towerX, this.y, towerWidth, this.height);
-        ctx.beginPath(); ctx.arc(towerX + towerWidth / 2, this.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = '#ef233c'; ctx.fill();
+        
+        // Main mast with gradient
+        const gradient = ctx.createLinearGradient(towerX, this.y, towerX + towerWidth, this.y);
+        gradient.addColorStop(0, '#adb5bd');
+        gradient.addColorStop(0.5, '#f8f9fa');
+        gradient.addColorStop(1, '#adb5bd');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(towerX, this.y, towerWidth, this.height);
+
+        // Antenna segments
+        ctx.strokeStyle = '#495057';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i++) {
+            const segY = this.y + this.height * (0.2 * i);
+            ctx.strokeRect(towerX - towerWidth * 0.5, segY, towerWidth * 2, 2);
+        }
+
+        // Blinking light and dish
+        const dishY = this.y + 10;
+        ctx.beginPath();
+        ctx.arc(towerX + towerWidth / 2, dishY, towerWidth * 1.5, Math.PI * 1.2, Math.PI * 1.8);
+        ctx.strokeStyle = '#e9ecef';
+        ctx.stroke();
+
         if (Math.random() > 0.5) {
-            ctx.shadowColor = '#ef233c'; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ff4d4d';
+            ctx.shadowColor = '#ff4d4d';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(towerX + towerWidth / 2, this.y, 5, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
+
+    drawEnergyShield(ctx) {
+        ctx.save();
+        const shieldPadding = 8;
+        const shieldX = this.x - shieldPadding;
+        const shieldY = this.y - shieldPadding;
+        const shieldW = this.width + shieldPadding * 2;
+        const shieldH = this.height + shieldPadding;
+        
+        // Create a shimmering effect with multiple layers
+        const layers = 3;
+        for (let i = 0; i < layers; i++) {
+            ctx.beginPath();
+            ctx.rect(shieldX - i, shieldY - i, shieldW + i*2, shieldH + i*2);
+            ctx.lineWidth = 1 + i;
+            ctx.strokeStyle = `rgba(0, 221, 255, ${0.4 - i * 0.1})`;
+            ctx.shadowColor = 'cyan';
+            ctx.shadowBlur = 10 + i * 2;
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
     drawRubble(ctx, height) {
-        ctx.fillStyle = '#4a2a2a'; ctx.beginPath();
-        switch(this.structureType) {
-            case 1:
-                ctx.moveTo(this.x, height); ctx.lineTo(this.x + this.width * 0.3, height - this.width * 0.1);
-                ctx.lineTo(this.x + this.width * 0.5, height); ctx.lineTo(this.x + this.width * 0.8, height - this.width * 0.2);
-                ctx.lineTo(this.x + this.width, height); break;
-            default:
-                ctx.moveTo(this.x, height); ctx.lineTo(this.x + this.width * 0.2, height - this.height * 0.3);
-                ctx.lineTo(this.x + this.width * 0.5, height); ctx.lineTo(this.x + this.width * 0.6, height - this.height * 0.2);
-                ctx.lineTo(this.x + this.width, height); break;
+        const rubbleColors = ['#495057', '#343a40', '#6c757d'];
+        ctx.fillStyle = '#4a2a2a';
+        for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = rubbleColors[i % rubbleColors.length];
+            const w = random(this.width * 0.2, this.width * 0.5);
+            const h = random(this.height * 0.1, this.height * 0.4);
+            const x = this.x + random(0, this.width - w);
+            const y = height - h - random(0, this.height * 0.3);
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y + h);
+            ctx.lineTo(x + random(-10, 10), y);
+            ctx.lineTo(x + w + random(-10, 10), y);
+            ctx.lineTo(x + w, y + h);
+            ctx.closePath();
+            ctx.fill();
         }
-        ctx.closePath(); ctx.fill();
     }
+
     repair() { this.isDestroyed = false; }
 }
 
