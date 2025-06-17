@@ -25,6 +25,8 @@ export function getInitialState() {
         homingMines: [],
         empPowerUps: [],
         flares: [],
+        boss: null, // NEW
+        bossDefeated: false, // NEW
         empActiveTimer: 0,
         empShockwave: { radius: 0, alpha: 0 },
         screenShake: { intensity: 0, duration: 0 },
@@ -38,7 +40,7 @@ export function getInitialState() {
         nukeAvailable: false,
         basesAreArmored: false,
         turretFireRateLevel: 0,
-        turretRangeLevel: 0, // NEW
-        homingMinesAvailable: 0, // NEW
+        turretRangeLevel: 0,
+        homingMinesAvailable: 0,
     };
 }

@@ -3,18 +3,28 @@
  * * Contains the core game logic for updating the game state each frame.
  */
 import { config, waveDefinitions, difficultySettings } from './config.js';
-import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, Interceptor, EMP, ArmoredRocket, HomingMine } from './classes.js';
+import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, Interceptor, EMP, ArmoredRocket, HomingMine, HiveCarrier } from './classes.js';
 import { createExplosion, triggerScreenShake } from './helpers.js';
 import * as UI from './ui.js';
 
 function findTargetedRocket(state) {
-    let closestDist = 50;
+    let closestDist = Infinity; // Start with infinity to find the true closest
     state.targetedRocket = null;
     const potentialTargets = [...state.rockets, ...state.flares];
+    if (state.boss) {
+        potentialTargets.push(state.boss);
+    }
+
     for (const target of potentialTargets) {
         if (target.type === 'stealth' && !target.isVisible) continue;
+
         const dist = Math.hypot(target.x - state.mouse.x, target.y - state.mouse.y);
-        if (dist < closestDist) {
+        
+        // Use a larger click area for the boss, 50 for rockets/flares
+        const targetableRadius = (target instanceof HiveCarrier) ? target.radius : 50; 
+
+        // Check if the mouse is within the object's targeting radius AND if this target is closer than the previously found one.
+        if (dist < targetableRadius && dist < closestDist) {
             closestDist = dist;
             state.targetedRocket = target;
         }
@@ -23,11 +33,10 @@ function findTargetedRocket(state) {
 
 function handleSpawning(state, width, height) {
     const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    if (waveDef.isBossWave) return; // Boss spawning is handled in flow.js
+
     const difficulty = difficultySettings[state.difficulty];
-    
-    // Post-wave 6 difficulty scaling
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
-    
     const currentWaveDelay = (waveDef.delay * difficulty.waveDelayMultiplier) / difficultyScale;
     const speedMultiplier = (1 + (state.currentWave * 0.05)) * difficultyScale;
     
@@ -50,6 +59,11 @@ function handleSpawning(state, width, height) {
     if (Math.random() < config.empSpawnChance && state.empPowerUps.length < 1 && state.empActiveTimer <= 0) {
         state.empPowerUps.push(new EMP(null, null, width, height));
     }
+}
+
+function updateBoss(state) {
+    if (!state.boss) return;
+    state.boss.update(state.rockets);
 }
 
 function updateRockets(state, width, height) {
@@ -112,12 +126,29 @@ function updateTracerRounds(state) {
             state.tracerRounds.splice(i, 1);
             continue;
         }
+
+        // Check for collision with boss
+        if (state.boss && Math.hypot(tracer.x - state.boss.x, tracer.y - state.boss.y) < state.boss.radius) {
+            const isDestroyed = state.boss.takeDamage(1); // Tracers do 1 damage
+            state.score += 10; // Points for hitting the boss
+            state.tracerRounds.splice(i, 1);
+            createExplosion(state, tracer.x, tracer.y, 10, 30);
+             if (isDestroyed) {
+                state.score += config.bosses.hiveCarrier.points;
+                createExplosion(state, state.boss.x, state.boss.y, 500, 0);
+                triggerScreenShake(state, 50, 120);
+                state.boss = null;
+                state.bossDefeated = true;
+            }
+            continue;
+        }
+
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
             if (Math.hypot(tracer.x - rocket.x, tracer.y - rocket.y) < tracer.radius + rocket.radius) {
                 let isDestroyed = true;
                 if (typeof rocket.takeDamage === 'function') {
-                    isDestroyed = rocket.takeDamage(1); // Tracers do 1 damage
+                    isDestroyed = rocket.takeDamage(1);
                 }
                 
                 state.tracerRounds.splice(i, 1);
@@ -145,12 +176,30 @@ function updateTracerRounds(state) {
 function updateInterceptors(state, width) {
     for (let i = state.interceptors.length - 1; i >= 0; i--) {
         const interceptor = state.interceptors[i];
-        interceptor.update(state.rockets, state.flares);
+        interceptor.update(state.rockets, state.flares, state.boss);
 
         if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
             state.interceptors.splice(i, 1);
             continue;
         }
+
+        // Check for collision with boss
+        if (state.boss && Math.hypot(interceptor.x - state.boss.x, interceptor.y - state.boss.y) < state.boss.radius) {
+            const damage = interceptor.type === 'nuke' ? 100 : 3;
+            const isDestroyed = state.boss.takeDamage(damage);
+            state.score += damage * 10; // Points for hitting boss
+            createExplosion(state, interceptor.x, interceptor.y, interceptor.blastRadius, 0);
+            state.interceptors.splice(i, 1);
+            if (isDestroyed) {
+                state.score += config.bosses.hiveCarrier.points;
+                createExplosion(state, state.boss.x, state.boss.y, 500, 0);
+                triggerScreenShake(state, 50, 120);
+                state.boss = null;
+                state.bossDefeated = true;
+            }
+            continue;
+        }
+
 
         for (let f = state.flares.length - 1; f >= 0; f--) {
             const flare = state.flares[f];
@@ -217,6 +266,7 @@ function updateParticles(state) {
 export function update(state, width, height, refreshUpgradeScreen, init) {
     state.gameTime++;
     UI.updateTopUI(state);
+    UI.updateBossUI(state.boss);
     if (state.gameState !== 'IN_WAVE') return;
     
     if (state.empActiveTimer > 0) {
@@ -228,6 +278,7 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     }
 
     handleSpawning(state, width, height);
+    updateBoss(state);
     updateRockets(state, width, height);
     updateFlares(state);
     updateTurrets(state);
@@ -241,7 +292,20 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     });
     findTargetedRocket(state);
     
-    if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
+    // --- Wave End Condition ---
+    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    let waveIsOver = false;
+    if (waveDef.isBossWave) {
+        if (state.bossDefeated && state.rockets.length === 0) {
+            waveIsOver = true;
+        }
+    } else {
+        if (state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0) {
+            waveIsOver = true;
+        }
+    }
+
+    if (waveIsOver) {
         state.gameState = 'BETWEEN_WAVES';
         state.targetedRocket = null;
         state.flares = [];

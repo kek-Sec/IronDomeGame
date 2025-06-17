@@ -10,6 +10,7 @@
     --border-color: #30363d;
     --border-highlight: rgba(0, 221, 255, 0.5);
     --disabled-color: #484f58;
+    --boss-health-bar-color: #ef233c;
 }
 
 /* --- Keyframe Animations --- */
@@ -132,6 +133,41 @@ canvas {
     text-shadow: 0 0 5px var(--glow-color);
     animation: pulseGlow 4s infinite ease-in-out;
 }
+
+/* --- NEW BOSS UI STYLING --- */
+#boss-ui-container {
+    position: absolute;
+    top: 100px; /* Position below main UI */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    max-width: 600px;
+    z-index: 3;
+    text-align: center;
+}
+#boss-name {
+    color: var(--boss-health-bar-color);
+    font-size: 1.5em;
+    text-shadow: 0 0 10px var(--boss-health-bar-color);
+    margin-bottom: 8px;
+}
+#boss-health-bar-container {
+    width: 100%;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 3px;
+}
+#boss-health-bar {
+    height: 100%;
+    width: 100%;
+    background-color: var(--boss-health-bar-color);
+    border-radius: 6px;
+    box-shadow: 0 0 15px var(--boss-health-bar-color);
+    transition: width 0.2s ease-out;
+}
+
 
 /* --- Pause Button Styling --- */
 .pause-btn {
@@ -335,6 +371,17 @@ canvas {
         gap: 10px; /* Reduced gap */
     }
 
+    #boss-ui-container {
+        top: 80px;
+        width: 80%;
+    }
+    #boss-name {
+        font-size: 1.2em;
+    }
+    #boss-health-bar-container {
+        height: 15px;
+    }
+
     .pause-btn {
         width: 50px; /* Smaller pause button */
         height: 50px;
@@ -381,6 +428,9 @@ canvas {
         flex-direction: column; /* Stack UI elements vertically */
         align-items: flex-start;
         gap: 5px;
+    }
+    #boss-ui-container {
+        top: 150px; /* Adjust for stacked UI */
     }
     .ui-box {
         padding: 5px 10px;

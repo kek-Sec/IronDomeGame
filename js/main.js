@@ -45,7 +45,8 @@ function resetAndStartGame(difficulty = 'normal') {
     state.difficulty = difficulty;
     state.currentWave = -1; // Will be incremented to 0 by startNextWave
     createCities();
-    startNextWave(state);
+    // FIX: Pass the canvas to startNextWave to ensure boss waves can be created correctly from the start.
+    startNextWave(state, canvas);
 }
 
 // --- Helper Functions ---

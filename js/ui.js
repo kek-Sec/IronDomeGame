@@ -13,6 +13,10 @@ const modalContainer = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-content-main');
 const pauseButton = document.getElementById('pause-button');
 const pauseIcon = document.getElementById('pause-icon');
+const bossUiContainer = document.getElementById('boss-ui-container');
+const bossNameEl = document.getElementById('boss-name');
+const bossHealthBarEl = document.getElementById('boss-health-bar');
+
 
 /**
  * Updates the top UI bar with the current game state.
@@ -28,6 +32,21 @@ export function updateTopUI(state) {
         pauseIcon.innerHTML = state.gameState === 'PAUSED' ? '▶' : '||';
     } else {
         pauseButton.style.display = 'none';
+    }
+}
+
+/**
+ * NEW: Updates the boss health bar UI.
+ * @param {object | null} boss - The current boss object or null.
+ */
+export function updateBossUI(boss) {
+    if (boss) {
+        bossUiContainer.style.display = 'block';
+        bossNameEl.textContent = boss.name;
+        const healthPercentage = (boss.health / boss.maxHealth) * 100;
+        bossHealthBarEl.style.width = `${Math.max(0, healthPercentage)}%`;
+    } else {
+        bossUiContainer.style.display = 'none';
     }
 }
 

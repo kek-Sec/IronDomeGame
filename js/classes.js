@@ -4,6 +4,7 @@
  * Each class represents a blueprint for a game entity, such as a rocket or a particle.
  */
 import { random } from './utils.js';
+import { config } from './config.js';
 
 // Represents a city/base to be defended
 export class City {
@@ -255,20 +256,41 @@ export class Interceptor {
         this.blastRadius = type === 'nuke' ? 150 : blastRadius;
         this.type = type; this.trail = []; this.isHoming = !!target;
         this.hasBeenDistracted = false;
+        this.vx = 0;
+        this.vy = -speed;
     }
-    update(rockets, flares) {
-        if (this.isHoming && !rockets.find(r => r.id === this.target.id) && !flares.find(f => f.id === this.target.id)) { this.isHoming = false; }
-        if (this.isHoming && !this.hasBeenDistracted) {
+    update(rockets, flares, boss) {
+        // If it has a target, check the target still exists
+        if (this.isHoming && this.target) {
+            const targetIsRocket = this.target instanceof Rocket && !rockets.find(r => r.id === this.target.id);
+            const targetIsFlare = this.target instanceof Flare && !flares.find(f => f.id === this.target.id);
+            const targetIsBoss = this.target instanceof HiveCarrier && !boss;
+            if (targetIsRocket || targetIsFlare || targetIsBoss) {
+                this.isHoming = false; // Target is gone
+            }
+        }
+        
+        // If it has a target that's a rocket (not a flare), check for flare distractions
+        if (this.isHoming && !this.hasBeenDistracted && this.target instanceof Rocket) {
             for (const flare of flares) {
                 if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
-                    this.target = flare; this.hasBeenDistracted = true; break;
+                    this.target = flare; 
+                    this.hasBeenDistracted = true;
+                    break;
                 }
             }
         }
-        if (this.isHoming) {
-            const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
-            this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
+
+        // Home in on the target
+        if (this.isHoming && this.target) {
+            const targetX = this.target.x;
+            const targetY = this.target.y;
+            const angle = Math.atan2(targetY - this.y, targetX - this.x);
+            this.vx = Math.cos(angle) * this.speed;
+            this.vy = Math.sin(angle) * this.speed;
         }
+
+        // Update position
         this.trail.push({ x: this.x, y: this.y });
         if (this.trail.length > 25) this.trail.shift();
         this.x += this.vx; this.y += this.vy;
@@ -417,7 +439,7 @@ export class HomingMine {
         if (this.isLaunching) {
             this.y += this.vy;
             this.vy *= 1.05; // Accelerate
-            if (Math.hypot(this.x - this.target.x, this.y - this.target.y) < this.radius + this.target.radius) {
+            if (this.target && Math.hypot(this.x - this.target.x, this.y - this.target.y) < this.radius + this.target.radius) {
                 return true; // Hit target
             }
         }
@@ -459,6 +481,87 @@ export class EMP {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius + Math.sin(this.time * 0.1) * 5, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(0, 150, 255, 0.8)'; ctx.stroke();
+        ctx.restore();
+    }
+}
+
+// NEW: Boss Class for Hive Carrier
+export class HiveCarrier {
+    constructor(width) {
+        this.name = 'Hive Carrier';
+        this.health = config.bosses.hiveCarrier.health;
+        this.maxHealth = config.bosses.hiveCarrier.health;
+        this.width = width;
+        this.x = -200; // Start off-screen
+        this.y = 150;
+        this.vx = 0.5; // Slowly moves across the screen
+        this.droneSpawnCooldown = 0;
+        this.droneSpawnRate = config.bosses.hiveCarrier.droneSpawnRate;
+        this.radius = 100; // For collision detection
+    }
+
+    takeDamage(amount) {
+        this.health -= amount;
+        return this.health <= 0;
+    }
+
+    update(rockets) {
+        this.x += this.vx;
+
+        // FIX: Correct boundary detection to allow the boss to enter the screen and turn around correctly.
+        if (this.vx > 0 && (this.x + this.radius) > this.width) {
+            // If moving right and right edge is past screen width
+            this.vx *= -1;
+        } else if (this.vx < 0 && (this.x - this.radius) < 0) {
+            // If moving left and left edge is past screen left
+            this.vx *= -1;
+        }
+
+        // Spawn drones periodically
+        this.droneSpawnCooldown--;
+        if (this.droneSpawnCooldown <= 0) {
+            const droneCount = 3;
+            for (let i = 0; i < droneCount; i++) {
+                const angle = random(Math.PI * 0.25, Math.PI * 0.75); // Downward cone
+                const speed = random(2, 4);
+                const newVx = Math.cos(angle) * speed;
+                const newVy = Math.sin(angle) * speed;
+                // Spawn from one of the "bays"
+                const spawnX = this.x + random(-this.radius * 0.5, this.radius * 0.5);
+                rockets.push(new Drone(spawnX, this.y + 40, newVx, newVy, this.width));
+            }
+            this.droneSpawnCooldown = this.droneSpawnRate;
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.fillStyle = '#3c4043'; // Dark grey main body
+        ctx.beginPath();
+        ctx.moveTo(this.x - this.radius, this.y);
+        ctx.bezierCurveTo(this.x - this.radius, this.y - 80, this.x + this.radius, this.y - 80, this.x + this.radius, this.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#2a2c2e';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Cockpit
+        ctx.fillStyle = '#00ddff';
+        ctx.beginPath();
+        ctx.moveTo(this.x - 20, this.y - 40);
+        ctx.bezierCurveTo(this.x, this.y - 60, this.x + 20, this.y - 60, this.x + 40, this.y - 40);
+        ctx.fill();
+        ctx.shadowColor = '#00ddff';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Drone bays
+        ctx.fillStyle = '#212121';
+        ctx.fillRect(this.x - 60, this.y + 5, 40, 20);
+        ctx.fillRect(this.x + 20, this.y + 5, 40, 20);
+
         ctx.restore();
     }
 }

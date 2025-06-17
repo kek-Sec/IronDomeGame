@@ -69,6 +69,11 @@ export function draw(ctx, state, width, height) {
     state.empPowerUps.forEach(emp => emp.draw(ctx));
     state.flares.forEach(flare => flare.draw(ctx));
     state.tracerRounds.forEach(t => t.draw(ctx));
+    
+    // NEW: Draw the boss if it exists
+    if (state.boss) {
+        state.boss.draw(ctx);
+    }
 
     if (state.targetedRocket) {
         drawReticle(ctx, state.targetedRocket, state.gameTime);
