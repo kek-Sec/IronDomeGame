@@ -10,12 +10,21 @@ export class HiveCarrier {
         this.maxHealth = Math.floor(config.bosses.hiveCarrier.health * healthMultiplier);
         this.health = this.maxHealth;
         this.width = width;
-        this.x = -200; // Start off-screen
         this.y = 150;
-        this.vx = 0.5; // Slowly moves across the screen
         this.droneSpawnCooldown = 0;
         this.droneSpawnRate = config.bosses.hiveCarrier.droneSpawnRate;
         this.radius = 100; // For collision detection
+
+        // NEW: Randomize spawn position and velocity
+        if (Math.random() < 0.5) {
+            // Spawn from the left and move right
+            this.x = -this.radius;
+            this.vx = 0.5; 
+        } else {
+            // Spawn from the right and move left
+            this.x = this.width + this.radius;
+            this.vx = -0.5;
+        }
     }
 
     takeDamage(amount) {
