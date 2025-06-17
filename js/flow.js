@@ -63,7 +63,7 @@ export function refreshUpgradeScreen(state, canvas) {
         upgradeRepairCallback: () => upgradeHandlers.handleUpgradeRepair(state, refreshCallback),
         upgradeTurretCallback: () => upgradeHandlers.handleUpgradeTurret(state, canvas, refreshCallback),
         upgradeSpeedCallback: () => upgradeHandlers.handleUpgradeSpeed(state, refreshCallback),
-        upgradeBlastCallback: () => upgradeHandlers.handleUpgradeBlast(state, refreshCallback),
+        upgradeMultishotCallback: () => upgradeHandlers.handleUpgradeMultishot(state, refreshCallback),
         upgradeNukeCallback: () => upgradeHandlers.handleUpgradeNuke(state, refreshCallback),
         upgradeBaseArmorCallback: () => upgradeHandlers.handleUpgradeBaseArmor(state, refreshCallback),
         upgradeTurretSpeedCallback: () => upgradeHandlers.handleUpgradeTurretSpeed(state, refreshCallback),

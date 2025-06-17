@@ -162,10 +162,10 @@ export function showArmoryScreen(playerData) {
 
 
 export function showBetweenWaveScreen(state, callbacks, config) {
-    const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks } = state;
+    const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks, multishotLevel } = state;
     const {
         upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback,
-        upgradeSpeedCallback, upgradeBlastCallback, upgradeBaseArmorCallback,
+        upgradeSpeedCallback, upgradeMultishotCallback, upgradeBaseArmorCallback,
         upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback,
         upgradeHomingMineCallback, upgradeFieldReinforcementCallback, upgradeTargetingScramblerCallback
     } = callbacks;
@@ -177,7 +177,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     const categories = {
         core: {
             title: 'Core System Upgrades',
-            ids: ['speed', 'blast', 'turret', 'turretSpeed', 'turretRange', 'baseArmor']
+            ids: ['speed', 'multishot', 'turret', 'turretSpeed', 'turretRange', 'baseArmor']
         },
         tactical: {
             title: 'Single-Wave Tactical Gear',
@@ -192,7 +192,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     const shopItems = [
         // Permanent Upgrades
         { id: 'speed', title: 'Interceptor Speed', desc: 'Permanently increase the speed of your interceptors.', detailedDesc: 'A permanent, stacking buff to the velocity of all interceptors you launch.', cost: upgradeCosts.interceptorSpeed, available: true },
-        { id: 'blast', title: 'Blast Radius', desc: 'Permanently increase the explosion radius of your interceptors.', detailedDesc: 'Increases the Area of Effect for all normal interceptor impacts. Does not affect Nukes or Mines.', cost: upgradeCosts.blastRadius, available: true },
+        { id: 'multishot', title: `Multishot (Lvl ${multishotLevel})`, desc: 'Fire an additional interceptor per shot. Max Lvl 3.', detailedDesc: 'Increases the number of interceptors launched with each click. Each interceptor will target the same rocket.', cost: upgradeCosts.multishot * (multishotLevel + 1), available: multishotLevel < 3, maxed: multishotLevel >= 3 },
         { id: 'turret', title: 'Build Turret', desc: 'Construct an automated defense turret. Max 2.', detailedDesc: 'Builds a C-RAM turret that automatically fires at nearby rockets. Limited to two turrets.', cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets },
         { id: 'turretSpeed', title: `Turret Speed (Lvl ${turretFireRateLevel})`, desc: 'Permanently increase the fire rate of all turrets. Max Lvl 3.', detailedDesc: 'Reduces the cooldown between bursts for all owned turrets. Stacks up to 3 times.', cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3 },
         { id: 'turretRange', title: `Turret Range (Lvl ${turretRangeLevel})`, desc: 'Permanently increase the engagement range of all turrets. Max Lvl 3.', detailedDesc: 'Increases the detection and firing radius for all owned turrets. Stacks up to 3 times.', cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3 },
@@ -280,7 +280,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
 
     // Safely add event listeners for all potential shop items
     addListenerIfPresent('shop-speed', upgradeSpeedCallback);
-    addListenerIfPresent('shop-blast', upgradeBlastCallback);
+    addListenerIfPresent('shop-multishot', upgradeMultishotCallback);
     addListenerIfPresent('shop-turret', upgradeTurretCallback);
     addListenerIfPresent('shop-turretSpeed', upgradeTurretSpeedCallback);
     addListenerIfPresent('shop-turretRange', upgradeTurretRangeCallback);
@@ -317,7 +317,6 @@ export function showRocketInfoScreen(closeCallback) {
         <button id="close-info-button" class="modal-button">CLOSE</button>
     `;
 
-    // --- FIX STARTS HERE ---
     // This function will handle closing the modal and removing the background click listener
     const cleanupAndClose = () => {
         modalContainer.removeEventListener('click', backgroundClickHandler);
@@ -333,7 +332,6 @@ export function showRocketInfoScreen(closeCallback) {
 
     document.getElementById('close-info-button').addEventListener('click', cleanupAndClose);
     modalContainer.addEventListener('click', backgroundClickHandler);
-    // --- FIX ENDS HERE ---
 }
 
 

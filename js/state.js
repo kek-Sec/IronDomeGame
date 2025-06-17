@@ -22,7 +22,6 @@ export function getInitialState() {
         coins: 0, // Set later by main.js based on difficulty
         currentWave: 0,
         interceptorSpeed: config.initialInterceptorSpeed,
-        blastRadius: config.initialBlastRadius,
         
         // Game Entities
         rockets: [],
@@ -61,6 +60,7 @@ export function getInitialState() {
         homingMinesAvailable: perks.extraMine ? 1 : 0,
         firstUpgradePurchased: false, // For Rapid Deployment perk
         scramblerActive: false, // For Targeting Scrambler upgrade
+        multishotLevel: 0, // Replaced blastRadius
         
         // Persistent Data Reference
         playerData: playerData, 

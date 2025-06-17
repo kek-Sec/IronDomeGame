@@ -37,13 +37,23 @@ export function handleClick(state, canvas, e) {
     }
     
     if (state.gameState === 'IN_WAVE' && state.targetedRocket) {
-        // Perk check for Nuke availability
         const nukeIsAvailable = state.nukeAvailable || state.activePerks.surplusValue;
-        const interceptorType = nukeIsAvailable ? 'nuke' : 'standard';
 
-        state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, state.blastRadius, interceptorType));
         if (nukeIsAvailable) {
+            // Fire a single nuke, no multishot
+            state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, config.nukeBlastRadius, 'nuke'));
             state.nukeAvailable = false;
+        } else {
+            // Standard interceptors with multishot
+            const numShots = 1 + state.multishotLevel;
+            const centralLauncherX = width / 2;
+            const spread = (numShots - 1) * 10;
+            const startX = centralLauncherX - spread / 2;
+            
+            for (let i = 0; i < numShots; i++) {
+                const launchX = startX + i * 10;
+                state.interceptors.push(new Interceptor(launchX, height, state.targetedRocket, state.interceptorSpeed, config.initialBlastRadius, 'standard'));
+            }
         }
         UI.updateTopUI(state);
     }
@@ -69,7 +79,9 @@ export function handleTouchStart(state, canvas, e) {
             }
         }
         if (touchTarget) {
-            state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, state.blastRadius));
+            // Create a temporary state for blastRadius for the interceptor
+            const interceptorBlastRadius = config.initialBlastRadius; // Use initial value
+            state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, interceptorBlastRadius));
             UI.updateTopUI(state);
         }
     }

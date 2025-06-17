@@ -44,11 +44,11 @@ export function handleUpgradeSpeed(state, refreshUpgradeScreen) {
     }
 }
 
-export function handleUpgradeBlast(state, refreshUpgradeScreen) {
-    const cost = applyCost(state, config.upgradeCosts.blastRadius);
-    if (state.coins >= cost) {
+export function handleUpgradeMultishot(state, refreshUpgradeScreen) {
+    const cost = applyCost(state, config.upgradeCosts.multishot * (state.multishotLevel + 1));
+    if (state.coins >= cost && state.multishotLevel < 3) {
         state.coins -= cost;
-        state.blastRadius *= 1.3;
+        state.multishotLevel++;
         refreshUpgradeScreen();
     }
 }
