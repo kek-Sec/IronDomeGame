@@ -2,7 +2,7 @@
  * flow.js
  * * Manages the overall flow of the game, like starting waves and handling upgrades.
  */
-import { getWaveDefinition, config } from './config.js';
+import { getWaveDefinition, config, waveDefinitions } from './config.js';
 import * as UI from './ui.js';
 import * as upgradeHandlers from './logic/upgradeHandlers.js';
 import { HiveCarrier } from './entities/bosses.js';
@@ -24,7 +24,8 @@ export function startNextWave(state, canvas) {
     if (waveDef.isBossWave) {
         if (waveDef.bossType === 'hiveCarrier') {
             // Scale boss health in endless mode
-            const waveFactor = state.currentWave - config.waveDefinitions.length + 1;
+            // THE FIX: Correctly reference the imported 'waveDefinitions' array, not 'config.waveDefinitions'
+            const waveFactor = state.currentWave - waveDefinitions.length + 1;
             const healthMultiplier = (waveFactor > 0) ? 1 + (Math.floor(waveFactor / 5) * 0.75) : 1;
             state.boss = new HiveCarrier(canvas.width, healthMultiplier);
         }
