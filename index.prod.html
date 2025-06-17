@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iron Dome Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="ui-container">
+        <div class="ui-box">
+             <h2>FPS: <span id="fps-counter">60</span></h2>
+        </div>
+        <div class="ui-box">
+            <h2>SCORE: <span id="score">0</span></h2>
+        </div>
+        <div class="ui-box">
+            <h2>COINS: <span id="coins">0</span></h2>
+        </div>
+        <div class="ui-box">
+            <h2>WAVE: <span id="wave">1</span></h2>
+        </div>
+    </div>
+
+    <div id="boss-ui-container" style="display: none;">
+        <h3 id="boss-name"></h3>
+        <div id="boss-health-bar-container">
+            <div id="boss-health-bar"></div>
+        </div>
+    </div>
+
+    <div id="top-right-buttons">
+        <div id="rocket-info-btn" class="info-btn">?</div>
+        <div id="pause-button" class="pause-btn">
+            <div id="pause-icon">||</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="modal-container">
+        <div id="modal-content-main" class="modal-content">
+            </div>
+    </div>
+
+    <script src="js/main.min.js"></script>
+</body>
+</html>
