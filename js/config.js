@@ -50,19 +50,23 @@ export const config = {
     turretRange: 350,
     empSpawnChance: 0.0005,
     empDuration: 300,
+    nukeEmpDuration: 120, // 2 seconds
     maxParticles: 300,
+    homingMineDetonationRadius: 100,
     upgradeCosts: {
         repairCity: 1000,
         automatedTurret: 2500,
         interceptorSpeed: 750,
         blastRadius: 1200,
-        nuke: 3000,
+        nuke: 3500, // Cost increased for EMP buff
         baseArmor: 2000,
         turretSpeed: 1500,
         turretRange: 1800,
         homingMine: 800,
+        fieldReinforcement: 1250, // New Item
+        targetingScrambler: 1750, // New Item
     },
-    // NEW: Boss configurations
+    // Boss configurations
     bosses: {
         hiveCarrier: {
             health: 250,

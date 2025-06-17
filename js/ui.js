@@ -116,27 +116,35 @@ export function showArmoryScreen(playerData) {
 
 export function showBetweenWaveScreen(state, callbacks, config) {
     const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks } = state;
-    const { upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback, upgradeSpeedCallback, upgradeBlastCallback, upgradeBaseArmorCallback, upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback, upgradeHomingMineCallback } = callbacks;
+    const { 
+        upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback, 
+        upgradeSpeedCallback, upgradeBlastCallback, upgradeBaseArmorCallback, 
+        upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback, 
+        upgradeHomingMineCallback, upgradeFieldReinforcementCallback, upgradeTargetingScramblerCallback 
+    } = callbacks;
     const { upgradeCosts, maxTurrets } = config;
 
-    // Perk check for nuke availability
     const nukeIsPurchasable = !state.nukeAvailable || activePerks.surplusValue;
+    const reinforcementNeeded = state.cities.some(c => !c.isDestroyed && !c.isArmored);
 
     const shopItems = [
-        { id: 'repair', title: 'Repair Base', desc: 'Repair one of your destroyed bases.', cost: upgradeCosts.repairCity, available: cities.some(c => c.isDestroyed) },
+        // Permanent Upgrades
+        { id: 'speed', title: 'Interceptor Speed', desc: 'Permanently increase the speed of your interceptors.', cost: upgradeCosts.interceptorSpeed, available: true },
+        { id: 'blast', title: 'Blast Radius', desc: 'Permanently increase the explosion radius of your interceptors.', cost: upgradeCosts.blastRadius, available: true },
         { id: 'turret', title: 'Build Turret', desc: 'Construct an automated defense turret. Max 2.', cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets },
-        { id: 'homingMine', title: 'Buy Homing Mine', desc: 'Buy a proximity mine to place on the ground. Click the ground to deploy.', cost: upgradeCosts.homingMine, available: true },
-        { id: 'speed', title: 'Increase Interceptor Speed', desc: 'Permanently increase the speed of your interceptors.', cost: upgradeCosts.interceptorSpeed, available: true },
-        { id: 'blast', title: 'Increase Blast Radius', desc: 'Permanently increase the explosion radius of your interceptors.', cost: upgradeCosts.blastRadius, available: true },
-        { id: 'turretSpeed', title: `Upgrade Turret Speed (Lvl ${turretFireRateLevel})`, desc: 'Permanently increase the fire rate of all turrets. Max Lvl 3.', cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3 },
-        { id: 'turretRange', title: `Upgrade Turret Range (Lvl ${turretRangeLevel})`, desc: 'Permanently increase the engagement range of all turrets. Max Lvl 3.', cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3 },
-        { id: 'baseArmor', title: 'Armor Plating', desc: 'Apply armor to all bases, allowing them to survive one extra hit.', cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored },
-        { id: 'nuke', title: 'Nuke Interceptor', desc: 'A single-use interceptor with a massive blast radius. One per wave.', cost: upgradeCosts.nuke, available: nukeIsPurchasable, maxed: !nukeIsPurchasable && !activePerks.surplusValue }
+        { id: 'turretSpeed', title: `Turret Speed (Lvl ${turretFireRateLevel})`, desc: 'Permanently increase the fire rate of all turrets. Max Lvl 3.', cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3 },
+        { id: 'turretRange', title: `Turret Range (Lvl ${turretRangeLevel})`, desc: 'Permanently increase the engagement range of all turrets. Max Lvl 3.', cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3 },
+        { id: 'baseArmor', title: 'Permanent Armor', desc: 'Permanently armor all bases, allowing them to survive one extra hit.', cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored },
+        // Tactical / Single-Use Items
+        { id: 'nuke', title: 'Nuke (w/ EMP)', desc: 'A single-use interceptor with a massive blast and EMP effect.', cost: upgradeCosts.nuke, available: nukeIsPurchasable, maxed: !nukeIsPurchasable && !activePerks.surplusValue },
+        { id: 'homingMine', title: 'Buy Proximity Mine', desc: 'An AOE mine that explodes when rockets get near.', cost: upgradeCosts.homingMine, available: true },
+        { id: 'fieldReinforcement', title: 'Field Reinforcement', desc: 'Apply one layer of armor to all standing, unarmored bases for the next wave.', cost: upgradeCosts.fieldReinforcement, available: reinforcementNeeded, maxed: !reinforcementNeeded },
+        { id: 'targetingScrambler', title: 'Targeting Scrambler', desc: '25% chance for new rockets to be scrambled next wave.', cost: upgradeCosts.targetingScrambler, available: !state.scramblerActive, maxed: state.scramblerActive },
+        { id: 'repair', title: 'Repair Base', desc: 'Repair one of your destroyed bases.', cost: upgradeCosts.repairCity, available: cities.some(c => c.isDestroyed) },
     ];
 
     let shopHTML = '<div class="shop-grid">';
     shopItems.forEach(item => {
-        // Apply Rapid Deployment discount if applicable
         let currentCost = item.cost;
         if (activePerks.rapidDeployment && !state.firstUpgradePurchased) {
             currentCost = Math.ceil(currentCost * 0.75);
@@ -144,12 +152,11 @@ export function showBetweenWaveScreen(state, callbacks, config) {
 
         const affordable = coins >= currentCost;
         const disabled = !affordable || !item.available;
-        const maxed = item.maxed;
         let statusText = `<div class="cost">Cost: ${currentCost} Coins</div>`;
-        if (maxed) statusText = `<div class="cost">${item.id === 'baseArmor' ? 'APPLIED' : (item.id === 'nuke' ? 'OWNED' : 'MAXED')}</div>`;
+        if (item.maxed) statusText = `<div class="cost">${item.id === 'targetingScrambler' ? 'ACTIVE' : 'MAXED'}</div>`;
 
         shopHTML += `
-            <div class="shop-card ${disabled ? 'disabled' : ''} ${maxed ? 'maxed' : ''}" id="shop-${item.id}">
+            <div class="shop-card ${disabled ? 'disabled' : ''} ${item.maxed ? 'maxed' : ''}" id="shop-${item.id}">
                 <h3>${item.title}</h3>
                 <p>${item.desc}</p>
                 ${statusText}
@@ -169,15 +176,18 @@ export function showBetweenWaveScreen(state, callbacks, config) {
         <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
     `;
 
-    document.getElementById('shop-repair').addEventListener('click', upgradeRepairCallback);
-    document.getElementById('shop-turret').addEventListener('click', upgradeTurretCallback);
+    // Add event listeners for all shop items
     document.getElementById('shop-speed').addEventListener('click', upgradeSpeedCallback);
     document.getElementById('shop-blast').addEventListener('click', upgradeBlastCallback);
+    document.getElementById('shop-turret').addEventListener('click', upgradeTurretCallback);
     document.getElementById('shop-turretSpeed').addEventListener('click', upgradeTurretSpeedCallback);
     document.getElementById('shop-turretRange').addEventListener('click', upgradeTurretRangeCallback);
-    document.getElementById('shop-homingMine').addEventListener('click', upgradeHomingMineCallback);
     document.getElementById('shop-baseArmor').addEventListener('click', upgradeBaseArmorCallback);
     document.getElementById('shop-nuke').addEventListener('click', upgradeNukeCallback);
+    document.getElementById('shop-homingMine').addEventListener('click', upgradeHomingMineCallback);
+    document.getElementById('shop-fieldReinforcement').addEventListener('click', upgradeFieldReinforcementCallback);
+    document.getElementById('shop-targetingScrambler').addEventListener('click', upgradeTargetingScramblerCallback);
+    document.getElementById('shop-repair').addEventListener('click', upgradeRepairCallback);
     document.getElementById('next-wave-button').addEventListener('click', nextWaveCallback);
 }
 

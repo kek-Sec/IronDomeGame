@@ -3,6 +3,7 @@ import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredR
 import { EMP } from '../entities/playerAbilities.js';
 import { HiveCarrier } from '../entities/bosses.js';
 import { createExplosion, triggerScreenShake } from '../utils.js';
+import { random } from '../utils.js';
 
 export function findTargetedRocket(state) {
     let closestDist = Infinity;
@@ -33,7 +34,6 @@ export function handleSpawning(state, width, height) {
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
     const currentWaveDelay = (waveDef.delay * difficulty.waveDelayMultiplier) / difficultyScale;
     
-    // Apply the enemy speed bonus from difficulty settings
     const speedBonus = difficulty.enemySpeedBonus || 1;
     const speedMultiplier = (1 + (state.currentWave * 0.05)) * difficultyScale * speedBonus;
     
@@ -42,13 +42,23 @@ export function handleSpawning(state, width, height) {
     if (state.waveRocketSpawn.timer > currentWaveDelay && state.waveRocketSpawn.toSpawn.length > 0) {
         const rocketType = state.waveRocketSpawn.toSpawn.pop();
         const sizeMultiplier = difficulty.missileSizeMultiplier;
-
-        if (rocketType === 'standard') { state.rockets.push(new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier)); } 
-        else if (rocketType === 'mirv') { state.rockets.push(new MirvRocket(width, height, sizeMultiplier, speedMultiplier)); }
-        else if (rocketType === 'stealth') { state.rockets.push(new StealthRocket(width, sizeMultiplier, speedMultiplier)); }
-        else if (rocketType === 'swarmer') { state.rockets.push(new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier)); }
-        else if (rocketType === 'flare') { state.rockets.push(new FlareRocket(width, sizeMultiplier, speedMultiplier)); }
-        else if (rocketType === 'armored') { state.rockets.push(new ArmoredRocket(width, sizeMultiplier, speedMultiplier)); }
+        
+        let newRocket;
+        if (rocketType === 'standard') { newRocket = new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier); } 
+        else if (rocketType === 'mirv') { newRocket = new MirvRocket(width, height, sizeMultiplier, speedMultiplier); }
+        else if (rocketType === 'stealth') { newRocket = new StealthRocket(width, sizeMultiplier, speedMultiplier); }
+        else if (rocketType === 'swarmer') { newRocket = new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier); }
+        else if (rocketType === 'flare') { newRocket = new FlareRocket(width, sizeMultiplier, speedMultiplier); }
+        else if (rocketType === 'armored') { newRocket = new ArmoredRocket(width, sizeMultiplier, speedMultiplier); }
+        
+        if (newRocket) {
+            // Apply Targeting Scrambler effect
+            if (state.scramblerActive && Math.random() < 0.25) {
+                newRocket.vx = random(-4, 4); // Scramble horizontal velocity
+                newRocket.vy *= 0.8; // Slow vertical speed slightly
+            }
+            state.rockets.push(newRocket);
+        }
         
         state.waveRocketSpawn.timer = 0;
     }
@@ -177,6 +187,8 @@ export function updateInterceptors(state, width) {
         const interceptor = state.interceptors[i];
         interceptor.update(state.rockets, state.flares, state.boss);
 
+        // Check for detonation
+        let detonated = false;
         if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
             state.interceptors.splice(i, 1);
             continue;
@@ -187,13 +199,13 @@ export function updateInterceptors(state, width) {
         if (state.activePerks.efficientInterceptors && Math.random() < 0.10) {
             damage *= 3; // Critical Hit!
         }
-
+        
+        // --- Boss Collision ---
         if (state.boss && Math.hypot(interceptor.x - state.boss.x, interceptor.y - state.boss.y) < state.boss.radius) {
             const isDestroyed = state.boss.takeDamage(damage);
             state.score += damage * 10;
             state.coins += damage * 10;
-            createExplosion(state, interceptor.x, interceptor.y, interceptor.blastRadius, 0);
-            state.interceptors.splice(i, 1);
+            detonated = true;
             if (isDestroyed) {
                 state.score += config.bosses.hiveCarrier.points;
                 state.coins += config.bosses.hiveCarrier.points;
@@ -202,30 +214,76 @@ export function updateInterceptors(state, width) {
                 state.boss = null;
                 state.bossDefeated = true;
             }
-            continue;
         }
 
-
-        for (let f = state.flares.length - 1; f >= 0; f--) {
-            const flare = state.flares[f];
-            if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
-                state.flares.splice(f, 1);
-                createExplosion(state, interceptor.x, interceptor.y, 20, 50);
-                state.interceptors.splice(i, 1);
-                break;
+        // --- Flare Collision ---
+        if (!detonated) {
+            for (let f = state.flares.length - 1; f >= 0; f--) {
+                const flare = state.flares[f];
+                if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
+                    state.flares.splice(f, 1);
+                    detonated = true;
+                    break;
+                }
             }
         }
-        if(!state.interceptors[i]) continue;
 
-        for (let j = state.rockets.length - 1; j >= 0; j--) {
-            const rocket = state.rockets[j];
-            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
-                let isDestroyed = true;
-                 if (typeof rocket.takeDamage === 'function') {
-                    isDestroyed = rocket.takeDamage(damage);
+        // --- Rocket Collision ---
+        if (!detonated) {
+            for (let j = state.rockets.length - 1; j >= 0; j--) {
+                const rocket = state.rockets[j];
+                if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
+                    let isDestroyed = true;
+                    if (typeof rocket.takeDamage === 'function') {
+                        isDestroyed = rocket.takeDamage(damage);
+                    }
+                    
+                    if (isDestroyed) {
+                        let points = 0;
+                        if (rocket.type === 'standard') points = config.rocketPoints;
+                        else if (rocket.type === 'mirv') points = config.mirvPoints;
+                        else if (rocket.type === 'stealth') points = config.stealthPoints;
+                        else if (rocket.type === 'swarmer') points = config.swarmerPoints;
+                        else if (rocket.type === 'flare') points = config.flareRocketPoints;
+                        else if (rocket.type === 'drone') points = config.dronePoints;
+                        else if (rocket.type === 'armored') points = config.armoredPoints;
+                        state.score += points;
+                        state.coins += points;
+                        state.rockets.splice(j, 1);
+                    }
+                    detonated = true;
+                    break; // Interceptor can only hit one rocket directly
                 }
-                
-                if (isDestroyed) {
+            }
+        }
+        
+        // --- Handle Detonation ---
+        if(detonated) {
+            createExplosion(state, interceptor.x, interceptor.y, interceptor.blastRadius, 200);
+            // NUKE BUFF: Trigger EMP effect
+            if (interceptor.type === 'nuke') {
+                state.empActiveTimer = config.nukeEmpDuration;
+                state.empShockwave = { radius: 0, alpha: 1 };
+                triggerScreenShake(state, 30, 60);
+            }
+            state.interceptors.splice(i, 1);
+        }
+    }
+}
+
+export function updateHomingMines(state) {
+    for (let i = state.homingMines.length - 1; i >= 0; i--) {
+        const mine = state.homingMines[i];
+        // update returns true if it's time to detonate
+        if (mine.update(state.rockets)) { 
+            createExplosion(state, mine.x, mine.y, config.homingMineDetonationRadius, 30);
+            triggerScreenShake(state, 10, 20);
+
+            // HOMING MINE BUFF: AOE Damage
+            for (let j = state.rockets.length - 1; j >= 0; j--) {
+                const rocket = state.rockets[j];
+                if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
+                    // All rockets in radius are destroyed
                     let points = 0;
                     if (rocket.type === 'standard') points = config.rocketPoints;
                     else if (rocket.type === 'mirv') points = config.mirvPoints;
@@ -238,25 +296,6 @@ export function updateInterceptors(state, width) {
                     state.coins += points;
                     state.rockets.splice(j, 1);
                 }
-
-                createExplosion(state, rocket.x, rocket.y, 80, 200);
-                state.interceptors.splice(i, 1);
-                break;
-            }
-        }
-    }
-}
-
-export function updateHomingMines(state) {
-    for (let i = state.homingMines.length - 1; i >= 0; i--) {
-        const mine = state.homingMines[i];
-        if (mine.update(state.rockets)) {
-            if (mine.target) {
-                // Award points/coins for mine kills
-                state.score += config.rocketPoints; 
-                state.coins += config.rocketPoints;
-                state.rockets = state.rockets.filter(r => r.id !== mine.target.id);
-                createExplosion(state, mine.x, mine.y, 60, 30);
             }
             state.homingMines.splice(i, 1);
         }

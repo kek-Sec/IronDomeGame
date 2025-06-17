@@ -101,3 +101,25 @@ export function handleUpgradeHomingMine(state, refreshUpgradeScreen) {
         refreshUpgradeScreen();
     }
 }
+
+export function handleUpgradeFieldReinforcement(state, refreshUpgradeScreen) {
+    const cost = applyCost(state, config.upgradeCosts.fieldReinforcement);
+    if(state.coins >= cost) {
+        state.coins -= cost;
+        state.cities.forEach(c => {
+            if (!c.isDestroyed && !c.isArmored) {
+                c.isArmored = true;
+            }
+        });
+        refreshUpgradeScreen();
+    }
+}
+
+export function handleUpgradeTargetingScrambler(state, refreshUpgradeScreen) {
+    const cost = applyCost(state, config.upgradeCosts.targetingScrambler);
+    if(state.coins >= cost && !state.scramblerActive) {
+        state.coins -= cost;
+        state.scramblerActive = true;
+        refreshUpgradeScreen();
+    }
+}

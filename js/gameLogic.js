@@ -79,6 +79,7 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
         state.flares = [];
         state.nukeAvailable = false;
         state.firstUpgradePurchased = false; // Reset for Rapid Deployment perk
+        state.scramblerActive = false; // Reset Scrambler at the end of the wave
         refreshUpgradeScreen();
     }
     

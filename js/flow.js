@@ -61,6 +61,8 @@ export function refreshUpgradeScreen(state, canvas) {
         upgradeTurretSpeedCallback: () => upgradeHandlers.handleUpgradeTurretSpeed(state, refreshCallback),
         upgradeTurretRangeCallback: () => upgradeHandlers.handleUpgradeTurretRange(state, refreshCallback),
         upgradeHomingMineCallback: () => upgradeHandlers.handleUpgradeHomingMine(state, refreshCallback),
+        upgradeFieldReinforcementCallback: () => upgradeHandlers.handleUpgradeFieldReinforcement(state, refreshCallback),
+        upgradeTargetingScramblerCallback: () => upgradeHandlers.handleUpgradeTargetingScrambler(state, refreshCallback),
         nextWaveCallback: () => startNextWave(state, canvas)
     }, config);
 }

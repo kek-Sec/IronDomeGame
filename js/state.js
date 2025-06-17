@@ -59,6 +59,7 @@ export function getInitialState() {
         turretRangeLevel: 0,
         homingMinesAvailable: perks.extraMine ? 1 : 0,
         firstUpgradePurchased: false, // For Rapid Deployment perk
+        scramblerActive: false, // For Targeting Scrambler upgrade
         
         // Persistent Data Reference
         playerData: playerData, 
