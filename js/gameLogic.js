@@ -268,6 +268,17 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     UI.updateTopUI(state);
     UI.updateBossUI(state.boss);
     if (state.gameState !== 'IN_WAVE') return;
+
+    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+
+    // --- Failsafe Timer Logic ---
+    // If it's a normal wave, no rockets are on screen, but we are still expecting more to spawn, start the timer.
+    if (!waveDef.isBossWave && state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length > 0) {
+        state.timeSinceLastRocket++;
+    } else {
+        // Otherwise, reset the timer.
+        state.timeSinceLastRocket = 0;
+    }
     
     if (state.empActiveTimer > 0) {
         state.empActiveTimer--;
@@ -293,8 +304,16 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     findTargetedRocket(state);
     
     // --- Wave End Condition ---
-    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
     let waveIsOver = false;
+
+    // Failsafe Trigger: If the timer exceeds 20 seconds (at 60fps), force the wave to end.
+    if (state.timeSinceLastRocket > 1200) {
+        waveIsOver = true;
+        console.warn("Failsafe triggered: Wave ended due to timeout.");
+        // Clear the spawn list to prevent this wave's rockets from spawning in the next one.
+        state.waveRocketSpawn.toSpawn = []; 
+    }
+
     if (waveDef.isBossWave) {
         if (state.bossDefeated && state.rockets.length === 0) {
             waveIsOver = true;

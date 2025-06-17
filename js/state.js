@@ -25,8 +25,9 @@ export function getInitialState() {
         homingMines: [],
         empPowerUps: [],
         flares: [],
-        boss: null, // NEW
-        bossDefeated: false, // NEW
+        boss: null,
+        bossDefeated: false,
+        timeSinceLastRocket: 0, // NEW: Failsafe timer
         empActiveTimer: 0,
         empShockwave: { radius: 0, alpha: 0 },
         screenShake: { intensity: 0, duration: 0 },
