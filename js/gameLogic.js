@@ -2,7 +2,7 @@
  * gameLogic.js
  * * Contains the core game logic for updating the game state each frame.
  */
-import { config, waveDefinitions } from './config.js';
+import { config, getWaveDefinition } from './config.js';
 import * as UI from './ui.js';
 import { savePlayerData } from './saveManager.js';
 import { 
@@ -24,7 +24,7 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     UI.updateBossUI(state.boss);
     if (state.gameState !== 'IN_WAVE') return;
 
-    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    const waveDef = getWaveDefinition(state.currentWave);
 
     if (!waveDef.isBossWave && state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length > 0) {
         state.timeSinceLastRocket++;
@@ -57,12 +57,23 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     
     let waveIsOver = false;
 
+    // --- Safeguard & Wave End Checks ---
+    const waveDuration = state.gameTime - state.waveStartTime;
+    // Absolute timeout of 3 minutes for any wave
+    if (waveDuration > 10800) {
+        waveIsOver = true;
+        console.warn(`Failsafe triggered: Wave ${state.currentWave + 1} ended due to absolute timeout (3 minutes).`);
+        state.rockets = []; // Clear any remaining rockets to be sure
+    }
+
+    // Timeout if no rockets are on screen and none are spawning for 20s
     if (state.timeSinceLastRocket > 1200) {
         waveIsOver = true;
-        console.warn("Failsafe triggered: Wave ended due to timeout.");
+        console.warn("Failsafe triggered: Wave ended due to 20s of no activity.");
         state.waveRocketSpawn.toSpawn = []; 
     }
 
+    // Standard wave end conditions
     if (waveDef.isBossWave) {
         if (state.bossDefeated && state.rockets.length === 0) {
             waveIsOver = true;

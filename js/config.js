@@ -53,6 +53,7 @@ export const config = {
     nukeEmpDuration: 120, // 2 seconds
     maxParticles: 300,
     homingMineDetonationRadius: 100,
+    rocketMaxLifetime: 2700, // 45 seconds at 60fps - Safeguard
     upgradeCosts: {
         repairCity: 1000,
         automatedTurret: 2500,
@@ -76,7 +77,7 @@ export const config = {
     }
 };
 
-// Defines the base composition of enemy rockets for each wave with new types
+// Defines the base composition of enemy rockets for the pre-set waves
 export const waveDefinitions = [
     /* Wave 1 */ { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 120 },
     /* Wave 2 */ { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 115 },
@@ -86,6 +87,45 @@ export const waveDefinitions = [
     /* Wave 6 */ { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, armored: 1, delay: 90 },
     /* Wave 7 */ { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, delay: 85 }
 ];
+
+/**
+ * Gets the definition for a given wave, generating it procedurally if it's beyond the pre-set waves.
+ * @param {number} waveNumber - The wave number (0-indexed).
+ * @returns {object} A wave definition object.
+ */
+export function getWaveDefinition(waveNumber) {
+    if (waveNumber < waveDefinitions.length) {
+        return waveDefinitions[waveNumber];
+    }
+
+    // --- Procedural Generation for Endless Mode ---
+    const waveFactor = waveNumber - waveDefinitions.length + 1;
+    const totalRockets = 15 + waveFactor * 2; // Total rockets scale up
+    const waveData = { isBossWave: false, composition: [] };
+
+    // Procedural Boss Waves
+    if (waveFactor > 0 && waveFactor % 5 === 0) {
+        waveData.isBossWave = true;
+        waveData.bossType = 'hiveCarrier';
+        return waveData;
+    }
+
+    // Determine available rocket types for this wave
+    const availableTypes = ['standard', 'standard', 'standard', 'mirv'];
+    if (waveNumber > 8) availableTypes.push('stealth');
+    if (waveNumber > 10) availableTypes.push('swarmer');
+    if (waveNumber > 12) availableTypes.push('armored');
+    if (waveNumber > 14) availableTypes.push('flare');
+
+    // Build the wave composition
+    for (let i = 0; i < totalRockets; i++) {
+        const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        waveData.composition.push(randomType);
+    }
+    
+    return waveData;
+}
+
 
 // Data for the Rocket Info Bestiary
 export const rocketInfo = {

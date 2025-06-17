@@ -1,4 +1,4 @@
-import { config, waveDefinitions, difficultySettings } from '../config.js';
+import { config, getWaveDefinition, difficultySettings } from '../config.js';
 import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredRocket } from '../entities/rockets.js';
 import { EMP } from '../entities/playerAbilities.js';
 import { HiveCarrier } from '../entities/bosses.js';
@@ -27,12 +27,12 @@ export function findTargetedRocket(state) {
 }
 
 export function handleSpawning(state, width, height) {
-    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    const waveDef = getWaveDefinition(state.currentWave);
     if (waveDef.isBossWave) return;
 
     const difficulty = difficultySettings[state.difficulty];
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
-    const currentWaveDelay = (waveDef.delay * difficulty.waveDelayMultiplier) / difficultyScale;
+    const currentWaveDelay = (waveDef.delay || 85) * difficulty.waveDelayMultiplier / difficultyScale;
     
     const speedBonus = difficulty.enemySpeedBonus || 1;
     const speedMultiplier = (1 + (state.currentWave * 0.05)) * difficultyScale * speedBonus;
@@ -75,34 +75,57 @@ export function updateBoss(state) {
 
 export function updateRockets(state, width, height) {
     if (state.empActiveTimer > 0) return;
+
     for (let i = state.rockets.length - 1; i >= 0; i--) {
         const rocket = state.rockets[i];
-        if (rocket.type === 'flare') { rocket.update(state.flares); } 
-        else { rocket.update(); }
+
+        // --- ROCKET UPDATE (THE FIX) ---
+        // FlareRockets have a special update method that requires the flares array.
+        if (rocket.type === 'flare') {
+            rocket.update(state.flares); 
+        } else {
+            rocket.update(); 
+        }
+
+        // --- SAFEGUARDS & REMOVAL LOGIC ---
         
-        if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
-            state.rockets.push(...rocket.split());
+        // 1. Lifetime Safeguard: Remove rockets that have been alive for too long
+        if (rocket.life > config.rocketMaxLifetime) {
+            console.warn('Safeguard triggered: Removed rocket due to max lifetime.', rocket);
+            state.rockets.splice(i, 1);
+            continue; 
+        }
+
+        // 2. Off-Screen Safeguard: Remove rockets that are out of bounds
+        const bounds = rocket.radius;
+        if (rocket.y >= height || rocket.x < -bounds || rocket.x > width + bounds) {
             state.rockets.splice(i, 1);
             continue;
         }
 
-        if (rocket.y > height - 100 || rocket.x < 0 || rocket.x > width) {
-            let hitCity = false;
-            if(rocket.y > height - 100) {
-                 state.cities.forEach(city => {
-                   if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-                       if (city.isArmored) { city.isArmored = false; } 
-                       else { city.isDestroyed = true; }
-                       hitCity = true;
-                       createExplosion(state, rocket.x, rocket.y, 80, 0);
-                       triggerScreenShake(state, 15, 30);
-                   }
-                });
+        // 3. City Collision
+        let hitCity = false;
+        for (const city of state.cities) {
+            if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
+                if (city.isArmored) { city.isArmored = false; } 
+                else { city.isDestroyed = true; }
+                
+                hitCity = true;
+                createExplosion(state, rocket.x, rocket.y, 80, 0);
+                triggerScreenShake(state, 15, 30);
+                break; 
             }
-            if (hitCity || rocket.y >= height) {
-                if (!hitCity && rocket.y < height + rocket.radius) createExplosion(state, rocket.x, rocket.y, 40, 0);
-                state.rockets.splice(i, 1);
-            }
+        }
+        if (hitCity) {
+            state.rockets.splice(i, 1);
+            continue;
+        }
+
+        // --- ROCKET BEHAVIOR LOGIC (e.g., splitting) ---
+        if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
+            state.rockets.push(...rocket.split());
+            state.rockets.splice(i, 1);
+            continue;
         }
     }
 }

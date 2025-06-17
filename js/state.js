@@ -39,6 +39,7 @@ export function getInitialState() {
         // Flags & Timers
         bossDefeated: false,
         timeSinceLastRocket: 0,
+        waveStartTime: 0, // For wave timeout safeguard
         empActiveTimer: 0,
         empShockwave: { radius: 0, alpha: 0 },
         screenShake: { intensity: 0, duration: 0 },

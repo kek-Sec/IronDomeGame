@@ -26,8 +26,10 @@ export function updateTopUI(state) {
     coinsEl.textContent = state.coins;
     waveEl.textContent = state.currentWave + 1;
     
+    // Ensure the pause button is only visible during active gameplay states
     if (state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED') {
         pauseButton.style.display = 'flex';
+        // Update icon based on state
         pauseIcon.innerHTML = state.gameState === 'PAUSED' ? '▶' : '||';
     } else {
         pauseButton.style.display = 'none';
@@ -193,7 +195,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     document.getElementById('next-wave-button').addEventListener('click', nextWaveCallback);
 }
 
-export function showRocketInfoScreen() {
+export function showRocketInfoScreen(closeCallback) {
     modalContainer.style.display = 'flex';
     let rocketHTML = '<div class="rocket-info-grid">';
 
@@ -217,7 +219,7 @@ export function showRocketInfoScreen() {
         <button id="close-info-button" class="modal-button">CLOSE</button>
     `;
     
-    document.getElementById('close-info-button').addEventListener('click', hideModal);
+    document.getElementById('close-info-button').addEventListener('click', closeCallback);
 }
 
 

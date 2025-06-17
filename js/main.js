@@ -93,7 +93,26 @@ function init() {
     canvas.addEventListener('mousemove', (e) => events.handleMouseMove(state, canvas, e));
     canvas.addEventListener('click', (e) => events.handleClick(state, canvas, e));
     document.getElementById('pause-button').addEventListener('click', () => events.togglePause(state, init));
-    document.getElementById('rocket-info-btn').addEventListener('click', () => UI.showRocketInfoScreen());
+    
+    // Add logic to pause the game when showing the info screen
+    document.getElementById('rocket-info-btn').addEventListener('click', () => {
+        const gameWasRunning = state.gameState === 'IN_WAVE';
+        if (gameWasRunning) {
+            state.gameState = 'PAUSED';
+            // Also update the pause button icon immediately
+            UI.updateTopUI(state);
+        }
+        
+        UI.showRocketInfoScreen(() => {
+            UI.hideModal();
+            // Only resume if the game was running before
+            if (gameWasRunning) {
+                state.gameState = 'IN_WAVE';
+                UI.updateTopUI(state);
+            }
+        });
+    });
+
     canvas.addEventListener('touchstart', (e) => events.handleTouchStart(state, canvas, e));
     
     const playerData = loadPlayerData();
