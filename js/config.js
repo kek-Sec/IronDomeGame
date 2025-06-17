@@ -86,3 +86,14 @@ export const waveDefinitions = [
     /* Wave 6 */ { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, armored: 1, delay: 90 },
     /* Wave 7 */ { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, delay: 85 }
 ];
+
+// Data for the Rocket Info Bestiary
+export const rocketInfo = {
+    standard: { name: 'Standard Rocket', threat: 'Low', description: 'A common, straightforward projectile. Predictable and unarmored.' },
+    armored: { name: 'Armored Rocket', threat: 'Medium', description: 'A slow but tough rocket that requires multiple hits to destroy. Represents a significant threat to defenses.' },
+    mirv: { name: 'MIRV', threat: 'High', description: 'Splits into three standard rockets mid-flight, overwhelming defenses with multiple targets.' },
+    swarmer: { name: 'Swarmer', threat: 'High', description: 'Deploys a swarm of six fast-moving but fragile drones. Difficult to intercept with single-target weapons.' },
+    drone: { name: 'Drone', threat: 'Low', description: 'A small, fast-moving projectile deployed by Swarmer rockets. Weak, but dangerous in numbers.' },
+    stealth: { name: 'Stealth Rocket', threat: 'Medium', description: 'Periodically cloaks, making it untargetable by your mouse and turrets. Timing is key to interception.' },
+    flare: { name: 'Flare Rocket', threat: 'Medium', description: 'Continuously deploys decoy flares that will distract your interceptors, wasting valuable shots.' }
+};

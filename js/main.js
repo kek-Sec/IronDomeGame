@@ -93,6 +93,7 @@ function init() {
     canvas.addEventListener('mousemove', (e) => events.handleMouseMove(state, canvas, e));
     canvas.addEventListener('click', (e) => events.handleClick(state, canvas, e));
     document.getElementById('pause-button').addEventListener('click', () => events.togglePause(state, init));
+    document.getElementById('rocket-info-btn').addEventListener('click', () => UI.showRocketInfoScreen());
     canvas.addEventListener('touchstart', (e) => events.handleTouchStart(state, canvas, e));
     
     const playerData = loadPlayerData();
