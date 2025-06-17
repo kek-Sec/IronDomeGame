@@ -52,8 +52,12 @@ function resetAndStartGame(difficulty = 'normal') {
 function createCities() {
     state.cities = [];
     const cityWidth = width / config.cityCount;
+    // Responsive city height calculation
+    const minHeight = 30;
+    const maxHeight = Math.min(height * 0.15, 120); // Cap height at 15% of screen or 120px, whichever is smaller
+
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(40, height * 0.2);
+        const h = random(minHeight, maxHeight); // Use the new responsive bounds
         const w = cityWidth * random(0.6, 0.8);
         const x = (i * cityWidth) + (cityWidth - w) / 2;
         state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));

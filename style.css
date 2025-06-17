@@ -322,3 +322,83 @@ canvas {
     color: gold;
     font-size: 1.2em;
 }
+
+/* --- Media Query for Responsiveness --- */
+@media (max-width: 768px) {
+    .ui-box h2 {
+        font-size: 1.2em; /* Smaller font for UI */
+    }
+    .ui-box {
+        padding: 8px 16px; /* Smaller padding */
+    }
+    #ui-container {
+        gap: 10px; /* Reduced gap */
+    }
+
+    .pause-btn {
+        width: 50px; /* Smaller pause button */
+        height: 50px;
+        font-size: 1.2em;
+    }
+
+    .modal-content {
+        padding: 20px; /* Less padding in modals */
+    }
+    .modal-content h1 {
+        font-size: 2em; /* Smaller modal title */
+    }
+    .modal-content p {
+        font-size: 1em; /* Smaller modal text */
+        line-height: 1.5;
+    }
+    .modal-button {
+        padding: 12px 24px; /* Smaller buttons */
+        font-size: 1.2em;
+    }
+
+    .shop-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Adjust grid for smaller cards */
+        gap: 15px;
+    }
+
+    .shop-card {
+        padding: 15px;
+    }
+
+    .shop-card h3 {
+        font-size: 1em;
+    }
+    .shop-card p {
+        font-size: 0.8em;
+    }
+    .shop-card .cost {
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+     #ui-container {
+        flex-direction: column; /* Stack UI elements vertically */
+        align-items: flex-start;
+        gap: 5px;
+    }
+    .ui-box {
+        padding: 5px 10px;
+    }
+    .ui-box h2 {
+        font-size: 1em;
+    }
+
+    .shop-grid {
+        /* Switch to a single column layout for very small screens */
+        grid-template-columns: 1fr;
+    }
+
+     .modal-content h1 {
+        font-size: 1.8em;
+    }
+     .modal-button {
+        padding: 10px 20px;
+        font-size: 1em;
+    }
+}
