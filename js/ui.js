@@ -129,6 +129,21 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     const nukeIsPurchasable = !state.nukeAvailable || activePerks.surplusValue;
     const reinforcementNeeded = state.cities.some(c => !c.isDestroyed && !c.isArmored);
 
+    const categories = {
+        core: {
+            title: 'Core System Upgrades',
+            ids: ['speed', 'blast', 'turret', 'turretSpeed', 'turretRange', 'baseArmor']
+        },
+        tactical: {
+            title: 'Single-Wave Tactical Gear',
+            ids: ['nuke', 'homingMine', 'fieldReinforcement', 'targetingScrambler']
+        },
+        maintenance: {
+            title: 'Base Maintenance',
+            ids: ['repair']
+        }
+    };
+
     const shopItems = [
         // Permanent Upgrades
         { id: 'speed', title: 'Interceptor Speed', desc: 'Permanently increase the speed of your interceptors.', detailedDesc: 'A permanent, stacking buff to the velocity of all interceptors you launch.', cost: upgradeCosts.interceptorSpeed, available: true },
@@ -145,39 +160,69 @@ export function showBetweenWaveScreen(state, callbacks, config) {
         { id: 'repair', title: 'Repair Base', desc: 'Repair one of your destroyed bases.', detailedDesc: 'Rebuilds a single destroyed city, restoring it to full functionality.', cost: upgradeCosts.repairCity, available: cities.some(c => c.isDestroyed) },
     ];
 
-    let shopHTML = '<div class="shop-grid">';
-    shopItems.forEach(item => {
-        let currentCost = item.cost;
-        if (activePerks.rapidDeployment && !state.firstUpgradePurchased) {
-            currentCost = Math.ceil(currentCost * 0.75);
+    let shopHTML = '<div class="shop-container">';
+
+    for (const categoryKey in categories) {
+        const category = categories[categoryKey];
+        const itemsInCategory = shopItems.filter(item => category.ids.includes(item.id));
+        const isCategoryRelevant = itemsInCategory.some(item => item.available || (item.maxed === false && item.id !== 'repair'));
+
+        if (isCategoryRelevant || (categoryKey === 'maintenance' && itemsInCategory.some(item => item.available))) {
+            shopHTML += `
+                <div class="shop-category">
+                    <h2>${category.title}</h2>
+                    <div class="shop-grid">
+            `;
+
+            itemsInCategory.forEach(item => {
+                let currentCost = item.cost;
+                if (activePerks.rapidDeployment && !state.firstUpgradePurchased) {
+                    currentCost = Math.ceil(currentCost * 0.75);
+                }
+
+                const affordable = coins >= currentCost;
+                const disabled = !affordable || !item.available;
+                let statusText = `<div class="cost">Cost: ${currentCost} <span class="coin-icon"></span></div>`;
+                
+                if (item.maxed) {
+                    statusText = `<div class="cost maxed-out">MAXED</div>`;
+                } else if (item.id === 'targetingScrambler' && state.scramblerActive) {
+                    statusText = `<div class="cost active-status">ACTIVE</div>`;
+                } else if (item.id === 'nuke' && state.nukeAvailable && !activePerks.surplusValue) {
+                    statusText = `<div class="cost active-status">LOADED</div>`;
+                }
+
+
+                shopHTML += `
+                    <div class="shop-card ${disabled ? 'disabled' : ''} ${item.maxed ? 'maxed' : ''}" id="shop-${item.id}">
+                        <div class="info-icon">?</div>
+                        <div class="info-tooltip">${item.detailedDesc || item.desc}</div>
+                        <h3>${item.title}</h3>
+                        <p>${item.desc}</p>
+                        ${statusText}
+                    </div>
+                `;
+            });
+            shopHTML += `</div></div>`;
         }
-
-        const affordable = coins >= currentCost;
-        const disabled = !affordable || !item.available;
-        let statusText = `<div class="cost">Cost: ${currentCost} Coins</div>`;
-        if (item.maxed) statusText = `<div class="cost">${item.id === 'targetingScrambler' ? 'ACTIVE' : (item.id === 'fieldReinforcement' ? 'MAXED' : 'MAXED')}</div>`;
-
-        shopHTML += `
-            <div class="shop-card ${disabled ? 'disabled' : ''} ${item.maxed ? 'maxed' : ''}" id="shop-${item.id}">
-                <div class="info-icon">i</div>
-                <div class="info-tooltip">${item.detailedDesc || item.desc}</div>
-                <h3>${item.title}</h3>
-                <p>${item.desc}</p>
-                ${statusText}
-            </div>
-        `;
-    });
+    }
     shopHTML += '</div>';
 
     modalContainer.style.display = 'flex';
     modalContent.innerHTML = `
-        <h1>WAVE ${currentWave + 1} COMPLETE</h1>
-        <div class="end-wave-stats">
-            <p class="game-over-stats">SCORE: ${score}</p>
-            <p class="game-over-stats">COINS: ${coins}</p>
+        <div class="modal-header">
+            <h1>WAVE ${currentWave + 1} COMPLETE</h1>
+            <div class="end-wave-stats">
+                <div>SCORE: <span>${score}</span></div>
+                <div>COINS: <span>${coins}</span></div>
+            </div>
         </div>
-        ${shopHTML}
-        <button id="next-wave-button" class="modal-button">START WAVE ${currentWave + 2}</button>
+        <div class="modal-body">
+            ${shopHTML}
+        </div>
+        <div class="modal-footer">
+            <button id="next-wave-button" class="modal-button next-wave-btn">START WAVE ${currentWave + 2}</button>
+        </div>
     `;
 
     // Add event listeners for all shop items
