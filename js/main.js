@@ -70,13 +70,29 @@ function createCities() {
 const resizeCanvas = () => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
+
     if (state.gameState && state.gameState !== 'IN_WAVE') {
-        createCities();
-        if (state.turrets) {
-            state.turrets.forEach((turret, index) => {
-                turret.x = index === 0 ? width * 0.25 : width * 0.75;
+        // THE FIX: Instead of calling createCities(), update existing city and turret positions.
+        // This preserves their state (destroyed, armored, etc.).
+        if (state.cities && state.cities.length > 0) {
+            const citySlotWidth = width / config.cityCount;
+            state.cities.forEach((city, i) => {
+                // Recalculate x to be centered within its new slot, preserving its width.
+                city.x = (i * citySlotWidth) + (citySlotWidth - city.width) / 2;
+                // Recalculate y based on the new canvas height, preserving its height.
+                city.y = height - city.height;
             });
         }
+
+        if (state.turrets && state.turrets.length > 0) {
+            state.turrets.forEach((turret, index) => {
+                // Reposition turrets based on new width and height.
+                turret.x = index === 0 ? width * 0.25 : width * 0.75;
+                turret.y = height - 10; // Turrets are positioned near the bottom of the canvas.
+            });
+        }
+
+        // After updating positions, redraw everything.
         draw(ctx, state, width, height);
     }
 };
