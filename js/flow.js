@@ -8,13 +8,69 @@ import * as upgradeHandlers from './logic/upgradeHandlers.js';
 import { HiveCarrier } from './entities/bosses.js';
 
 /**
+ * Generates a procedural wave definition for endless mode.
+ * The difficulty increases based on how many waves have passed.
+ * @param {number} currentWave - The wave number to generate.
+ * @returns {object} A wave definition object.
+ */
+function generateProceduralWave(currentWave) {
+    const baseWave = waveDefinitions[waveDefinitions.length - 1];
+    const waveFactor = currentWave - waveDefinitions.length + 1;
+
+    const waveData = {
+        standard: baseWave.standard || 5,
+        mirv: baseWave.mirv || 2,
+        stealth: baseWave.stealth || 2,
+        swarmer: baseWave.swarmer || 2,
+        flare: baseWave.flare || 1,
+        armored: baseWave.armored || 2,
+        delay: Math.max(45, baseWave.delay - waveFactor * 2), // Clamp delay to a minimum
+        isBossWave: false,
+    };
+
+    // --- Increase rocket counts based on the wave number ---
+    // Add a standard rocket every wave
+    waveData.standard += Math.floor(waveFactor * 1.5);
+
+    // Add an "elite" rocket (mirv or swarmer) every 2 waves
+    if (waveFactor > 0 && waveFactor % 2 === 0) {
+        if (Math.random() > 0.5) waveData.mirv++;
+        else waveData.swarmer++;
+    }
+
+    // Add a "specialist" rocket (stealth, armored, or flare) every 3 waves
+    if (waveFactor > 0 && waveFactor % 3 === 0) {
+        const rand = Math.random();
+        if (rand < 0.4) waveData.stealth++;
+        else if (rand < 0.8) waveData.armored++;
+        else waveData.flare++;
+    }
+    
+    // --- Introduce a boss wave every 5 waves in endless mode ---
+    if (waveFactor > 0 && waveFactor % 5 === 0) {
+        waveData.isBossWave = true;
+        waveData.bossType = 'hiveCarrier';
+    }
+    
+    return waveData;
+}
+
+
+/**
  * Starts the next wave of enemies.
  * @param {object} state - The current game state.
  * @param {HTMLCanvasElement} canvas - The game canvas.
  */
 export function startNextWave(state, canvas) {
     state.currentWave++;
-    const waveDef = waveDefinitions[Math.min(state.currentWave, waveDefinitions.length - 1)];
+    let waveDef;
+    
+    // Use predefined waves first, then switch to procedural generation
+    if (state.currentWave < waveDefinitions.length) {
+        waveDef = waveDefinitions[state.currentWave];
+    } else {
+        waveDef = generateProceduralWave(state.currentWave);
+    }
     
     state.boss = null;
     state.bossDefeated = false;
@@ -22,7 +78,10 @@ export function startNextWave(state, canvas) {
 
     if (waveDef.isBossWave) {
         if (waveDef.bossType === 'hiveCarrier') {
-            state.boss = new HiveCarrier(canvas.width);
+            // Scale boss health in endless mode
+            const waveFactor = state.currentWave - waveDefinitions.length + 1;
+            const healthMultiplier = (waveFactor > 0) ? 1 + (Math.floor(waveFactor / 5) * 0.75) : 1;
+            state.boss = new HiveCarrier(canvas.width, healthMultiplier);
         }
     } else {
         let spawnList = [];

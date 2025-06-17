@@ -4,10 +4,11 @@ import { Drone } from './rockets.js';
 
 // Boss Class for Hive Carrier
 export class HiveCarrier {
-    constructor(width) {
+    constructor(width, healthMultiplier = 1) {
         this.name = 'Hive Carrier';
-        this.health = config.bosses.hiveCarrier.health;
-        this.maxHealth = config.bosses.hiveCarrier.health;
+        // Apply health multiplier for scaling difficulty
+        this.maxHealth = Math.floor(config.bosses.hiveCarrier.health * healthMultiplier);
+        this.health = this.maxHealth;
         this.width = width;
         this.x = -200; // Start off-screen
         this.y = 150;
