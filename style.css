@@ -229,24 +229,35 @@ canvas {
 .modal-content {
     background: var(--background-start);
     border: 1px solid var(--border-highlight);
-    padding: 40px;
+    padding: 30px; /* Adjusted padding */
     border-radius: 12px;
     text-align: center;
     max-width: 800px;
     width: 90%;
     box-shadow: 0 0 30px rgba(0, 221, 255, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
     animation: fadeIn 0.5s ease-out;
-    /* ADDED for scrollability */
-    display: flex;
-    flex-direction: column;
     max-height: 95vh;
+    overflow-y: auto; /* THE FIX: The entire modal scrolls if content is too tall */
+    /* Custom scrollbar for modal */
+    scrollbar-width: thin;
+    scrollbar-color: var(--glow-color) transparent;
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+.modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.modal-content::-webkit-scrollbar-thumb {
+    background-color: var(--glow-color);
+    border-radius: 4px;
 }
 
 .modal-content h1 {
     font-size: 3em;
     color: var(--glow-color);
     margin-bottom: 20px;
-    flex-shrink: 0; /* Prevent header from shrinking */
     animation: textFlicker 3s infinite;
 }
 
@@ -259,7 +270,6 @@ canvas {
     margin-bottom: 20px;
     line-height: 1.7;
     font-size: 1.2em;
-    flex-shrink: 0; /* Prevent paragraphs from shrinking */
 }
 
 .end-wave-stats {
@@ -267,7 +277,6 @@ canvas {
     justify-content: space-around;
     flex-wrap: wrap;
     margin-bottom: 20px;
-    flex-shrink: 0;
 }
 
 .end-wave-stats p.game-over-stats,
@@ -301,7 +310,6 @@ p.prestige-points {
     box-shadow: 0 0 10px rgba(0, 221, 255, 0.3), inset 0 0 10px rgba(0, 221, 255, 0.2);
     pointer-events: all;
     margin-top: 20px;
-    flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .modal-button:hover:not(:disabled), .armory-button:hover:not(:disabled) {
@@ -340,24 +348,10 @@ p.prestige-points {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     margin-bottom: 20px;
-    overflow-y: auto;
-    flex-grow: 1;
-    padding: 15px;
+    padding: 5px; /* Add slight padding for content */
     text-align: left;
-    scrollbar-width: thin;
-    scrollbar-color: var(--glow-color) transparent;
 }
 
-.shop-grid::-webkit-scrollbar, .perk-grid::-webkit-scrollbar, .rocket-info-grid::-webkit-scrollbar {
-    width: 8px;
-}
-.shop-grid::-webkit-scrollbar-track, .perk-grid::-webkit-scrollbar-track, .rocket-info-grid::-webkit-scrollbar-track {
-    background: transparent;
-}
-.shop-grid::-webkit-scrollbar-thumb, .perk-grid::-webkit-scrollbar-thumb, .rocket-info-grid::-webkit-scrollbar-thumb {
-    background-color: var(--glow-color);
-    border-radius: 4px;
-}
 
 .shop-card, .perk-card {
     background: rgba(13, 17, 23, 0.9);
@@ -379,6 +373,7 @@ p.prestige-points {
     border-color: var(--glow-color);
     transform: translateY(-5px);
     box-shadow: 0 5px 25px rgba(0, 221, 255, 0.2);
+    z-index: 10; /* Bring hovered card above its siblings */
 }
 
 .shop-card h3 {
