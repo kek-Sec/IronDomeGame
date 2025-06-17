@@ -5,7 +5,7 @@
  */
 
 // --- Module Imports ---
-import { config } from './config.js';
+import { config, difficultySettings } from './config.js';
 import { random } from './utils.js';
 import { City } from './entities/structures.js';
 import * as UI from './ui.js';
@@ -44,6 +44,9 @@ function gameLoop(timestamp) {
 function resetAndStartGame(difficulty = 'normal') {
     state = getInitialState();
     state.difficulty = difficulty;
+    // Set starting coins based on the chosen difficulty
+    state.coins = difficultySettings[difficulty].startingCoins;
+    
     state.currentWave = -1; // Will be incremented to 0 by startNextWave
     createCities();
     startNextWave(state, canvas);

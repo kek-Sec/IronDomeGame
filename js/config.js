@@ -11,18 +11,24 @@ export const difficultySettings = {
         waveDelayMultiplier: 1.25,
         missileSizeMultiplier: 1.5,
         turretFireRateMultiplier: 0.8,
+        enemySpeedBonus: 0.85, // Enemies are slightly slower
+        startingCoins: 250,
     },
     normal: {
         name: 'Normal',
         waveDelayMultiplier: 1.0,
         missileSizeMultiplier: 1.25,
         turretFireRateMultiplier: 1.0,
+        enemySpeedBonus: 1.0, // Standard enemy speed
+        startingCoins: 150,
     },
     hard: {
         name: 'Hard',
-        waveDelayMultiplier: 0.7,
-        missileSizeMultiplier: 1.0,
-        turretFireRateMultiplier: 1.5,
+        waveDelayMultiplier: 0.6,          // Waves arrive much faster
+        missileSizeMultiplier: 0.9,        // Missiles are smaller and harder to hit
+        turretFireRateMultiplier: 1.75,    // Your turrets fire even slower
+        enemySpeedBonus: 1.2,              // Enemies are 20% faster
+        startingCoins: 100,                // Start with fewer resources
     }
 };
 

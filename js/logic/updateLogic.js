@@ -32,7 +32,10 @@ export function handleSpawning(state, width, height) {
     const difficulty = difficultySettings[state.difficulty];
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
     const currentWaveDelay = (waveDef.delay * difficulty.waveDelayMultiplier) / difficultyScale;
-    const speedMultiplier = (1 + (state.currentWave * 0.05)) * difficultyScale;
+    
+    // Apply the enemy speed bonus from difficulty settings
+    const speedBonus = difficulty.enemySpeedBonus || 1;
+    const speedMultiplier = (1 + (state.currentWave * 0.05)) * difficultyScale * speedBonus;
     
     state.waveRocketSpawn.timer++;
 

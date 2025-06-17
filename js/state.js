@@ -19,7 +19,7 @@ export function getInitialState() {
         gameState: 'START_SCREEN',
         difficulty: 'normal',
         score: perks.veteranCommander ? 500 : 0,
-        coins: perks.veteranCommander ? 250 : 150, // Players start with some coins
+        coins: 0, // Set later by main.js based on difficulty
         currentWave: 0,
         interceptorSpeed: config.initialInterceptorSpeed,
         blastRadius: config.initialBlastRadius,
