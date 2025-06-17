@@ -49,23 +49,61 @@ export function updateBossUI(boss) {
 
 export function showStartScreen(startGameCallback, showArmoryCallback) {
     modalContainer.style.display = 'flex';
-    let difficultyButtonsHTML = '<div class="upgrade-options">';
+    modalContent.classList.remove('armory');
+
+    let difficultyCardsHTML = '<div class="difficulty-card-grid">';
     for (const key in difficultySettings) {
-        difficultyButtonsHTML += `<button id="start-${key}" class="modal-button" data-difficulty="${key}">${difficultySettings[key].name}</button>`;
+        const diff = difficultySettings[key];
+        difficultyCardsHTML += `
+            <div class="difficulty-card" id="start-${key}" data-difficulty="${key}">
+                <h3>${diff.name}</h3>
+                <p>${diff.description}</p>
+                <div class="difficulty-summary">
+                    <span>Starts with ${diff.startingCoins} Coins</span>
+                </div>
+            </div>
+        `;
     }
-    difficultyButtonsHTML += '</div>';
-    modalContent.innerHTML = `<h1>IRON DOME</h1><p>Enemy rockets are attacking. Survive the waves and protect the bases.</p>${difficultyButtonsHTML}<button id="armory-button" class="armory-button">Armory</button>`;
+    difficultyCardsHTML += '</div>';
+
+    modalContent.innerHTML = `
+        <div class="start-screen-header">
+            <h1>IRON DOME</h1>
+            <button id="armory-button" class="armory-button">
+                <span class="armory-icon">🛡️</span> Armory
+            </button>
+        </div>
+        <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
+        ${difficultyCardsHTML}
+    `;
     
     for (const key in difficultySettings) {
         document.getElementById(`start-${key}`).addEventListener('click', (e) => {
-            startGameCallback(e.target.getAttribute('data-difficulty'));
+            let target = e.target;
+            while (target && !target.dataset.difficulty) {
+                target = target.parentElement;
+            }
+            if (target) {
+                startGameCallback(target.dataset.difficulty);
+            }
         });
     }
     document.getElementById('armory-button').addEventListener('click', showArmoryCallback);
 }
 
+const perkIcons = {
+    veteranCommander: '🏆',
+    advancedFortifications: '🧱',
+    rapidDeployment: '⚡',
+    efficientInterceptors: '💥',
+    surplusValue: '☢️',
+    extraMine: '💣'
+};
+
 export function showArmoryScreen(playerData) {
     modalContainer.style.display = 'flex';
+    modalContent.classList.add('armory');
+
     let perkHTML = '<div class="perk-grid">';
     for (const key in perks) {
         const perk = perks[key];
@@ -73,15 +111,18 @@ export function showArmoryScreen(playerData) {
         const canAfford = playerData.prestigePoints >= perk.cost;
 
         perkHTML += `
-            <div class="perk-card ${isUnlocked ? 'unlocked' : ''}">
-                <h3>${perk.name}</h3>
-                <p>${perk.description}</p>
+            <div class="perk-card ${isUnlocked ? 'unlocked' : ''} ${!canAfford && !isUnlocked ? 'unaffordable' : ''}">
+                <div class="perk-header">
+                    <div class="perk-icon">${perkIcons[key] || '⚙️'}</div>
+                    <h3>${perk.name}</h3>
+                </div>
+                <p class="perk-description">${perk.description}</p>
                 <button 
                     class="perk-button" 
                     id="perk-${key}" 
                     ${isUnlocked || !canAfford ? 'disabled' : ''}
                 >
-                    ${isUnlocked ? 'UNLOCKED' : `Cost: ${perk.cost}`}
+                    ${isUnlocked ? 'UNLOCKED' : `COST: ${perk.cost}`}
                 </button>
             </div>
         `;
@@ -89,8 +130,12 @@ export function showArmoryScreen(playerData) {
     perkHTML += '</div>';
     
     modalContent.innerHTML = `
-        <h1>ARMORY</h1>
-        <p class="prestige-points">Prestige Points: ${playerData.prestigePoints}</p>
+        <div class="armory-header">
+            <h1>ARMORY</h1>
+            <div class="prestige-points">
+                Prestige Points: <span>${playerData.prestigePoints}</span>
+            </div>
+        </div>
         ${perkHTML}
         <button id="back-to-menu-button" class="modal-button">Main Menu</button>
     `;
@@ -112,7 +157,7 @@ export function showArmoryScreen(playerData) {
             }
         }
     }
-    document.getElementById('back-to-menu-button').addEventListener('click', () => showStartScreen(() => location.reload(), () => showArmoryScreen(playerData)));
+    document.getElementById('back-to-menu-button').addEventListener('click', () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData)));
 }
 
 

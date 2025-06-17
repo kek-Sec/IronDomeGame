@@ -347,11 +347,6 @@ p.prestige-points {
      margin-bottom: 0;
 }
 
-p.prestige-points {
-    color: var(--prestige-color);
-    text-shadow: 0 0 8px var(--prestige-color);
-    margin-top: -20px;
-}
 
 /* --- Button Styling --- */
 .modal-button, .armory-button {
@@ -374,11 +369,11 @@ p.prestige-points {
     background-color: rgba(0, 221, 255, 0.2);
     color: white;
     box-shadow: 0 0 20px var(--glow-color), 0 0 30px var(--glow-color);
-    transform: scale(1.05);
+    transform: scale(1.02);
 }
 
 .modal-button:active:not(:disabled), .armory-button:active:not(:disabled) {
-    transform: scale(1.02);
+    transform: scale(1.0);
 }
 
 .modal-button:disabled, .armory-button:disabled {
@@ -399,16 +394,201 @@ p.prestige-points {
     animation: pulseButton 2.5s infinite ease-in-out;
 }
 
+/* --- HOME SCREEN & ARMORY --- */
+
+.start-screen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+p.start-screen-subtitle {
+    font-size: 1.2em;
+    margin: 10px 0 25px;
+    text-align: left;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
 .armory-button {
     border-color: var(--prestige-color);
     color: var(--prestige-color);
     background-image: linear-gradient(rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0));
     text-shadow: 0 0 8px var(--prestige-color);
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 215, 0, 0.2);
+    font-size: 1.2em;
+    padding: 12px 24px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.armory-icon {
+    font-size: 1.5em;
+    filter: drop-shadow(0 0 5px var(--prestige-color));
+}
+
+.difficulty-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.difficulty-card {
+    border: 1px solid var(--border-color);
+    padding: 25px;
+    border-radius: 8px;
+    text-align: left;
+    background: linear-gradient(145deg, rgba(30, 36, 42, 0.9), rgba(13, 17, 23, 0.9));
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.difficulty-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--glow-color);
+    box-shadow: 0 8px 30px rgba(0, 221, 255, 0.2);
+}
+.difficulty-card h3 {
+    color: var(--glow-color);
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+.difficulty-card p {
+    font-size: 1em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+.difficulty-summary {
+    text-align: right;
+    font-weight: bold;
+    color: var(--prestige-color);
 }
 
 
-/* --- SHOP & ARMORY UI STYLES --- */
+/* ARMORY STYLES */
+.modal-content.armory {
+    border-color: var(--prestige-color);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
+}
+.modal-content.armory h1 {
+    color: var(--prestige-color);
+}
+.modal-content.armory .modal-button {
+    border-color: var(--prestige-color);
+    color: var(--prestige-color);
+    text-shadow: 0 0 8px var(--prestige-color);
+}
+.modal-content.armory .modal-button:hover:not(:disabled) {
+    background-color: rgba(255, 215, 0, 0.2);
+    color: white;
+    box-shadow: 0 0 20px var(--prestige-color), 0 0 30px var(--prestige-color);
+}
+
+.armory-header {
+    margin-bottom: 20px;
+}
+
+p.prestige-points, .prestige-points {
+    font-size: 1.4em;
+    font-weight: normal;
+    color: var(--text-color);
+    margin: 10px 0;
+}
+p.prestige-points span, .prestige-points span {
+    color: var(--prestige-color);
+    text-shadow: 0 0 8px var(--prestige-color);
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.perk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    text-align: left;
+}
+
+.perk-card {
+    background: linear-gradient(145deg, rgba(30, 36, 42, 0.9), rgba(13, 17, 23, 0.9));
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s ease-in-out;
+}
+.perk-header {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.perk-icon {
+    font-size: 2em;
+    filter: drop-shadow(0 0 4px var(--prestige-color));
+}
+.perk-card h3 {
+    color: var(--prestige-color);
+    font-size: 1.2em;
+}
+.perk-description {
+    font-size: 0.9em;
+    line-height: 1.5;
+    opacity: 0.8;
+    flex-grow: 1;
+    margin-bottom: 15px;
+}
+.perk-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--prestige-color);
+    background: transparent;
+    color: var(--prestige-color);
+    transition: all 0.2s ease-in-out;
+    border-radius: 5px;
+}
+.perk-button:hover:not(:disabled) {
+    background: var(--prestige-color);
+    color: var(--background-start);
+}
+.perk-button:disabled {
+    background: transparent;
+    border-color: var(--disabled-color);
+    color: var(--disabled-color);
+    cursor: not-allowed;
+}
+
+.perk-card.unaffordable .perk-header,
+.perk-card.unaffordable .perk-description {
+    opacity: 0.5;
+}
+
+.perk-card.unlocked {
+    border: 1px solid var(--threat-low);
+}
+.perk-card.unlocked .perk-header h3 {
+    color: var(--threat-low);
+}
+.perk-card.unlocked .perk-icon {
+    filter: drop-shadow(0 0 4px var(--threat-low));
+}
+.perk-card.unlocked .perk-button {
+    background: var(--threat-low);
+    border-color: var(--threat-low);
+    color: var(--background-start);
+    font-weight: bold;
+    cursor: default;
+}
+
+
+/* --- SHOP STYLES --- */
 .shop-container {
     width: 100%;
     text-align: left;
@@ -428,7 +608,7 @@ p.prestige-points {
     text-align: left;
 }
 
-.shop-grid, .perk-grid, .rocket-info-grid {
+.shop-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
@@ -436,7 +616,7 @@ p.prestige-points {
 }
 
 
-.shop-card, .perk-card {
+.shop-card {
     background: linear-gradient(145deg, rgba(30, 36, 42, 0.9), rgba(13, 17, 23, 0.9));
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -589,43 +769,6 @@ p.prestige-points {
     display: block;
 }
 
-/* ARMORY PERK STYLES */
-.perk-card {
-    border-color: var(--prestige-color);
-}
-.perk-card.unlocked {
-    background: rgba(255, 215, 0, 0.1);
-}
-.perk-card h3 {
-    color: var(--prestige-color);
-    font-size: 1.2em;
-    margin-bottom: 10px;
-}
-.perk-card p {
-    flex-grow: 1;
-}
-.perk-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 15px;
-    font-size: 1em;
-    font-family: 'Orbitron', sans-serif;
-    cursor: pointer;
-    border: 1px solid var(--prestige-color);
-    background: transparent;
-    color: var(--prestige-color);
-    transition: all 0.2s ease-in-out;
-}
-.perk-button:hover:not(:disabled) {
-    background: var(--prestige-color);
-    color: var(--background-start);
-}
-.perk-button:disabled {
-    background: var(--disabled-color);
-    border-color: var(--disabled-color);
-    color: #222;
-    cursor: not-allowed;
-}
 
 /* Rocket Info Bestiary */
 .rocket-info-card {
@@ -739,7 +882,7 @@ p.prestige-points {
         font-size: 1em;
     }
 
-    .shop-grid, .perk-grid, .rocket-info-grid {
+    .shop-grid, .perk-grid, .rocket-info-grid, .difficulty-card-grid {
         grid-template-columns: 1fr;
     }
 

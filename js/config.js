@@ -7,7 +7,8 @@
 // Difficulty settings to adjust game balance.
 export const difficultySettings = {
     easy: {
-        name: 'Easy',
+        name: 'Recruit',
+        description: 'A balanced introduction to the battlefield. Enemies are slightly slower and you start with more funding.',
         waveDelayMultiplier: 1.25,
         missileSizeMultiplier: 1.5,
         turretFireRateMultiplier: 0.8,
@@ -15,7 +16,8 @@ export const difficultySettings = {
         startingCoins: 250,
     },
     normal: {
-        name: 'Normal',
+        name: 'Veteran',
+        description: 'The standard combat scenario. A true test of your defensive capabilities against a determined foe.',
         waveDelayMultiplier: 1.0,
         missileSizeMultiplier: 1.25,
         turretFireRateMultiplier: 1.0,
@@ -23,7 +25,8 @@ export const difficultySettings = {
         startingCoins: 150,
     },
     hard: {
-        name: 'Hard',
+        name: 'Elite',
+        description: 'For seasoned commanders only. The enemy is faster, smarter, and relentless. Expect smaller targets and less time to react.',
         waveDelayMultiplier: 0.6,          // Waves arrive much faster
         missileSizeMultiplier: 0.9,        // Missiles are smaller and harder to hit
         turretFireRateMultiplier: 1.75,    // Your turrets fire even slower
