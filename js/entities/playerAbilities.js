@@ -2,6 +2,8 @@ import { random } from '../utils.js';
 import { Rocket } from './rockets.js';
 import { HiveCarrier } from './bosses.js';
 
+// ... (Interceptor, Flare, HomingMine, EMP classes are unchanged)
+
 // Represents the player's interceptor missile
 export class Interceptor {
     constructor(startX, startY, target, speed, blastRadius, type = 'standard') {
@@ -85,17 +87,20 @@ export class TracerRound {
     constructor(startX, startY, angle, speed) {
         this.x = startX; this.y = startY;
         this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
-        this.radius = 2; this.life = 60; this.color = 'rgba(255, 100, 0, 1)'; this.trail = [];
+        this.radius = 2;
+        this.life = 80; // Increased life to match higher speed
+        this.color = 'rgba(255, 100, 0, 1)';
+        this.trail = [];
     }
     update() {
-        this.trail.push({ x: this.x, y: this.y }); if (this.trail.length > 5) this.trail.shift();
+        this.trail.push({ x: this.x, y: this.y }); if (this.trail.length > 8) this.trail.shift();
         this.x += this.vx; this.y += this.vy; this.life--;
     }
     draw(ctx) {
         if (this.trail.length > 0) {
              ctx.beginPath(); ctx.moveTo(this.trail[0].x, this.trail[0].y);
              for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
-             ctx.strokeStyle = 'rgba(255, 100, 0, 0.5)'; ctx.lineWidth = this.radius * 2; ctx.stroke();
+             ctx.strokeStyle = 'rgba(255, 165, 0, 0.6)'; ctx.lineWidth = this.radius * 2; ctx.stroke();
         }
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = this.color; ctx.shadowColor = 'red'; ctx.shadowBlur = 10;
@@ -121,20 +126,19 @@ export class HomingMine {
             for (const rocket of rockets) {
                 if (Math.hypot(this.x - rocket.x, this.y - rocket.y) < this.range) {
                     this.isLaunching = true;
-                    this.target = rocket;
-                    this.vy = -8; // Initial launch speed
-                    break;
+                    // Homing mine now just launches straight up to detonate, it doesn't seek
+                    this.vy = -12; 
+                    return true; // Detonate
                 }
             }
         }
+        
+        // This logic is mostly deprecated in favor of immediate AOE detonation
         if (this.isLaunching) {
             this.y += this.vy;
-            this.vy *= 1.05; // Accelerate
-            if (this.target && Math.hypot(this.x - this.target.x, this.y - this.target.y) < this.radius + this.target.radius) {
-                return true; // Hit target
-            }
+            return this.y < this.y - this.range; // Detonate after traveling a certain distance
         }
-        return this.y < 0; // Destroyed if it goes off-screen
+        return false;
     }
     draw(ctx) {
         ctx.save();
@@ -146,7 +150,7 @@ export class HomingMine {
             ctx.fillStyle = '#424242'; ctx.fillRect(this.x - 10, this.y - 5, 20, 5);
             ctx.beginPath(); ctx.arc(this.x, this.y - 5, this.radius, Math.PI, 0);
             ctx.fillStyle = '#616161'; ctx.fill();
-            if (this.isArmed && Math.floor(this.armingTime / 15) % 2 === 0) {
+            if (this.isArmed && Math.floor(Date.now() / 200) % 2 === 0) {
                 ctx.beginPath(); ctx.arc(this.x, this.y - 8, 3, 0, Math.PI * 2);
                 ctx.fillStyle = '#e53935'; ctx.fill();
                 ctx.shadowColor = '#e53935'; ctx.shadowBlur = 10; ctx.fill();

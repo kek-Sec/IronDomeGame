@@ -73,61 +73,138 @@ export class City {
     repair() { this.isDestroyed = false; }
 }
 
-// Represents an automated defense turret
+// Represents an automated defense turret (C-RAM)
 export class AutomatedTurret {
     constructor(x, y, range, fireRate) {
-        this.x = x; this.y = y; this.range = range;
-        this.baseFireRate = fireRate; this.fireRate = fireRate;
-        this.fireCooldown = 0; this.angle = -Math.PI / 2;
-        this.isFiring = false; this.burstsLeft = 0;
-        this.timeInBurst = 0; this.shotsPerBurst = 5;
-        this.delayBetweenShots = 4;
+        this.x = x;
+        this.y = y;
+        this.range = range;
+        this.fireRate = fireRate; // Now used as cooldown between targets
+        this.fireCooldown = 0;
+        this.angle = -Math.PI / 2;
+        this.radarAngle = 0;
+        this.currentTarget = null;
+        this.isFiring = false;
+        this.shotTimer = 0;
+        this.delayBetweenShots = 2; // Fires much faster
     }
+
     update(rockets) {
-        if (this.fireCooldown > 0) { this.fireCooldown--; }
-        const newTracers = []; const target = this.findTarget(rockets);
-        if (target) {
-            this.angle = Math.atan2(target.y - this.y, target.x - this.x);
-            if (!this.isFiring && this.fireCooldown <= 0) {
-                this.isFiring = true; this.burstsLeft = this.shotsPerBurst;
-                this.timeInBurst = 0; this.fireCooldown = this.fireRate;
+        const tracerSpeed = 25; // Faster projectiles
+        const newTracers = [];
+        if (this.fireCooldown > 0) this.fireCooldown--;
+
+        // Target validation: Check if current target is still valid
+        if (this.currentTarget) {
+            const targetExists = rockets.some(r => r.id === this.currentTarget.id);
+            const targetInRange = targetExists && Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y) < this.range;
+            if (!targetExists || !targetInRange) {
+                this.currentTarget = null; // Target is gone, find a new one
+                this.isFiring = false;
             }
         }
-        if (this.isFiring) {
-            this.timeInBurst++;
-            if (this.timeInBurst % this.delayBetweenShots === 0 && this.burstsLeft > 0) {
-                const tracerSpeed = 15; const fireAngle = this.angle + (random(-0.5, 0.5) * 0.05);
+
+        // Target acquisition: If no target, find one
+        if (!this.currentTarget && this.fireCooldown <= 0) {
+            this.isFiring = false;
+            this.currentTarget = this.findTarget(rockets);
+            if(this.currentTarget) {
+                this.fireCooldown = this.fireRate; // Cooldown before switching to another target
+            }
+        }
+
+        // Firing logic
+        if (this.currentTarget) {
+            // Predictive Targeting
+            const dist = Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y);
+            const timeToImpact = dist / tracerSpeed;
+            const predictedX = this.currentTarget.x + this.currentTarget.vx * timeToImpact;
+            const predictedY = this.currentTarget.y + this.currentTarget.vy * timeToImpact;
+
+            // Aim at the predicted position
+            this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
+            
+            this.isFiring = true;
+            this.shotTimer++;
+            if (this.shotTimer % this.delayBetweenShots === 0) {
+                // Add slight inaccuracy
+                const fireAngle = this.angle + (random(-0.5, 0.5) * 0.02);
                 newTracers.push(new TracerRound(this.x, this.y, fireAngle, tracerSpeed));
-                this.burstsLeft--;
             }
-            if (this.burstsLeft <= 0) { this.isFiring = false; }
+        } else {
+            // If no target, scan with radar
+            this.radarAngle += 0.02;
         }
+
         return newTracers;
     }
+
     findTarget(rockets) {
         const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
         if (inRange.length === 0) return null;
+
+        // Prioritize more dangerous rockets
         const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv' || r.type === 'flare' || r.type === 'armored');
-        if (highPriority.length > 0) return highPriority[0];
+        if (highPriority.length > 0) {
+             return highPriority.sort((a, b) => a.y - b.y)[0]; // Target the highest one
+        }
+
+        // Otherwise, target the closest one
         return inRange.reduce((closest, current) => {
             const closestDist = Math.hypot(this.x - closest.x, this.y - closest.y);
             const currentDist = Math.hypot(this.x - current.x, this.y - current.y);
             return currentDist < closestDist ? current : closest;
         });
     }
+
     draw(ctx) {
-        ctx.save(); ctx.translate(this.x, this.y);
-        ctx.fillStyle = '#6c757d'; ctx.beginPath();
-        ctx.moveTo(-15, 10); ctx.lineTo(15, 10); ctx.lineTo(10, 0); ctx.lineTo(-10, 0);
-        ctx.closePath(); ctx.fill();
-        ctx.rotate(this.angle);
-        if(this.isFiring && this.burstsLeft > 0 && this.timeInBurst % this.delayBetweenShots < 2) {
-            ctx.fillStyle = 'rgba(255, 200, 0, 0.8)'; ctx.beginPath();
-            ctx.moveTo(20, 0); ctx.lineTo(35, -5); ctx.lineTo(35, 5);
-            ctx.closePath(); ctx.fill();
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Base
+        ctx.fillStyle = '#6c757d';
+        ctx.beginPath();
+        ctx.moveTo(-15, 10);
+        ctx.lineTo(15, 10);
+        ctx.lineTo(10, 0);
+        ctx.lineTo(-10, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Radar dish (scans when not firing)
+        if (!this.isFiring) {
+            ctx.save();
+            ctx.rotate(this.radarAngle);
+            ctx.fillStyle = '#adb5bd';
+            ctx.fillRect(0, -1.5, 15, 3);
+            ctx.restore();
         }
-        ctx.fillStyle = '#adb5bd'; ctx.fillRect(0, -3, 20, 6);
-        ctx.fillStyle = '#00ddff'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+
+        // Rotate turret assembly
+        ctx.rotate(this.angle);
+
+        // Muzzle flash (more intense)
+        if (this.isFiring) {
+            ctx.fillStyle = `rgba(255, ${random(180,220)}, 0, ${random(0.5,1)})`;
+            ctx.beginPath();
+            const flashLength = random(20, 40);
+            const flashWidth = random(8, 12);
+            ctx.moveTo(20, 0);
+            ctx.lineTo(20 + flashLength, -flashWidth / 2);
+            ctx.lineTo(20 + flashLength, flashWidth / 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Gun barrel
+        ctx.fillStyle = '#495057';
+        ctx.fillRect(0, -4, 25, 8);
+
+        // Turret pivot
+        ctx.fillStyle = '#00ddff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
     }
 }

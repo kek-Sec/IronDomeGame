@@ -5,6 +5,7 @@ import { HiveCarrier } from '../entities/bosses.js';
 import { createExplosion, triggerScreenShake } from '../utils.js';
 import { random } from '../utils.js';
 
+// findTargetedRocket, handleSpawning, updateBoss, updateRockets, updateFlares, updateTurrets - (unchanged from previous correct version)
 export function findTargetedRocket(state) {
     let closestDist = Infinity;
     state.targetedRocket = null;
@@ -79,8 +80,7 @@ export function updateRockets(state, width, height) {
     for (let i = state.rockets.length - 1; i >= 0; i--) {
         const rocket = state.rockets[i];
 
-        // --- ROCKET UPDATE (THE FIX) ---
-        // FlareRockets have a special update method that requires the flares array.
+        // --- ROCKET UPDATE ---
         if (rocket.type === 'flare') {
             rocket.update(state.flares); 
         } else {
@@ -88,22 +88,18 @@ export function updateRockets(state, width, height) {
         }
 
         // --- SAFEGUARDS & REMOVAL LOGIC ---
-        
-        // 1. Lifetime Safeguard: Remove rockets that have been alive for too long
         if (rocket.life > config.rocketMaxLifetime) {
             console.warn('Safeguard triggered: Removed rocket due to max lifetime.', rocket);
             state.rockets.splice(i, 1);
             continue; 
         }
 
-        // 2. Off-Screen Safeguard: Remove rockets that are out of bounds
         const bounds = rocket.radius;
         if (rocket.y >= height || rocket.x < -bounds || rocket.x > width + bounds) {
             state.rockets.splice(i, 1);
             continue;
         }
 
-        // 3. City Collision
         let hitCity = false;
         for (const city of state.cities) {
             if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
@@ -121,7 +117,7 @@ export function updateRockets(state, width, height) {
             continue;
         }
 
-        // --- ROCKET BEHAVIOR LOGIC (e.g., splitting) ---
+        // --- ROCKET BEHAVIOR LOGIC ---
         if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit) {
             state.rockets.push(...rocket.split());
             state.rockets.splice(i, 1);
@@ -178,8 +174,11 @@ export function updateTracerRounds(state) {
             const rocket = state.rockets[j];
             if (Math.hypot(tracer.x - rocket.x, tracer.y - rocket.y) < tracer.radius + rocket.radius) {
                 let isDestroyed = true;
+                // C-RAM rounds are now armor-piercing
+                const damage = rocket.type === 'armored' ? 2 : 1;
+
                 if (typeof rocket.takeDamage === 'function') {
-                    isDestroyed = rocket.takeDamage(1);
+                    isDestroyed = rocket.takeDamage(damage);
                 }
                 
                 state.tracerRounds.splice(i, 1);
