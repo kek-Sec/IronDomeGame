@@ -25,7 +25,7 @@ export function updateTopUI(state) {
     scoreEl.textContent = state.score;
     coinsEl.textContent = state.coins;
     waveEl.textContent = state.currentWave + 1;
-    
+
     // Ensure the pause button is only visible during active gameplay states
     if (state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED') {
         pauseButton.style.display = 'flex';
@@ -76,7 +76,7 @@ export function showStartScreen(startGameCallback, showArmoryCallback) {
         <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
         ${difficultyCardsHTML}
     `;
-    
+
     for (const key in difficultySettings) {
         document.getElementById(`start-${key}`).addEventListener('click', (e) => {
             let target = e.target;
@@ -117,9 +117,9 @@ export function showArmoryScreen(playerData) {
                     <h3>${perk.name}</h3>
                 </div>
                 <p class="perk-description">${perk.description}</p>
-                <button 
-                    class="perk-button" 
-                    id="perk-${key}" 
+                <button
+                    class="perk-button"
+                    id="perk-${key}"
                     ${isUnlocked || !canAfford ? 'disabled' : ''}
                 >
                     ${isUnlocked ? 'UNLOCKED' : `COST: ${perk.cost}`}
@@ -128,7 +128,7 @@ export function showArmoryScreen(playerData) {
         `;
     }
     perkHTML += '</div>';
-    
+
     modalContent.innerHTML = `
         <div class="armory-header">
             <h1>ARMORY</h1>
@@ -163,11 +163,11 @@ export function showArmoryScreen(playerData) {
 
 export function showBetweenWaveScreen(state, callbacks, config) {
     const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks } = state;
-    const { 
-        upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback, 
-        upgradeSpeedCallback, upgradeBlastCallback, upgradeBaseArmorCallback, 
-        upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback, 
-        upgradeHomingMineCallback, upgradeFieldReinforcementCallback, upgradeTargetingScramblerCallback 
+    const {
+        upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback,
+        upgradeSpeedCallback, upgradeBlastCallback, upgradeBaseArmorCallback,
+        upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback,
+        upgradeHomingMineCallback, upgradeFieldReinforcementCallback, upgradeTargetingScramblerCallback
     } = callbacks;
     const { upgradeCosts, maxTurrets } = config;
 
@@ -228,7 +228,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
                 const affordable = coins >= currentCost;
                 const disabled = !affordable || !item.available;
                 let statusText = `<div class="cost">Cost: ${currentCost} <span class="coin-icon"></span></div>`;
-                
+
                 if (item.maxed) {
                     statusText = `<div class="cost maxed-out">MAXED</div>`;
                 } else if (item.id === 'targetingScrambler' && state.scramblerActive) {
@@ -270,19 +270,27 @@ export function showBetweenWaveScreen(state, callbacks, config) {
         </div>
     `;
 
-    // Add event listeners for all shop items
-    document.getElementById('shop-speed').addEventListener('click', upgradeSpeedCallback);
-    document.getElementById('shop-blast').addEventListener('click', upgradeBlastCallback);
-    document.getElementById('shop-turret').addEventListener('click', upgradeTurretCallback);
-    document.getElementById('shop-turretSpeed').addEventListener('click', upgradeTurretSpeedCallback);
-    document.getElementById('shop-turretRange').addEventListener('click', upgradeTurretRangeCallback);
-    document.getElementById('shop-baseArmor').addEventListener('click', upgradeBaseArmorCallback);
-    document.getElementById('shop-nuke').addEventListener('click', upgradeNukeCallback);
-    document.getElementById('shop-homingMine').addEventListener('click', upgradeHomingMineCallback);
-    document.getElementById('shop-fieldReinforcement').addEventListener('click', upgradeFieldReinforcementCallback);
-    document.getElementById('shop-targetingScrambler').addEventListener('click', upgradeTargetingScramblerCallback);
-    document.getElementById('shop-repair').addEventListener('click', upgradeRepairCallback);
-    document.getElementById('next-wave-button').addEventListener('click', nextWaveCallback);
+    // Helper function to safely add event listeners
+    function addListenerIfPresent(id, callback) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', callback);
+        }
+    }
+
+    // Safely add event listeners for all potential shop items
+    addListenerIfPresent('shop-speed', upgradeSpeedCallback);
+    addListenerIfPresent('shop-blast', upgradeBlastCallback);
+    addListenerIfPresent('shop-turret', upgradeTurretCallback);
+    addListenerIfPresent('shop-turretSpeed', upgradeTurretSpeedCallback);
+    addListenerIfPresent('shop-turretRange', upgradeTurretRangeCallback);
+    addListenerIfPresent('shop-baseArmor', upgradeBaseArmorCallback);
+    addListenerIfPresent('shop-nuke', upgradeNukeCallback);
+    addListenerIfPresent('shop-homingMine', upgradeHomingMineCallback);
+    addListenerIfPresent('shop-fieldReinforcement', upgradeFieldReinforcementCallback);
+    addListenerIfPresent('shop-targetingScrambler', upgradeTargetingScramblerCallback);
+    addListenerIfPresent('shop-repair', upgradeRepairCallback);
+    addListenerIfPresent('next-wave-button', nextWaveCallback);
 }
 
 export function showRocketInfoScreen(closeCallback) {
@@ -308,8 +316,24 @@ export function showRocketInfoScreen(closeCallback) {
         ${rocketHTML}
         <button id="close-info-button" class="modal-button">CLOSE</button>
     `;
-    
-    document.getElementById('close-info-button').addEventListener('click', closeCallback);
+
+    // --- FIX STARTS HERE ---
+    // This function will handle closing the modal and removing the background click listener
+    const cleanupAndClose = () => {
+        modalContainer.removeEventListener('click', backgroundClickHandler);
+        closeCallback();
+    };
+
+    // This function checks if the click was on the background itself
+    const backgroundClickHandler = (e) => {
+        if (e.target === modalContainer) {
+            cleanupAndClose();
+        }
+    };
+
+    document.getElementById('close-info-button').addEventListener('click', cleanupAndClose);
+    modalContainer.addEventListener('click', backgroundClickHandler);
+    // --- FIX ENDS HERE ---
 }
 
 
