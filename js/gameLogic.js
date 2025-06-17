@@ -49,6 +49,19 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     updateTracerRounds(state);
     updateHomingMines(state);
     updateParticles(state);
+    
+    // Update new visual effects
+    for (let i = state.flashes.length - 1; i >= 0; i--) {
+        const flash = state.flashes[i];
+        flash.update();
+        if (flash.alpha <= 0) state.flashes.splice(i, 1);
+    }
+    for (let i = state.shockwaves.length - 1; i >= 0; i--) {
+        const shockwave = state.shockwaves[i];
+        shockwave.update();
+        if (shockwave.alpha <= 0) state.shockwaves.splice(i, 1);
+    }
+
     state.empPowerUps.forEach((emp, i) => {
         emp.update();
         if (emp.life <= 0) state.empPowerUps.splice(i, 1);

@@ -2,10 +2,11 @@ import { config, getWaveDefinition, difficultySettings } from '../config.js';
 import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredRocket } from '../entities/rockets.js';
 import { EMP } from '../entities/playerAbilities.js';
 import { HiveCarrier } from '../entities/bosses.js';
-import { createExplosion, triggerScreenShake } from '../utils.js';
+import { createAdvancedExplosion, triggerScreenShake } from '../utils.js';
 import { random } from '../utils.js';
+import { Flash } from '../entities/effects.js';
 
-// findTargetedRocket, handleSpawning, updateBoss, updateRockets, updateFlares, updateTurrets - (unchanged from previous correct version)
+// findTargetedRocket, handleSpawning, updateBoss, updateFlares, updateTurrets - (unchanged from previous correct version)
 export function findTargetedRocket(state) {
     let closestDist = Infinity;
     state.targetedRocket = null;
@@ -81,11 +82,7 @@ export function updateRockets(state, width, height) {
         const rocket = state.rockets[i];
 
         // --- ROCKET UPDATE ---
-        if (rocket.type === 'flare') {
-            rocket.update(state.flares); 
-        } else {
-            rocket.update(); 
-        }
+        rocket.update();
 
         // --- SAFEGUARDS & REMOVAL LOGIC ---
         if (rocket.life > config.rocketMaxLifetime) {
@@ -107,7 +104,7 @@ export function updateRockets(state, width, height) {
                 else { city.isDestroyed = true; }
                 
                 hitCity = true;
-                createExplosion(state, rocket.x, rocket.y, 80, 0);
+                createAdvancedExplosion(state, rocket.x, rocket.y);
                 triggerScreenShake(state, 15, 30);
                 break; 
             }
@@ -158,11 +155,11 @@ export function updateTracerRounds(state) {
             state.score += 10;
             state.coins += 10;
             state.tracerRounds.splice(i, 1);
-            createExplosion(state, tracer.x, tracer.y, 10, 30);
-             if (isDestroyed) {
+            state.flashes.push(new Flash(tracer.x, tracer.y, 20, '255, 255, 255'));
+            if (isDestroyed) {
                 state.score += config.bosses.hiveCarrier.points;
                 state.coins += config.bosses.hiveCarrier.points;
-                createExplosion(state, state.boss.x, state.boss.y, 500, 0);
+                createAdvancedExplosion(state, state.boss.x, state.boss.y);
                 triggerScreenShake(state, 50, 120);
                 state.boss = null;
                 state.bossDefeated = true;
@@ -174,7 +171,6 @@ export function updateTracerRounds(state) {
             const rocket = state.rockets[j];
             if (Math.hypot(tracer.x - rocket.x, tracer.y - rocket.y) < tracer.radius + rocket.radius) {
                 let isDestroyed = true;
-                // C-RAM rounds are now armor-piercing
                 const damage = rocket.type === 'armored' ? 2 : 1;
 
                 if (typeof rocket.takeDamage === 'function') {
@@ -182,7 +178,6 @@ export function updateTracerRounds(state) {
                 }
                 
                 state.tracerRounds.splice(i, 1);
-                createExplosion(state, tracer.x, tracer.y, 10, 30);
                 
                 if (isDestroyed) {
                     let points = 0;
@@ -196,7 +191,10 @@ export function updateTracerRounds(state) {
                     state.score += points;
                     state.coins += points;
                     state.rockets.splice(j, 1);
-                    createExplosion(state, rocket.x, rocket.y, 40, 0);
+                    createAdvancedExplosion(state, rocket.x, rocket.y);
+                } else {
+                    // Create a small impact flash if not destroyed
+                    state.flashes.push(new Flash(tracer.x, tracer.y, 20, '255, 255, 255'));
                 }
                 break; 
             }
@@ -209,20 +207,17 @@ export function updateInterceptors(state, width) {
         const interceptor = state.interceptors[i];
         interceptor.update(state.rockets, state.flares, state.boss);
 
-        // Check for detonation
         let detonated = false;
         if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width) {
             state.interceptors.splice(i, 1);
             continue;
         }
 
-        // Perk: Efficient Interceptors
         let damage = interceptor.type === 'nuke' ? 100 : 3;
         if (state.activePerks.efficientInterceptors && Math.random() < 0.10) {
-            damage *= 3; // Critical Hit!
+            damage *= 3;
         }
         
-        // --- Boss Collision ---
         if (state.boss && Math.hypot(interceptor.x - state.boss.x, interceptor.y - state.boss.y) < state.boss.radius) {
             const isDestroyed = state.boss.takeDamage(damage);
             state.score += damage * 10;
@@ -231,14 +226,13 @@ export function updateInterceptors(state, width) {
             if (isDestroyed) {
                 state.score += config.bosses.hiveCarrier.points;
                 state.coins += config.bosses.hiveCarrier.points;
-                createExplosion(state, state.boss.x, state.boss.y, 500, 0);
+                createAdvancedExplosion(state, state.boss.x, state.boss.y);
                 triggerScreenShake(state, 50, 120);
                 state.boss = null;
                 state.bossDefeated = true;
             }
         }
 
-        // --- Flare Collision ---
         if (!detonated) {
             for (let f = state.flares.length - 1; f >= 0; f--) {
                 const flare = state.flares[f];
@@ -250,7 +244,6 @@ export function updateInterceptors(state, width) {
             }
         }
 
-        // --- Rocket Collision ---
         if (!detonated) {
             for (let j = state.rockets.length - 1; j >= 0; j--) {
                 const rocket = state.rockets[j];
@@ -274,15 +267,13 @@ export function updateInterceptors(state, width) {
                         state.rockets.splice(j, 1);
                     }
                     detonated = true;
-                    break; // Interceptor can only hit one rocket directly
+                    break;
                 }
             }
         }
         
-        // --- Handle Detonation ---
         if(detonated) {
-            createExplosion(state, interceptor.x, interceptor.y, interceptor.blastRadius, 200);
-            // NUKE BUFF: Trigger EMP effect
+            createAdvancedExplosion(state, interceptor.x, interceptor.y);
             if (interceptor.type === 'nuke') {
                 state.empActiveTimer = config.nukeEmpDuration;
                 state.empShockwave = { radius: 0, alpha: 1 };
@@ -296,16 +287,13 @@ export function updateInterceptors(state, width) {
 export function updateHomingMines(state) {
     for (let i = state.homingMines.length - 1; i >= 0; i--) {
         const mine = state.homingMines[i];
-        // update returns true if it's time to detonate
         if (mine.update(state.rockets)) { 
-            createExplosion(state, mine.x, mine.y, config.homingMineDetonationRadius, 30);
+            createAdvancedExplosion(state, mine.x, mine.y);
             triggerScreenShake(state, 10, 20);
 
-            // HOMING MINE BUFF: AOE Damage
             for (let j = state.rockets.length - 1; j >= 0; j--) {
                 const rocket = state.rockets[j];
                 if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
-                    // All rockets in radius are destroyed
                     let points = 0;
                     if (rocket.type === 'standard') points = config.rocketPoints;
                     else if (rocket.type === 'mirv') points = config.mirvPoints;

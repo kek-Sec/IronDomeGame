@@ -84,5 +84,12 @@ export function draw(ctx, state, width, height) {
     state.rockets.forEach(r => r.draw(ctx));
     state.interceptors.forEach(i => i.draw(ctx));
     state.particles.forEach(p => p.draw(ctx));
+    
+    // Draw new visual effects
+    ctx.globalCompositeOperation = 'lighter'; // Additive blending for bright effects
+    state.flashes.forEach(f => f.draw(ctx));
+    ctx.globalCompositeOperation = 'source-over'; // Reset blending mode
+    state.shockwaves.forEach(s => s.draw(ctx));
+    
     ctx.restore();
 }

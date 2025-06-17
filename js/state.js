@@ -34,6 +34,9 @@ export function getInitialState() {
         empPowerUps: [],
         flares: [],
         boss: null,
+        // NEW: Visual Effects Arrays
+        flashes: [],
+        shockwaves: [],
 
         // Flags & Timers
         bossDefeated: false,
@@ -60,7 +63,7 @@ export function getInitialState() {
         homingMinesAvailable: perks.extraMine ? 1 : 0,
         firstUpgradePurchased: false, // For Rapid Deployment perk
         scramblerActive: false, // For Targeting Scrambler upgrade
-        multishotLevel: 0, // Replaced blastRadius
+        multishotLevel: 0,
         
         // Persistent Data Reference
         playerData: playerData, 

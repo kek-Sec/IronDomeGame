@@ -97,9 +97,17 @@ export class ArmoredRocket extends Rocket {
         super(undefined, undefined, random(-0.5, 0.5), random(1, 1.5), width, sizeMultiplier * 1.5, speedMultiplier * 0.7);
         this.type = 'armored'; this.health = 3; this.maxHealth = 3;
         this.color = '#c0c0c0'; this.trailColor = 'rgba(192, 192, 192, 0.5)';
+        this.hitFlashTimer = 0; // NEW: Timer for hit flash effect
+    }
+    update() {
+        super.update();
+        if (this.hitFlashTimer > 0) {
+            this.hitFlashTimer--;
+        }
     }
     takeDamage(amount) {
         this.health -= amount;
+        this.hitFlashTimer = 10; // Activate flash on hit
         return this.health <= 0;
     }
     draw(ctx) {
@@ -122,6 +130,15 @@ export class ArmoredRocket extends Rocket {
         ctx.strokeStyle = '#212529';
         ctx.lineWidth = 2;
         ctx.strokeRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
+        
+        // NEW: Hit flash effect
+        if (this.hitFlashTimer > 0) {
+            const alpha = (this.hitFlashTimer / 10) * 0.8;
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillRect(-w/2, -h/2, w, h);
+            ctx.globalCompositeOperation = 'source-over';
+        }
         
         ctx.restore();
 
