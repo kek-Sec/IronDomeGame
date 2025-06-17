@@ -1,0 +1,168 @@
+@use '../abstracts/variables' as *;
+
+/* --- Card Styling --- */
+
+// Base Card for different types to extend
+%card {
+    border: 1px solid $border-color;
+    padding: 25px;
+    border-radius: 8px;
+    text-align: left;
+    background: linear-gradient(145deg, rgba(30, 36, 42, 0.9), rgba(13, 17, 23, 0.9));
+    transition: all 0.3s ease;
+}
+
+.difficulty-card {
+    @extend %card;
+    cursor: pointer;
+
+    &:hover {
+        transform: translateY(-8px);
+        border-color: $glow-color;
+        box-shadow: 0 8px 30px rgba(0, 221, 255, 0.2);
+    }
+    h3 {
+        color: $glow-color;
+        font-size: 1.8em;
+        margin-bottom: 15px;
+    }
+    p {
+        font-size: 1em;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        opacity: 0.8;
+    }
+    .difficulty-summary {
+        text-align: right;
+        font-weight: bold;
+        color: $prestige-color;
+    }
+}
+
+.perk-card {
+    @extend %card;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    &.unaffordable .perk-header,
+    &.unaffordable .perk-description {
+        opacity: 0.5;
+    }
+
+    &.unlocked {
+        border: 1px solid $threat-low;
+        .perk-header h3 {
+            color: $threat-low;
+        }
+        .perk-icon {
+            filter: drop-shadow(0 0 4px $threat-low);
+        }
+        .perk-button {
+            background: $threat-low;
+            border-color: $threat-low;
+            color: $background-start;
+            font-weight: bold;
+            cursor: default;
+        }
+    }
+
+    .perk-header {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .perk-icon {
+        font-size: 2em;
+        filter: drop-shadow(0 0 4px $prestige-color);
+    }
+    h3 {
+        color: $prestige-color;
+        font-size: 1.2em;
+    }
+    .perk-description {
+        font-size: 0.9em;
+        line-height: 1.5;
+        opacity: 0.8;
+        flex-grow: 1;
+        margin-bottom: 15px;
+    }
+}
+
+.shop-card {
+    @extend %card;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    position: relative;
+
+    &:not(.disabled):not(.maxed) {
+        cursor: pointer;
+        &:hover {
+            border-color: $glow-color;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 25px rgba(0, 221, 255, 0.2);
+            z-index: 10;
+        }
+    }
+
+    h3 {
+        color: $glow-color;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+        line-height: 1.3;
+    }
+    p {
+        font-size: 0.9em;
+        line-height: 1.4;
+        color: $text-color;
+        margin-bottom: 15px;
+        flex-grow: 1;
+    }
+
+    &.disabled {
+        color: $disabled-color;
+        border-color: $disabled-color;
+        background: rgba(10,10,10,0.5);
+        box-shadow: none;
+        filter: grayscale(80%);
+        &:hover {
+            transform: none;
+            border-color: $disabled-color;
+        }
+        h3, .cost {
+            color: $disabled-color;
+        }
+    }
+
+    &.maxed {
+        border-color: gold;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        h3 {
+            color: gold;
+        }
+    }
+}
+
+.rocket-info-card {
+    @extend %card;
+    padding: 15px;
+
+    h3 {
+        color: $glow-color;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .threat-level {
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+    .threat-low { color: $threat-low; }
+    .threat-medium { color: $threat-medium; }
+    .threat-high { color: $threat-high; }
+}
