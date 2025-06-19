@@ -5,7 +5,7 @@
   "main": "js/main.js",
   "scripts": {
     "dev": "npm-run-all --parallel scss:watch serve",
-    "serve": "http-server -c-1",
+    "serve": "live-server",
     "start": "npm run build:publish && http-server dist -c-1",
     "scss:watch": "sass --watch scss/main.scss css/style.css",
     "clean": "rimraf dist",
@@ -27,7 +27,7 @@
     "cssnano-cli": "^1.0.5",
     "esbuild": "^0.21.4",
     "html-minifier": "^4.0.0",
-    "http-server": "^14.1.1",
+    "live-server": "^1.2.2",
     "npm-run-all": "^4.1.5",
     "rimraf": "^5.0.7",
     "sass": "^1.77.4"
