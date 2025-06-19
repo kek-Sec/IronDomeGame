@@ -10,6 +10,8 @@
     text-align: left;
     background: linear-gradient(145deg, rgba(30, 36, 42, 0.9), rgba(13, 17, 23, 0.9));
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .difficulty-card {
@@ -31,19 +33,34 @@
         line-height: 1.6;
         margin-bottom: 20px;
         opacity: 0.8;
+        flex-grow: 1;
+    }
+    .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: auto;
     }
     .difficulty-summary {
+        text-align: left;
+        font-weight: normal;
+        color: $text-color;
+        opacity: 0.7;
+    }
+    .high-score {
         text-align: right;
         font-weight: bold;
         color: $prestige-color;
+        text-shadow: 0 0 5px $prestige-color;
+        span {
+            font-size: 1.1em;
+        }
     }
 }
 
 .perk-card {
     @extend %card;
     padding: 20px;
-    display: flex;
-    flex-direction: column;
     justify-content: space-between;
 
     &.unaffordable .perk-header,
@@ -94,8 +111,6 @@
 .shop-card {
     @extend %card;
     padding: 20px;
-    display: flex;
-    flex-direction: column;
     justify-content: space-between;
     box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     position: relative;

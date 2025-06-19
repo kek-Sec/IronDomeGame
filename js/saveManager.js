@@ -16,7 +16,12 @@ function getInitialPlayerData() {
 
     return {
         prestigePoints: 0,
-        unlockedPerks: unlockedPerks
+        unlockedPerks: unlockedPerks,
+        highScores: { // NEW: High score tracking
+            easy: 0,
+            normal: 0,
+            hard: 0
+        }
     };
 }
 
@@ -26,6 +31,12 @@ export function loadPlayerData() {
         const savedData = localStorage.getItem(SAVE_KEY);
         if (savedData) {
             const parsedData = JSON.parse(savedData);
+            
+            // Backwards compatibility: If old save file has no highScores, add it.
+            if (!parsedData.highScores) {
+                parsedData.highScores = { easy: 0, normal: 0, hard: 0 };
+            }
+
             // Simple validation to ensure data structure is not malformed
             if (parsedData.unlockedPerks && parsedData.hasOwnProperty('prestigePoints')) {
                 return parsedData;

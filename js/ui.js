@@ -4,7 +4,7 @@
  */
 import { difficultySettings, rocketInfo } from './config.js';
 import { perks } from './perks.js';
-import { savePlayerData } from './saveManager.js';
+import { savePlayerData, loadPlayerData } from './saveManager.js';
 
 // --- DOM Element References ---
 const fpsCounterEl = document.getElementById('fps-counter');
@@ -48,18 +48,25 @@ export function updateBossUI(boss) {
 }
 
 export function showStartScreen(startGameCallback, showArmoryCallback) {
+    const playerData = loadPlayerData(); // Load fresh data to show high scores
     modalContainer.style.display = 'flex';
     modalContent.classList.remove('armory');
 
     let difficultyCardsHTML = '<div class="difficulty-card-grid">';
     for (const key in difficultySettings) {
         const diff = difficultySettings[key];
+        const highScore = playerData.highScores[key] || 0;
         difficultyCardsHTML += `
             <div class="difficulty-card" id="start-${key}" data-difficulty="${key}">
                 <h3>${diff.name}</h3>
                 <p>${diff.description}</p>
-                <div class="difficulty-summary">
-                    <span>Starts with ${diff.startingCoins} Coins</span>
+                <div class="card-footer">
+                    <div class="difficulty-summary">
+                        <span>Starts with ${diff.startingCoins} Coins</span>
+                    </div>
+                    <div class="high-score">
+                        🏆 High Score: <span>${highScore.toLocaleString()}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -260,8 +267,8 @@ export function showBetweenWaveScreen(state, callbacks, config) {
         <div class="modal-header">
             <h1>WAVE ${currentWave + 1} COMPLETE</h1>
             <div class="end-wave-stats">
-                <div>SCORE: <span>${score}</span></div>
-                <div>COINS: <span>${coins}</span></div>
+                <div>SCORE: <span>${score.toLocaleString()}</span></div>
+                <div>COINS: <span>${coins.toLocaleString()}</span></div>
             </div>
         </div>
         <div class="modal-body">
@@ -338,15 +345,21 @@ export function showRocketInfoScreen(closeCallback) {
 }
 
 
-export function showGameOverScreen(state, restartCallback, pointsEarned) {
+export function showGameOverScreen(state, restartCallback, pointsEarned, newHighScore) {
     const { score, currentWave } = state;
     modalContainer.style.display = 'flex';
     modalContent.classList.add('game-over');
+
+    const newHighScoreHTML = newHighScore 
+        ? `<p class="new-high-score-banner">🏆 NEW HIGH SCORE! 🏆</p>`
+        : '';
+
     modalContent.innerHTML = `
         <h1>MISSION FAILED</h1>
-        <p class="game-over-stats">FINAL SCORE: ${score}</p>
-        <p class="game-over-stats">WAVES SURVIVED: ${currentWave}</p>
-        <p class="prestige-points">PRESTIGE EARNED: ${pointsEarned}</p>
+        ${newHighScoreHTML}
+        <p class="game-over-stats">FINAL SCORE: ${score.toLocaleString()}</p>
+        <p class="game-over-stats">WAVES SURVIVED: ${currentWave + 1}</p>
+        <p class="prestige-points">PRESTIGE EARNED: ${pointsEarned.toLocaleString()}</p>
         <button id="restart-button" class="modal-button">TRY AGAIN</button>
     `;
     document.getElementById('restart-button').addEventListener('click', () => {

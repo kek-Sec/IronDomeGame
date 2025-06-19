@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../abstracts/variables' as *;
 
 #modal-container {
@@ -112,6 +113,20 @@
         text-shadow: 0 0 5px $glow-color;
         margin-left: 8px;
     }
+}
+
+.new-high-score-banner {
+    background: linear-gradient(90deg, transparent, $prestige-color, transparent);
+    color: $background-start;
+    padding: 10px 20px;
+    font-size: 1.8em !important;
+    font-weight: bold;
+    margin: -10px auto 25px auto !important;
+    border-radius: 5px;
+    animation: pulseButton 2s infinite ease-in-out;
+    border: 2px solid color.adjust($prestige-color, $lightness: -10%);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    width: fit-content;
 }
 
 // Home screen, Armory, Shop specific styles

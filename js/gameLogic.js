@@ -114,11 +114,18 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     if (destroyedCities === config.cityCount) {
         state.gameState = 'GAME_OVER';
 
+        // Check for and save new high score
+        let newHighScore = false;
+        if (state.score > state.playerData.highScores[state.difficulty]) {
+            state.playerData.highScores[state.difficulty] = state.score;
+            newHighScore = true;
+        }
+        
         // Award Prestige Points and save data
         const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
         state.playerData.prestigePoints += pointsEarned;
         savePlayerData(state.playerData);
 
-        UI.showGameOverScreen(state, init, pointsEarned);
+        UI.showGameOverScreen(state, init, pointsEarned, newHighScore);
     }
 }
