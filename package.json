@@ -25,7 +25,7 @@
   "license": "ISC",
   "devDependencies": {
     "cssnano-cli": "^1.0.5",
-    "esbuild": "^0.21.4",
+    "esbuild": "^0.25.0",
     "html-minifier": "^4.0.0",
     "live-server": "^1.2.2",
     "npm-run-all": "^4.1.5",
