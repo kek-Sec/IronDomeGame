@@ -24,7 +24,6 @@ export function startNextWave(state, canvas) {
     if (waveDef.isBossWave) {
         if (waveDef.bossType === 'hiveCarrier') {
             // Scale boss health in endless mode
-            // THE FIX: Correctly reference the imported 'waveDefinitions' array, not 'config.waveDefinitions'
             const waveFactor = state.currentWave - waveDefinitions.length + 1;
             const healthMultiplier = (waveFactor > 0) ? 1 + (Math.floor(waveFactor / 5) * 0.75) : 1;
             state.boss = new HiveCarrier(canvas.width, healthMultiplier);
@@ -64,6 +63,7 @@ export function refreshUpgradeScreen(state, canvas) {
         upgradeTurretCallback: () => upgradeHandlers.handleUpgradeTurret(state, canvas, refreshCallback),
         upgradeSpeedCallback: () => upgradeHandlers.handleUpgradeSpeed(state, refreshCallback),
         upgradeMultishotCallback: () => upgradeHandlers.handleUpgradeMultishot(state, refreshCallback),
+        upgradeBlastRadiusCallback: () => upgradeHandlers.handleUpgradeBlastRadius(state, refreshCallback),
         upgradeNukeCallback: () => upgradeHandlers.handleUpgradeNuke(state, refreshCallback),
         upgradeBaseArmorCallback: () => upgradeHandlers.handleUpgradeBaseArmor(state, refreshCallback),
         upgradeTurretSpeedCallback: () => upgradeHandlers.handleUpgradeTurretSpeed(state, refreshCallback),

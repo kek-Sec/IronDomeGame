@@ -61,7 +61,8 @@ export const config = {
         repairCity: 1000,
         automatedTurret: 2500,
         interceptorSpeed: 750,
-        multishot: 1500, // Replaced blastRadius
+        multishot: 1500,
+        flakWarheads: 1200, // New upgrade cost
         nuke: 3500, // Cost increased for EMP buff
         baseArmor: 2000,
         turretSpeed: 1500,

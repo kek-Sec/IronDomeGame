@@ -162,12 +162,13 @@ export function showArmoryScreen(playerData, startGameCallback) {
 
 
 export function showBetweenWaveScreen(state, callbacks, config) {
-    const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks, multishotLevel } = state;
+    const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks, multishotLevel, blastRadiusLevel } = state;
     const {
         upgradeRepairCallback, nextWaveCallback, upgradeTurretCallback,
         upgradeSpeedCallback, upgradeMultishotCallback, upgradeBaseArmorCallback,
         upgradeNukeCallback, upgradeTurretSpeedCallback, upgradeTurretRangeCallback,
-        upgradeHomingMineCallback, upgradeFieldReinforcementCallback, upgradeTargetingScramblerCallback
+        upgradeHomingMineCallback, upgradeFieldReinforcementCallback, upgradeTargetingScramblerCallback,
+        upgradeBlastRadiusCallback
     } = callbacks;
     const { upgradeCosts, maxTurrets } = config;
 
@@ -177,7 +178,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     const categories = {
         core: {
             title: 'Core System Upgrades',
-            ids: ['speed', 'multishot', 'turret', 'turretSpeed', 'turretRange', 'baseArmor']
+            ids: ['speed', 'multishot', 'blastRadius', 'turret', 'turretSpeed', 'turretRange', 'baseArmor']
         },
         tactical: {
             title: 'Single-Wave Tactical Gear',
@@ -193,6 +194,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
         // Permanent Upgrades
         { id: 'speed', title: 'Interceptor Speed', desc: 'Permanently increase the speed of your interceptors.', detailedDesc: 'A permanent, stacking buff to the velocity of all interceptors you launch.', cost: upgradeCosts.interceptorSpeed, available: true },
         { id: 'multishot', title: `Multishot (Lvl ${multishotLevel})`, desc: 'Fire an additional interceptor per shot. Max Lvl 3.', detailedDesc: 'Increases the number of interceptors launched with each click. Each interceptor will target the same rocket.', cost: upgradeCosts.multishot * (multishotLevel + 1), available: multishotLevel < 3, maxed: multishotLevel >= 3 },
+        { id: 'blastRadius', title: `Flak Warheads (Lvl ${blastRadiusLevel})`, desc: 'Increase the blast radius of standard interceptors. Max Lvl 5.', detailedDesc: 'Increases the explosion radius of your interceptors, making them more effective against dense groups of rockets.', cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1), available: blastRadiusLevel < 5, maxed: blastRadiusLevel >= 5 },
         { id: 'turret', title: 'Build Turret', desc: 'Construct an automated defense turret. Max 2.', detailedDesc: 'Builds a C-RAM turret that automatically fires at nearby rockets. Limited to two turrets.', cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets },
         { id: 'turretSpeed', title: `Turret Speed (Lvl ${turretFireRateLevel})`, desc: 'Permanently increase the fire rate of all turrets. Max Lvl 3.', detailedDesc: 'Reduces the cooldown between bursts for all owned turrets. Stacks up to 3 times.', cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3 },
         { id: 'turretRange', title: `Turret Range (Lvl ${turretRangeLevel})`, desc: 'Permanently increase the engagement range of all turrets. Max Lvl 3.', detailedDesc: 'Increases the detection and firing radius for all owned turrets. Stacks up to 3 times.', cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3 },
@@ -281,6 +283,7 @@ export function showBetweenWaveScreen(state, callbacks, config) {
     // Safely add event listeners for all potential shop items
     addListenerIfPresent('shop-speed', upgradeSpeedCallback);
     addListenerIfPresent('shop-multishot', upgradeMultishotCallback);
+    addListenerIfPresent('shop-blastRadius', upgradeBlastRadiusCallback);
     addListenerIfPresent('shop-turret', upgradeTurretCallback);
     addListenerIfPresent('shop-turretSpeed', upgradeTurretSpeedCallback);
     addListenerIfPresent('shop-turretRange', upgradeTurretRangeCallback);

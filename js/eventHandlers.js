@@ -37,7 +37,7 @@ export function handleClick(state, canvas, e) {
     }
     
     if (state.gameState === 'IN_WAVE' && state.targetedRocket) {
-        const nukeIsAvailable = state.nukeAvailable || state.activePerks.surplusValue;
+        const nukeIsAvailable = state.nukeAvailable && !state.activePerks.surplusValue;
 
         if (nukeIsAvailable) {
             // Fire a single nuke, no multishot
@@ -52,7 +52,7 @@ export function handleClick(state, canvas, e) {
             
             for (let i = 0; i < numShots; i++) {
                 const launchX = startX + i * 10;
-                state.interceptors.push(new Interceptor(launchX, height, state.targetedRocket, state.interceptorSpeed, config.initialBlastRadius, 'standard'));
+                state.interceptors.push(new Interceptor(launchX, height, state.targetedRocket, state.interceptorSpeed, state.interceptorBlastRadius, 'standard'));
             }
         }
         UI.updateTopUI(state);
@@ -80,8 +80,7 @@ export function handleTouchStart(state, canvas, e) {
         }
         if (touchTarget) {
             // Create a temporary state for blastRadius for the interceptor
-            const interceptorBlastRadius = config.initialBlastRadius; // Use initial value
-            state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, interceptorBlastRadius));
+            state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, state.interceptorBlastRadius, 'standard'));
             UI.updateTopUI(state);
         }
     }

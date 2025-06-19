@@ -44,6 +44,16 @@ export function handleUpgradeSpeed(state, refreshUpgradeScreen) {
     }
 }
 
+export function handleUpgradeBlastRadius(state, refreshUpgradeScreen) {
+    const cost = applyCost(state, config.upgradeCosts.flakWarheads * (state.blastRadiusLevel + 1));
+    if (state.coins >= cost && state.blastRadiusLevel < 5) {
+        state.coins -= cost;
+        state.blastRadiusLevel++;
+        state.interceptorBlastRadius += 5; // Increase blast radius by 5 pixels per level
+        refreshUpgradeScreen();
+    }
+}
+
 export function handleUpgradeMultishot(state, refreshUpgradeScreen) {
     const cost = applyCost(state, config.upgradeCosts.multishot * (state.multishotLevel + 1));
     if (state.coins >= cost && state.multishotLevel < 3) {

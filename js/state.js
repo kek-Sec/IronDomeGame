@@ -21,7 +21,6 @@ export function getInitialState() {
         score: perks.veteranCommander ? 500 : 0,
         coins: 0, // Set later by main.js based on difficulty
         currentWave: 0,
-        interceptorSpeed: config.initialInterceptorSpeed,
         
         // Game Entities
         rockets: [],
@@ -56,6 +55,10 @@ export function getInitialState() {
         targetedRocket: null,
 
         // Upgrades & Perks State
+        interceptorSpeed: config.initialInterceptorSpeed,
+        interceptorBlastRadius: config.initialBlastRadius,
+        blastRadiusLevel: 0,
+        multishotLevel: 0,
         nukeAvailable: false,
         basesAreArmored: perks.advancedFortifications ? true : false,
         turretFireRateLevel: 0,
@@ -63,7 +66,6 @@ export function getInitialState() {
         homingMinesAvailable: perks.extraMine ? 1 : 0,
         firstUpgradePurchased: false, // For Rapid Deployment perk
         scramblerActive: false, // For Targeting Scrambler upgrade
-        multishotLevel: 0,
         
         // Persistent Data Reference
         playerData: playerData, 
