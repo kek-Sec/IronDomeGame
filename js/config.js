@@ -48,6 +48,7 @@ export const config = {
     dronePoints: 25,
     flareRocketPoints: 200,
     armoredPoints: 500,
+    artilleryDesignatorPoints: 400,
     maxTurrets: 2,
     turretFireRate: 90, 
     turretRange: 350,
@@ -62,14 +63,14 @@ export const config = {
         automatedTurret: 2500,
         interceptorSpeed: 750,
         multishot: 1500,
-        flakWarheads: 1200, // New upgrade cost
+        flakWarheads: 1200,
         nuke: 3500, // Cost increased for EMP buff
         baseArmor: 2000,
         turretSpeed: 1500,
         turretRange: 1800,
         homingMine: 800,
-        fieldReinforcement: 1250, // New Item
-        targetingScrambler: 1750, // New Item
+        fieldReinforcement: 1250, 
+        targetingScrambler: 1750,
     },
     // Boss configurations
     bosses: {
@@ -89,7 +90,7 @@ export const waveDefinitions = [
     /* Wave 4 */ { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
     /* Wave 5 */ { isBossWave: true, bossType: 'hiveCarrier', delay: 95 },
     /* Wave 6 */ { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, armored: 1, delay: 90 },
-    /* Wave 7 */ { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, delay: 85 }
+    /* Wave 7 */ { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, designator: 1, delay: 85 }
 ];
 
 /**
@@ -120,6 +121,8 @@ export function getWaveDefinition(waveNumber) {
     if (waveNumber > 10) availableTypes.push('swarmer');
     if (waveNumber > 12) availableTypes.push('armored');
     if (waveNumber > 14) availableTypes.push('flare');
+    if (waveNumber > 6) availableTypes.push('designator');
+
 
     // Build the wave composition
     for (let i = 0; i < totalRockets; i++) {
@@ -139,5 +142,6 @@ export const rocketInfo = {
     swarmer: { name: 'Swarmer', threat: 'High', description: 'Deploys a swarm of six fast-moving but fragile drones. Difficult to intercept with single-target weapons.' },
     drone: { name: 'Drone', threat: 'Low', description: 'A small, fast-moving projectile deployed by Swarmer rockets. Weak, but dangerous in numbers.' },
     stealth: { name: 'Stealth Rocket', threat: 'Medium', description: 'Periodically cloaks, making it untargetable by your mouse and turrets. Timing is key to interception.' },
-    flare: { name: 'Flare Rocket', threat: 'Medium', description: 'Continuously deploys decoy flares that will distract your interceptors, wasting valuable shots.' }
+    flare: { name: 'Flare Rocket', threat: 'Medium', description: 'Continuously deploys decoy flares that will distract your interceptors, wasting valuable shots.' },
+    designator: { name: 'Artillery Designator', threat: 'Critical', description: 'Slow-moving drone that targets a city from above. If it completes its targeting cycle, a devastating artillery shell will destroy the city. Must be destroyed quickly.'}
 };

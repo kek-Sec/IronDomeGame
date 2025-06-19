@@ -9,7 +9,8 @@ import {
     findTargetedRocket, 
     handleSpawning, 
     updateBoss, 
-    updateRockets, 
+    updateRockets,
+    updateArtilleryShells,
     updateFlares, 
     updateTurrets, 
     updateInterceptors, 
@@ -44,6 +45,7 @@ export function update(state, width, height, refreshUpgradeScreen, init) {
     handleSpawning(state, width, height);
     updateBoss(state);
     updateRockets(state, width, height);
+    updateArtilleryShells(state);
     updateFlares(state);
     updateTurrets(state);
     updateInterceptors(state, width);

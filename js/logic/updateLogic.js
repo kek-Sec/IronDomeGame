@@ -1,12 +1,12 @@
 import { config, getWaveDefinition, difficultySettings } from '../config.js';
-import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredRocket } from '../entities/rockets.js';
+import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredRocket, ArtilleryDesignator, ArtilleryShell } from '../entities/rockets.js';
 import { EMP } from '../entities/playerAbilities.js';
 import { HiveCarrier } from '../entities/bosses.js';
 import { createAdvancedExplosion, triggerScreenShake } from '../utils.js';
 import { random } from '../utils.js';
 import { Flash, Particle } from '../entities/effects.js';
 
-// --- (findTargetedRocket, handleSpawning, updateBoss, updateFlares, updateTurrets remain the same) ---
+// --- (findTargetedRocket, updateBoss, updateFlares, updateTurrets remain the same) ---
 export function findTargetedRocket(state) {
     let closestDist = Infinity;
     state.targetedRocket = null;
@@ -52,7 +52,8 @@ export function handleSpawning(state, width, height) {
         else if (rocketType === 'swarmer') { newRocket = new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier); }
         else if (rocketType === 'flare') { newRocket = new FlareRocket(width, sizeMultiplier, speedMultiplier); }
         else if (rocketType === 'armored') { newRocket = new ArmoredRocket(width, sizeMultiplier, speedMultiplier); }
-        
+        else if (rocketType === 'designator') { newRocket = new ArtilleryDesignator(width, height, state.cities, sizeMultiplier, speedMultiplier); }
+
         if (newRocket) {
             // Apply Targeting Scrambler effect
             if (state.scramblerActive && Math.random() < 0.25) {
@@ -86,6 +87,15 @@ export function updateRockets(state, width, height) {
         } else {
             rocket.update();
         }
+        
+        // Handle Artillery Designator logic
+        if (rocket.type === 'designator' && rocket.isDesignating) {
+            if (rocket.designationTimer > rocket.designationDuration) {
+                state.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width/2, rocket.targetCity.y));
+                state.rockets.splice(i, 1);
+                continue;
+            }
+        }
 
         if (rocket.life > config.rocketMaxLifetime) {
             state.rockets.splice(i, 1);
@@ -99,20 +109,23 @@ export function updateRockets(state, width, height) {
         }
 
         let hitCity = false;
-        for (const city of state.cities) {
-            if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-                if (city.isArmored) { 
-                    city.isArmored = false; 
-                } else { 
-                    city.destroy(); // Use the new destroy method
+        if (rocket.type !== 'designator') {
+            for (const city of state.cities) {
+                if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
+                    if (city.isArmored) { 
+                        city.isArmored = false; 
+                    } else { 
+                        city.destroy(); // Use the new destroy method
+                    }
+                    
+                    hitCity = true;
+                    createAdvancedExplosion(state, rocket.x, rocket.y);
+                    triggerScreenShake(state, 15, 30);
+                    break; 
                 }
-                
-                hitCity = true;
-                createAdvancedExplosion(state, rocket.x, rocket.y);
-                triggerScreenShake(state, 15, 30);
-                break; 
             }
         }
+
         if (hitCity) {
             state.rockets.splice(i, 1);
             continue;
@@ -125,6 +138,25 @@ export function updateRockets(state, width, height) {
         }
     }
 }
+
+export function updateArtilleryShells(state) {
+    for (let i = state.artilleryShells.length - 1; i >= 0; i--) {
+        const shell = state.artilleryShells[i];
+        if (shell.update()) {
+            // Find the city at the target location and destroy it
+            for (const city of state.cities) {
+                if (!city.isDestroyed && shell.targetX > city.x && shell.targetX < city.x + city.width) {
+                    city.destroy(); // Artillery ignores armor
+                    break;
+                }
+            }
+            createAdvancedExplosion(state, shell.targetX, shell.targetY + 50); // Large explosion
+            triggerScreenShake(state, 40, 60);
+            state.artilleryShells.splice(i, 1);
+        }
+    }
+}
+
 
 export function updateFlares(state) {
     for (let i = state.flares.length - 1; i >= 0; i--) {
@@ -183,14 +215,15 @@ export function updateTracerRounds(state) {
                 state.tracerRounds.splice(i, 1);
                 
                 if (isDestroyed) {
-                    let points = 0;
-                    if (rocket.type === 'standard') points = config.rocketPoints;
-                    else if (rocket.type === 'mirv') points = config.mirvPoints;
+                    let points = config.rocketPoints; // default
+                    if (rocket.type === 'mirv') points = config.mirvPoints;
                     else if (rocket.type === 'stealth') points = config.stealthPoints;
                     else if (rocket.type === 'swarmer') points = config.swarmerPoints;
                     else if (rocket.type === 'flare') points = config.flareRocketPoints;
                     else if (rocket.type === 'drone') points = config.dronePoints;
                     else if (rocket.type === 'armored') points = config.armoredPoints;
+                    else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
+
                     state.score += points;
                     state.coins += points;
                     state.rockets.splice(j, 1);
@@ -256,14 +289,15 @@ export function updateInterceptors(state, width) {
                     }
                     
                     if (isDestroyed) {
-                        let points = 0;
-                        if (rocket.type === 'standard') points = config.rocketPoints;
-                        else if (rocket.type === 'mirv') points = config.mirvPoints;
+                        let points = config.rocketPoints; // default
+                        if (rocket.type === 'mirv') points = config.mirvPoints;
                         else if (rocket.type === 'stealth') points = config.stealthPoints;
                         else if (rocket.type === 'swarmer') points = config.swarmerPoints;
                         else if (rocket.type === 'flare') points = config.flareRocketPoints;
                         else if (rocket.type === 'drone') points = config.dronePoints;
                         else if (rocket.type === 'armored') points = config.armoredPoints;
+                        else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
+
                         state.score += points;
                         state.coins += points;
                         state.rockets.splice(j, 1);
@@ -296,14 +330,15 @@ export function updateHomingMines(state) {
             for (let j = state.rockets.length - 1; j >= 0; j--) {
                 const rocket = state.rockets[j];
                 if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
-                    let points = 0;
-                    if (rocket.type === 'standard') points = config.rocketPoints;
-                    else if (rocket.type === 'mirv') points = config.mirvPoints;
+                    let points = config.rocketPoints; // default
+                    if (rocket.type === 'mirv') points = config.mirvPoints;
                     else if (rocket.type === 'stealth') points = config.stealthPoints;
                     else if (rocket.type === 'swarmer') points = config.swarmerPoints;
                     else if (rocket.type === 'flare') points = config.flareRocketPoints;
                     else if (rocket.type === 'drone') points = config.dronePoints;
                     else if (rocket.type === 'armored') points = config.armoredPoints;
+                    else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
+
                     state.score += points;
                     state.coins += points;
                     state.rockets.splice(j, 1);

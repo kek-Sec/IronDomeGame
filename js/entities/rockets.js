@@ -369,3 +369,151 @@ export class FlareRocket extends Rocket {
         }
     }
 }
+
+// A rocket that calls in a strike instead of impacting
+export class ArtilleryDesignator extends Rocket {
+    constructor(width, height, cities, sizeMultiplier = 1, speedMultiplier = 1) {
+        super(undefined, 0, 0, 0, width, sizeMultiplier, speedMultiplier);
+        this.type = 'designator';
+        this.color = '#ff9800';
+        this.trailColor = 'rgba(255, 152, 0, 0.5)';
+        
+        // Pick a non-destroyed city to target
+        const availableCities = cities.filter(c => !c.isDestroyed);
+        this.targetCity = availableCities.length > 0 ? availableCities[Math.floor(random(0, availableCities.length))] : null;
+        
+        if (this.targetCity) {
+            this.targetX = this.targetCity.x + this.targetCity.width / 2;
+            this.targetY = height * random(0.3, 0.5);
+            const angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+            const speed = 1.5 * speedMultiplier;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+        } else {
+            // No cities left, just fly down
+            this.vx = 0;
+            this.vy = 1.5 * speedMultiplier;
+        }
+
+        this.isDesignating = false;
+        this.designationTimer = 0;
+        this.designationDuration = 180; // 3 seconds at 60fps
+    }
+
+    update() {
+        if (!this.targetCity) {
+            super.update();
+            return;
+        }
+
+        if (this.isDesignating) {
+            this.designationTimer++;
+        } else {
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 20) this.trail.shift();
+
+            if (this.y >= this.targetY) {
+                this.isDesignating = true;
+                this.vx = 0;
+                this.vy = 0;
+            } else {
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+            this.angle = Math.atan2(this.vy, this.vx) - Math.PI / 2;
+        }
+    }
+
+    draw(ctx) {
+        this._drawTrail(ctx);
+        this._drawHead(ctx);
+
+        if (this.isDesignating && this.targetCity) {
+            // Draw targeting laser
+            const progress = this.designationTimer / this.designationDuration;
+            const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
+            const beamWidth = 1 + progress * 4;
+
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
+            ctx.strokeStyle = beamColor;
+            ctx.lineWidth = beamWidth;
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 15;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Draw targeting circle on the city
+            const circleRadius = (this.targetCity.width/2) * (1 - progress);
+            ctx.beginPath();
+            ctx.arc(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y + this.targetCity.height/2, circleRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    _drawHead(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        const w = this.radius * 2; // Wider drone
+        const h = this.radius * 2;
+
+        // Body
+        ctx.fillStyle = '#424242';
+        ctx.beginPath();
+        ctx.moveTo(-w / 2, -h / 2);
+        ctx.lineTo(w / 2, -h / 2);
+        ctx.lineTo(w, h / 2);
+        ctx.lineTo(-w, h / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Optics
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(0, 0, w / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+// A simple class for the visual and impact logic of the artillery
+export class ArtilleryShell {
+    constructor(targetX, targetY) {
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.timeLeft = 30; // 0.5 seconds travel time
+        this.startY = 0;
+        this.startX = targetX + random(-50, 50);
+    }
+    update() {
+        this.timeLeft--;
+        return this.timeLeft <= 0;
+    }
+    draw(ctx) {
+        const progress = 1 - (this.timeLeft / 30);
+        const currentY = this.startY + (this.targetY - this.startY) * progress;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.startX, this.startY);
+        ctx.lineTo(this.targetX, this.targetY);
+        
+        const gradient = ctx.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
+        gradient.addColorStop(0, 'rgba(255, 100, 0, 0)');
+        gradient.addColorStop(progress - 0.1, 'rgba(255, 100, 0, 0)');
+        gradient.addColorStop(progress, 'white');
+        gradient.addColorStop(progress + 0.1, 'rgba(255, 100, 0, 0)');
+        gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+    }
+}

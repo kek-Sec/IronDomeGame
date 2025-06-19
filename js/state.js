@@ -32,6 +32,7 @@ export function getInitialState() {
         homingMines: [],
         empPowerUps: [],
         flares: [],
+        artilleryShells: [],
         boss: null,
         // NEW: Visual Effects Arrays
         flashes: [],

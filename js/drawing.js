@@ -77,6 +77,8 @@ export function draw(ctx, state, width, height) {
     if (state.targetedRocket) {
         drawReticle(ctx, state.targetedRocket, state.gameTime);
     }
+    
+    state.artilleryShells.forEach(s => s.draw(ctx));
 
     ctx.beginPath(); ctx.moveTo(width / 2 - 20, height); ctx.lineTo(width / 2, height - 20); ctx.lineTo(width / 2 + 20, height);
     ctx.closePath(); ctx.fillStyle = '#00ffff'; ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
