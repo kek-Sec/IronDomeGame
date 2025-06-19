@@ -1,0 +1,63 @@
+# GitHub Action for deploying the Iron Dome game to GitHub Pages
+
+name: Deploy Iron Dome to GitHub Pages
+
+# Controls when the action will run.
+# It triggers on pushes to the main branch and also allows manual runs.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This job builds the project and deploys it to GitHub Pages
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an authentic source
+
+    steps:
+      # Step 1: Check out the repository's code so the workflow can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js environment.
+      # Your project uses Node.js for its build process (sass, esbuild, etc.)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a recent Long-Term Support (LTS) version of Node.js
+          cache: 'npm'       # Cache npm dependencies to speed up future builds
+
+      # Step 3: Install project dependencies as defined in package-lock.json
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Run the build script.
+      # This script, defined in your package.json, compiles SCSS, bundles JS,
+      # and creates the final production-ready files in the 'dist' directory.
+      - name: Build project
+        run: npm run build:publish
+
+      # Step 5: Configure GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # Step 6: Upload the build artifact.
+      # This action takes the contents of your 'dist' folder (the built game)
+      # and prepares it for deployment to GitHub Pages.
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # The path to the directory containing the built game files
+          path: './dist'
+
+      # Step 7: Deploy the artifact to GitHub Pages.
+      # This step takes the uploaded artifact and makes it live on your GitHub Pages site.
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
