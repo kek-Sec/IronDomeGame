@@ -14,6 +14,8 @@ import * as events from './eventHandlers';
 import { startNextWave, refreshUpgradeScreen } from './flow';
 import { loadPlayerData } from './saveManager';
 import type { GameState, StartGameCallback } from './types';
+import { loadGameAssets, loadedSprites } from './assetLoader';
+import { modalContainer, modalContent } from './ui/domElements';
 
 // --- DOM & Canvas Setup ---
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -84,15 +86,37 @@ const resetAndStartGame: StartGameCallback = (difficulty = 'normal') => {
 // --- Helper Functions ---
 function createCities(): void {
     state.cities = [];
-    const cityWidth = width / config.cityCount;
-    const minHeight = 30;
-    const maxHeight = Math.min(height * 0.15, 120);
+    const citySlotWidth = width / config.cityCount;
+    const minHeight = 50;
+    const maxHeight = Math.min(height * 0.15, 120); // Base max height for regular buildings
+    const spriteKeys = Object.keys(loadedSprites);
 
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(minHeight, maxHeight);
-        const w = cityWidth * random(0.6, 0.8);
-        const x = i * cityWidth + (cityWidth - w) / 2;
-        state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
+        // 1. Randomly select a sprite for the new city
+        const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+        const sprite = loadedSprites[randomSpriteKey];
+
+        let h: number;
+
+        // 2. If the sprite is the communications tower, make it taller
+        if (randomSpriteKey === 'comms') {
+            // Use a height range that makes it consistently taller
+            h = random(maxHeight, maxHeight * 1.3);
+        } else {
+            // Use a smaller, standard height range for other buildings
+            h = random(minHeight, maxHeight * 0.9);
+        }
+
+        // 3. Calculate the width based on the sprite's aspect ratio to prevent distortion
+        const aspectRatio = sprite.naturalWidth / sprite.naturalHeight;
+        const w = h * aspectRatio;
+
+        // 4. Center the city in its designated horizontal slot
+        const x = i * citySlotWidth + (citySlotWidth - w) / 2;
+        const y = height - h; // Position it at the bottom of the canvas
+
+        // 5. Create the new city with the correct dimensions and sprite
+        state.cities.push(new City(x, y, w, h, state.basesAreArmored, sprite));
     }
 }
 
@@ -104,6 +128,7 @@ const resizeCanvas = (): void => {
         if (state.cities && state.cities.length > 0) {
             const citySlotWidth = width / config.cityCount;
             state.cities.forEach((city, i) => {
+                // Recalculate x-position based on new width, but keep height and width fixed
                 city.x = i * citySlotWidth + (citySlotWidth - city.width) / 2;
                 city.y = height - city.height;
             });
@@ -121,39 +146,50 @@ const resizeCanvas = (): void => {
 };
 
 // --- Initialization ---
-function init(): void {
+async function init(): Promise<void> {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
     }
-    const playerData = loadPlayerData();
-    state = createInitialState(playerData);
-    resizeCanvas();
 
-    window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('mousemove', (e: MouseEvent) => events.handleMouseMove(state, canvas, e));
-    canvas.addEventListener('click', (e: MouseEvent) => events.handleClick(state, canvas, e));
-    document.getElementById('pause-button')?.addEventListener('click', () => events.togglePause(state, init));
+    modalContainer.style.display = 'flex';
+    modalContent.innerHTML = '<h1>Loading Assets...</h1>';
 
-    document.getElementById('rocket-info-btn')?.addEventListener('click', () => {
-        const gameWasRunning = state.gameState === 'IN_WAVE';
-        if (gameWasRunning) {
-            state.gameState = 'PAUSED';
-            UI.updateTopUI(state);
-        }
+    try {
+        await loadGameAssets();
 
-        UI.showRocketInfoScreen(() => {
-            UI.hideModal();
+        const playerData = loadPlayerData();
+        state = createInitialState(playerData);
+        resizeCanvas();
+
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('mousemove', (e: MouseEvent) => events.handleMouseMove(state, canvas, e));
+        canvas.addEventListener('click', (e: MouseEvent) => events.handleClick(state, canvas, e));
+        document.getElementById('pause-button')?.addEventListener('click', () => events.togglePause(state, init));
+
+        document.getElementById('rocket-info-btn')?.addEventListener('click', () => {
+            const gameWasRunning = state.gameState === 'IN_WAVE';
             if (gameWasRunning) {
-                state.gameState = 'IN_WAVE';
+                state.gameState = 'PAUSED';
                 UI.updateTopUI(state);
             }
+
+            UI.showRocketInfoScreen(() => {
+                UI.hideModal();
+                if (gameWasRunning) {
+                    state.gameState = 'IN_WAVE';
+                    UI.updateTopUI(state);
+                }
+            });
         });
-    });
 
-    canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e));
+        canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e));
 
-    UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData, resetAndStartGame));
-    animationFrameId = requestAnimationFrame(gameLoop);
+        UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData, resetAndStartGame));
+        animationFrameId = requestAnimationFrame(gameLoop);
+    } catch (error) {
+        console.error('Failed to load game assets:', error);
+        modalContent.innerHTML = '<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>';
+    }
 }
 
 // --- Start the game ---

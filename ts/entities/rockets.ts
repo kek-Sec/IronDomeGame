@@ -74,24 +74,41 @@ export class Rocket implements T.Rocket {
         const w = this.radius;
         const h = this.radius * 3;
 
+        // Engine Glow
+        ctx.fillStyle = 'rgba(255, 200, 150, 0.7)';
+        ctx.shadowColor = 'orange';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
         // Fins
         ctx.fillStyle = '#6c757d';
         ctx.beginPath();
-        ctx.moveTo(-w, h * 0.3);
-        ctx.lineTo(-w * 1.5, h * 0.5);
+        ctx.moveTo(-w, h * 0.2);
+        ctx.lineTo(-w * 1.8, h * 0.5);
         ctx.lineTo(-w, h * 0.5);
-        ctx.moveTo(w, h * 0.3);
-        ctx.lineTo(w * 1.5, h * 0.5);
+        ctx.moveTo(w, h * 0.2);
+        ctx.lineTo(w * 1.8, h * 0.5);
         ctx.lineTo(w, h * 0.5);
         ctx.fill();
 
         // Body
-        const gradient = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
-        gradient.addColorStop(0, '#dee2e6');
-        gradient.addColorStop(0.5, '#adb5bd');
-        gradient.addColorStop(1, '#6c757d');
+        const gradient = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+        gradient.addColorStop(0, '#8d99ae');
+        gradient.addColorStop(0.5, '#dee2e6');
+        gradient.addColorStop(1, '#8d99ae');
         ctx.fillStyle = gradient;
         ctx.fillRect(-w / 2, -h / 2, w, h);
+
+        // Panel line
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -h/2);
+        ctx.lineTo(0, h/2);
+        ctx.stroke();
 
         // Nose cone
         ctx.fillStyle = this.color;
@@ -101,10 +118,7 @@ export class Rocket implements T.Rocket {
         ctx.lineTo(w / 2, -h / 2);
         ctx.closePath();
         ctx.fill();
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 10;
-        ctx.fill();
-
+        
         ctx.restore();
     }
 }
@@ -167,7 +181,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         const h = this.radius * 3;
 
         // Base rocket body (drawn again for layering)
-        this.drawHead(ctx);
+        super.drawHead(ctx);
 
         // Armor Plating
         ctx.fillStyle = '#495057';
@@ -206,7 +220,8 @@ export class StealthRocket extends Rocket implements T.Rocket {
     }
     draw(ctx: CanvasRenderingContext2D) {
         if (this.isVisible) {
-            super.draw(ctx);
+            this.drawTrail(ctx);
+            this.drawHead(ctx);
         } else {
             // Draw a faint distortion effect when cloaked
             ctx.save();
@@ -334,17 +349,23 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
         return childDrones;
     }
     protected drawHead(ctx: CanvasRenderingContext2D) {
-        super.drawHead(ctx); // Draw the base missile shape
+        // Use the standard rocket draw as a base
+        super.drawHead(ctx);
+        
         // Add swarmer-specific details over the top
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
         const w = this.radius;
         const h = this.radius * 3;
-        // Draw "pods" on the side
+        
+        // Draw "pods" on the side that look like they hold drones
         ctx.fillStyle = '#1e6a21';
-        ctx.fillRect(-w * 0.8, -h * 0.2, w * 0.3, h * 0.4);
-        ctx.fillRect(w * 0.5, -h * 0.2, w * 0.3, h * 0.4);
+        ctx.fillRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
+        ctx.fillRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.strokeRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
+        ctx.strokeRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
         ctx.restore();
     }
 }
@@ -392,20 +413,35 @@ export class MirvRocket extends Rocket implements T.Rocket {
         const w = this.radius;
         const h = this.radius * 2.5;
 
+        // Engine Glow
+        ctx.fillStyle = 'rgba(255, 100, 255, 0.5)';
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(0, h * 0.4, w, 0, Math.PI, false);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
         // Body
-        ctx.fillStyle = '#adb5bd';
+        const bodyGrad = ctx.createLinearGradient(0, -h / 2, 0, h/2);
+        bodyGrad.addColorStop(0, '#555');
+        bodyGrad.addColorStop(1, '#333');
+        ctx.fillStyle = bodyGrad;
         ctx.beginPath();
         ctx.moveTo(0, -h / 2);
         ctx.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
         ctx.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
         ctx.fill();
 
-        // Seam lines
-        ctx.strokeStyle = '#495057';
+        // Seam lines to suggest it splits
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, -h / 2);
         ctx.lineTo(0, h / 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(0, 0, w * 0.8, h * 0.2, 0, 0, Math.PI * 2);
         ctx.stroke();
 
         // Nose cone
@@ -413,7 +449,7 @@ export class MirvRocket extends Rocket implements T.Rocket {
         ctx.shadowColor = this.color;
         ctx.shadowBlur = 15;
         ctx.beginPath();
-        ctx.arc(0, -h / 2, w / 2, Math.PI, 0);
+        ctx.arc(0, -h / 2, w / 1.5, Math.PI * 0.9, Math.PI * 0.1, true);
         ctx.closePath();
         ctx.fill();
 
@@ -438,6 +474,18 @@ export class FlareRocket extends Rocket implements T.Rocket {
             flares.push(new Flare(this.x, this.y));
             this.flareCooldown = this.flareDeployInterval;
         }
+    }
+    protected drawHead(ctx: CanvasRenderingContext2D): void {
+        super.drawHead(ctx);
+        // Add flare pods
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const w = this.radius;
+        const h = this.radius * 3;
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(-w * 0.4, h * 0.1, w * 0.8, h * 0.3);
+        ctx.restore();
     }
 }
 
@@ -592,17 +640,22 @@ export class ArtilleryShell implements T.ArtilleryShell {
     }
     draw(ctx: CanvasRenderingContext2D) {
         const progress = 1 - this.timeLeft / 30;
-        const currentY = this.startY + (this.targetY - this.startY) * progress;
 
         ctx.beginPath();
         ctx.moveTo(this.startX, this.startY);
         ctx.lineTo(this.targetX, this.targetY);
 
         const gradient = ctx.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
+
+        // Clamp the gradient stops to be within the valid [0, 1] range.
+        const stop1 = Math.max(0, progress - 0.05);
+        const stop2 = progress;
+        const stop3 = Math.min(1, progress + 0.05);
+
         gradient.addColorStop(0, 'rgba(255, 100, 0, 0)');
-        gradient.addColorStop(progress - 0.1, 'rgba(255, 100, 0, 0)');
-        gradient.addColorStop(progress, 'white');
-        gradient.addColorStop(progress + 0.1, 'rgba(255, 100, 0, 0)');
+        gradient.addColorStop(stop1, 'rgba(255, 100, 0, 0)');
+        gradient.addColorStop(stop2, 'white');
+        gradient.addColorStop(stop3, 'rgba(255, 100, 0, 0)');
         gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
 
         ctx.strokeStyle = gradient;

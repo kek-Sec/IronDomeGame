@@ -15,7 +15,6 @@ export class City implements CityType {
     width: number;
     height: number;
     isDestroyed: boolean;
-    structureType: number;
     isArmored: boolean;
     rubbleShape:
         | {
@@ -28,131 +27,42 @@ export class City implements CityType {
           }[]
         | null;
     isSmoking: boolean;
+    private sprite: HTMLImageElement;
 
-    constructor(x: number, y: number, w: number, h: number, isArmored: boolean = false) {
+    constructor(
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        isArmored: boolean = false,
+        sprite: HTMLImageElement
+    ) {
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
         this.isDestroyed = false;
-        this.structureType = Math.floor(random(0, 3));
         this.isArmored = isArmored;
-        this.rubbleShape = null; // To hold the static shape of the rubble
-        this.isSmoking = false; // To trigger the smoke effect
+        this.sprite = sprite;
+        this.rubbleShape = null;
+        this.isSmoking = false;
     }
+
     draw(ctx: CanvasRenderingContext2D, height: number): void {
         ctx.save();
         if (this.isDestroyed) {
             this.drawRubble(ctx, height);
         } else {
-            // Draw the structure based on its type
-            switch (this.structureType) {
-                case 0:
-                    this.drawBunker(ctx);
-                    break;
-                case 1:
-                    this.drawDome(ctx, height);
-                    break;
-                case 2:
-                    this.drawCommsTower(ctx);
-                    break;
+            // Draw the sprite with the correct dimensions
+            if (this.sprite && this.sprite.complete) {
+                ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
             }
-            // Draw the energy shield if armored
+
             if (this.isArmored) {
                 this.drawEnergyShield(ctx);
             }
         }
         ctx.restore();
-    }
-
-    private drawBunker(ctx: CanvasRenderingContext2D): void {
-        const h = this.height * 0.7;
-        const y = this.y + (this.height - h);
-
-        // Main structure with gradient
-        const gradient = ctx.createLinearGradient(this.x, y, this.x, y + h);
-        gradient.addColorStop(0, '#8d99ae');
-        gradient.addColorStop(1, '#6c757d');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(this.x, y, this.width, h);
-
-        // Details - vents, panels
-        ctx.fillStyle = '#343a40';
-        ctx.fillRect(this.x + this.width * 0.1, y + h * 0.2, this.width * 0.8, h * 0.1);
-        ctx.fillRect(this.x + this.width * 0.3, y + h * 0.5, this.width * 0.4, h * 0.15);
-
-        // Border
-        ctx.strokeStyle = '#212529';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(this.x, y, this.width, h);
-    }
-
-    private drawDome(ctx: CanvasRenderingContext2D, height: number): void {
-        const centerX = this.x + this.width / 2;
-        const radius = this.width / 1.8;
-
-        // Dome structure with a glowing gradient
-        ctx.beginPath();
-        ctx.arc(centerX, height, radius, Math.PI, 0);
-        const gradient = ctx.createRadialGradient(
-            centerX,
-            height - radius * 0.5,
-            radius * 0.2,
-            centerX,
-            height,
-            radius
-        );
-        gradient.addColorStop(0, 'rgba(173, 216, 230, 0.8)'); // Light blue center
-        gradient.addColorStop(0.7, 'rgba(0, 191, 255, 0.6)'); // Deep sky blue
-        gradient.addColorStop(1, 'rgba(70, 130, 180, 0.3)'); // Steel blue transparent
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Geodesic pattern
-        ctx.save();
-        ctx.strokeStyle = 'rgba(173, 216, 230, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.clip(); // Clip the lines to the dome shape
-        ctx.stroke();
-        ctx.restore();
-    }
-
-    private drawCommsTower(ctx: CanvasRenderingContext2D): void {
-        const towerWidth = this.width * 0.2;
-        const towerX = this.x + (this.width - towerWidth) / 2;
-
-        // Main mast with gradient
-        const gradient = ctx.createLinearGradient(towerX, this.y, towerX + towerWidth, this.y);
-        gradient.addColorStop(0, '#adb5bd');
-        gradient.addColorStop(0.5, '#f8f9fa');
-        gradient.addColorStop(1, '#adb5bd');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(towerX, this.y, towerWidth, this.height);
-
-        // Antenna segments
-        ctx.strokeStyle = '#495057';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 5; i++) {
-            const segY = this.y + this.height * (0.2 * i);
-            ctx.strokeRect(towerX - towerWidth * 0.5, segY, towerWidth * 2, 2);
-        }
-
-        // Blinking light and dish
-        const dishY = this.y + 10;
-        ctx.beginPath();
-        ctx.arc(towerX + towerWidth / 2, dishY, towerWidth * 1.5, Math.PI * 1.2, Math.PI * 1.8);
-        ctx.strokeStyle = '#e9ecef';
-        ctx.stroke();
-
-        if (Math.random() > 0.5) {
-            ctx.fillStyle = '#ff4d4d';
-            ctx.shadowColor = '#ff4d4d';
-            ctx.shadowBlur = 15;
-            ctx.beginPath();
-            ctx.arc(towerX + towerWidth / 2, this.y, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
     }
 
     private drawEnergyShield(ctx: CanvasRenderingContext2D): void {
@@ -209,7 +119,6 @@ export class City implements CityType {
                 yOffset: random(-this.height * 0.1, this.height * 0.2),
                 color: rubbleColors[i % rubbleColors.length],
                 points: [
-                    // Pre-calculate jagged points for a static shape
                     { x: 0, y: 1 },
                     { x: random(0.1, 0.3), y: random(0.1, 0.3) },
                     { x: random(0.7, 0.9), y: random(0.1, 0.3) },
@@ -270,7 +179,7 @@ export class AutomatedTurret implements AutomatedTurretType {
 
         return [];
     }
-    
+
     private updateTarget(rockets: RocketType[]): void {
         // Target validation: Check if current target is still valid
         if (this.currentTarget) {
@@ -292,15 +201,15 @@ export class AutomatedTurret implements AutomatedTurretType {
     }
 
     private aimAndFire(target: RocketType): TracerRoundType[] {
-         // Predictive Targeting
+        // Predictive Targeting
         const dist = Math.hypot(this.x - target.x, this.y - target.y);
         const timeToImpact = dist / this.tracerSpeed;
         const predictedX = target.x + target.vx * timeToImpact;
         const predictedY = target.y + target.vy * timeToImpact;
-        
+
         // Aim at the predicted position
         this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
-        
+
         this.isFiring = true;
         this.shotTimer++;
         if (this.shotTimer % this.delayBetweenShots === 0) {
@@ -364,7 +273,7 @@ export class AutomatedTurret implements AutomatedTurretType {
 
         // Muzzle flash
         if (this.isFiring) {
-           this.drawMuzzleFlash(ctx);
+            this.drawMuzzleFlash(ctx);
         }
 
         // Gun barrel

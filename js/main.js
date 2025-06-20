@@ -475,14 +475,14 @@
 
   // ts/entities/structures.ts
   var City = class {
-    constructor(x, y, w, h, isArmored = false) {
+    constructor(x, y, w, h, isArmored = false, sprite) {
       this.x = x;
       this.y = y;
       this.width = w;
       this.height = h;
       this.isDestroyed = false;
-      this.structureType = Math.floor(random(0, 3));
       this.isArmored = isArmored;
+      this.sprite = sprite;
       this.rubbleShape = null;
       this.isSmoking = false;
     }
@@ -491,92 +491,14 @@
       if (this.isDestroyed) {
         this.drawRubble(ctx2, height2);
       } else {
-        switch (this.structureType) {
-          case 0:
-            this.drawBunker(ctx2);
-            break;
-          case 1:
-            this.drawDome(ctx2, height2);
-            break;
-          case 2:
-            this.drawCommsTower(ctx2);
-            break;
+        if (this.sprite && this.sprite.complete) {
+          ctx2.drawImage(this.sprite, this.x, this.y, this.width, this.height);
         }
         if (this.isArmored) {
           this.drawEnergyShield(ctx2);
         }
       }
       ctx2.restore();
-    }
-    drawBunker(ctx2) {
-      const h = this.height * 0.7;
-      const y = this.y + (this.height - h);
-      const gradient = ctx2.createLinearGradient(this.x, y, this.x, y + h);
-      gradient.addColorStop(0, "#8d99ae");
-      gradient.addColorStop(1, "#6c757d");
-      ctx2.fillStyle = gradient;
-      ctx2.fillRect(this.x, y, this.width, h);
-      ctx2.fillStyle = "#343a40";
-      ctx2.fillRect(this.x + this.width * 0.1, y + h * 0.2, this.width * 0.8, h * 0.1);
-      ctx2.fillRect(this.x + this.width * 0.3, y + h * 0.5, this.width * 0.4, h * 0.15);
-      ctx2.strokeStyle = "#212529";
-      ctx2.lineWidth = 2;
-      ctx2.strokeRect(this.x, y, this.width, h);
-    }
-    drawDome(ctx2, height2) {
-      const centerX = this.x + this.width / 2;
-      const radius = this.width / 1.8;
-      ctx2.beginPath();
-      ctx2.arc(centerX, height2, radius, Math.PI, 0);
-      const gradient = ctx2.createRadialGradient(
-        centerX,
-        height2 - radius * 0.5,
-        radius * 0.2,
-        centerX,
-        height2,
-        radius
-      );
-      gradient.addColorStop(0, "rgba(173, 216, 230, 0.8)");
-      gradient.addColorStop(0.7, "rgba(0, 191, 255, 0.6)");
-      gradient.addColorStop(1, "rgba(70, 130, 180, 0.3)");
-      ctx2.fillStyle = gradient;
-      ctx2.fill();
-      ctx2.save();
-      ctx2.strokeStyle = "rgba(173, 216, 230, 0.4)";
-      ctx2.lineWidth = 1;
-      ctx2.beginPath();
-      ctx2.clip();
-      ctx2.stroke();
-      ctx2.restore();
-    }
-    drawCommsTower(ctx2) {
-      const towerWidth = this.width * 0.2;
-      const towerX = this.x + (this.width - towerWidth) / 2;
-      const gradient = ctx2.createLinearGradient(towerX, this.y, towerX + towerWidth, this.y);
-      gradient.addColorStop(0, "#adb5bd");
-      gradient.addColorStop(0.5, "#f8f9fa");
-      gradient.addColorStop(1, "#adb5bd");
-      ctx2.fillStyle = gradient;
-      ctx2.fillRect(towerX, this.y, towerWidth, this.height);
-      ctx2.strokeStyle = "#495057";
-      ctx2.lineWidth = 2;
-      for (let i = 0; i < 5; i++) {
-        const segY = this.y + this.height * (0.2 * i);
-        ctx2.strokeRect(towerX - towerWidth * 0.5, segY, towerWidth * 2, 2);
-      }
-      const dishY = this.y + 10;
-      ctx2.beginPath();
-      ctx2.arc(towerX + towerWidth / 2, dishY, towerWidth * 1.5, Math.PI * 1.2, Math.PI * 1.8);
-      ctx2.strokeStyle = "#e9ecef";
-      ctx2.stroke();
-      if (Math.random() > 0.5) {
-        ctx2.fillStyle = "#ff4d4d";
-        ctx2.shadowColor = "#ff4d4d";
-        ctx2.shadowBlur = 15;
-        ctx2.beginPath();
-        ctx2.arc(towerX + towerWidth / 2, this.y, 5, 0, Math.PI * 2);
-        ctx2.fill();
-      }
     }
     drawEnergyShield(ctx2) {
       ctx2.save();
@@ -625,7 +547,6 @@
           yOffset: random(-this.height * 0.1, this.height * 0.2),
           color: rubbleColors[i % rubbleColors.length],
           points: [
-            // Pre-calculate jagged points for a static shape
             { x: 0, y: 1 },
             { x: random(0.1, 0.3), y: random(0.1, 0.3) },
             { x: random(0.7, 0.9), y: random(0.1, 0.3) },
@@ -1381,30 +1302,40 @@
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 3;
+      ctx2.fillStyle = "rgba(255, 200, 150, 0.7)";
+      ctx2.shadowColor = "orange";
+      ctx2.shadowBlur = 10;
+      ctx2.beginPath();
+      ctx2.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.shadowBlur = 0;
       ctx2.fillStyle = "#6c757d";
       ctx2.beginPath();
-      ctx2.moveTo(-w, h * 0.3);
-      ctx2.lineTo(-w * 1.5, h * 0.5);
+      ctx2.moveTo(-w, h * 0.2);
+      ctx2.lineTo(-w * 1.8, h * 0.5);
       ctx2.lineTo(-w, h * 0.5);
-      ctx2.moveTo(w, h * 0.3);
-      ctx2.lineTo(w * 1.5, h * 0.5);
+      ctx2.moveTo(w, h * 0.2);
+      ctx2.lineTo(w * 1.8, h * 0.5);
       ctx2.lineTo(w, h * 0.5);
       ctx2.fill();
-      const gradient = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
-      gradient.addColorStop(0, "#dee2e6");
-      gradient.addColorStop(0.5, "#adb5bd");
-      gradient.addColorStop(1, "#6c757d");
+      const gradient = ctx2.createLinearGradient(-w / 2, 0, w / 2, 0);
+      gradient.addColorStop(0, "#8d99ae");
+      gradient.addColorStop(0.5, "#dee2e6");
+      gradient.addColorStop(1, "#8d99ae");
       ctx2.fillStyle = gradient;
       ctx2.fillRect(-w / 2, -h / 2, w, h);
+      ctx2.strokeStyle = "rgba(0, 0, 0, 0.2)";
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -h / 2);
+      ctx2.lineTo(0, h / 2);
+      ctx2.stroke();
       ctx2.fillStyle = this.color;
       ctx2.beginPath();
       ctx2.moveTo(0, -h * 0.6);
       ctx2.lineTo(-w / 2, -h / 2);
       ctx2.lineTo(w / 2, -h / 2);
       ctx2.closePath();
-      ctx2.fill();
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 10;
       ctx2.fill();
       ctx2.restore();
     }
@@ -1459,7 +1390,7 @@
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 3;
-      this.drawHead(ctx2);
+      super.drawHead(ctx2);
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       ctx2.strokeStyle = "#212529";
@@ -1492,7 +1423,8 @@
     }
     draw(ctx2) {
       if (this.isVisible) {
-        super.draw(ctx2);
+        this.drawTrail(ctx2);
+        this.drawHead(ctx2);
       } else {
         ctx2.save();
         ctx2.translate(this.x, this.y);
@@ -1601,8 +1533,11 @@
       const w = this.radius;
       const h = this.radius * 3;
       ctx2.fillStyle = "#1e6a21";
-      ctx2.fillRect(-w * 0.8, -h * 0.2, w * 0.3, h * 0.4);
-      ctx2.fillRect(w * 0.5, -h * 0.2, w * 0.3, h * 0.4);
+      ctx2.fillRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
+      ctx2.fillRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
+      ctx2.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx2.strokeRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
+      ctx2.strokeRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
       ctx2.restore();
     }
   };
@@ -1643,23 +1578,36 @@
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 2.5;
-      ctx2.fillStyle = "#adb5bd";
+      ctx2.fillStyle = "rgba(255, 100, 255, 0.5)";
+      ctx2.shadowColor = this.color;
+      ctx2.shadowBlur = 15;
+      ctx2.beginPath();
+      ctx2.arc(0, h * 0.4, w, 0, Math.PI, false);
+      ctx2.fill();
+      ctx2.shadowBlur = 0;
+      const bodyGrad = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
+      bodyGrad.addColorStop(0, "#555");
+      bodyGrad.addColorStop(1, "#333");
+      ctx2.fillStyle = bodyGrad;
       ctx2.beginPath();
       ctx2.moveTo(0, -h / 2);
       ctx2.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
       ctx2.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
       ctx2.fill();
-      ctx2.strokeStyle = "#495057";
+      ctx2.strokeStyle = "rgba(0,0,0,0.5)";
       ctx2.lineWidth = 2;
       ctx2.beginPath();
       ctx2.moveTo(0, -h / 2);
       ctx2.lineTo(0, h / 2);
       ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.ellipse(0, 0, w * 0.8, h * 0.2, 0, 0, Math.PI * 2);
+      ctx2.stroke();
       ctx2.fillStyle = this.color;
       ctx2.shadowColor = this.color;
       ctx2.shadowBlur = 15;
       ctx2.beginPath();
-      ctx2.arc(0, -h / 2, w / 2, Math.PI, 0);
+      ctx2.arc(0, -h / 2, w / 1.5, Math.PI * 0.9, Math.PI * 0.1, true);
       ctx2.closePath();
       ctx2.fill();
       ctx2.restore();
@@ -1681,6 +1629,17 @@
         flares.push(new Flare(this.x, this.y));
         this.flareCooldown = this.flareDeployInterval;
       }
+    }
+    drawHead(ctx2) {
+      super.drawHead(ctx2);
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      const w = this.radius;
+      const h = this.radius * 3;
+      ctx2.fillStyle = "#2c3e50";
+      ctx2.fillRect(-w * 0.4, h * 0.1, w * 0.8, h * 0.3);
+      ctx2.restore();
     }
   };
   var ArtilleryDesignator = class extends Rocket {
@@ -1802,15 +1761,17 @@
     }
     draw(ctx2) {
       const progress = 1 - this.timeLeft / 30;
-      const currentY = this.startY + (this.targetY - this.startY) * progress;
       ctx2.beginPath();
       ctx2.moveTo(this.startX, this.startY);
       ctx2.lineTo(this.targetX, this.targetY);
       const gradient = ctx2.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
+      const stop1 = Math.max(0, progress - 0.05);
+      const stop2 = progress;
+      const stop3 = Math.min(1, progress + 0.05);
       gradient.addColorStop(0, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(progress - 0.1, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(progress, "white");
-      gradient.addColorStop(progress + 0.1, "rgba(255, 100, 0, 0)");
+      gradient.addColorStop(stop1, "rgba(255, 100, 0, 0)");
+      gradient.addColorStop(stop2, "white");
+      gradient.addColorStop(stop3, "rgba(255, 100, 0, 0)");
       gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
       ctx2.strokeStyle = gradient;
       ctx2.lineWidth = 4;
@@ -2713,6 +2674,32 @@
     );
   }
 
+  // ts/assetLoader.ts
+  var spriteUrls = {
+    bunker: "assets/bunker.png",
+    dome: "assets/dome.png",
+    comms: "assets/tower.png"
+  };
+  var loadedSprites = {};
+  function loadGameAssets() {
+    const promises = [];
+    for (const key in spriteUrls) {
+      const url = spriteUrls[key];
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedSprites[key] = img;
+          resolve();
+        };
+        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
+        img.src = url;
+      });
+      promises.push(promise);
+    }
+    return Promise.all(promises).then(() => {
+    });
+  }
+
   // ts/main.ts
   var canvas = document.getElementById("gameCanvas");
   var ctx = canvas.getContext("2d");
@@ -2757,14 +2744,24 @@
   };
   function createCities() {
     state.cities = [];
-    const cityWidth = width / config.cityCount;
-    const minHeight = 30;
+    const citySlotWidth = width / config.cityCount;
+    const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120);
+    const spriteKeys = Object.keys(loadedSprites);
     for (let i = 0; i < config.cityCount; i++) {
-      const h = random(minHeight, maxHeight);
-      const w = cityWidth * random(0.6, 0.8);
-      const x = i * cityWidth + (cityWidth - w) / 2;
-      state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
+      const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+      const sprite = loadedSprites[randomSpriteKey];
+      let h;
+      if (randomSpriteKey === "comms") {
+        h = random(maxHeight, maxHeight * 1.3);
+      } else {
+        h = random(minHeight, maxHeight * 0.9);
+      }
+      const aspectRatio = sprite.naturalWidth / sprite.naturalHeight;
+      const w = h * aspectRatio;
+      const x = i * citySlotWidth + (citySlotWidth - w) / 2;
+      const y = height - h;
+      state.cities.push(new City(x, y, w, h, state.basesAreArmored, sprite));
     }
   }
   var resizeCanvas = () => {
@@ -2787,34 +2784,42 @@
       draw(ctx, state, width, height);
     }
   };
-  function init() {
+  async function init() {
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
     }
-    const playerData = loadPlayerData();
-    state = createInitialState(playerData);
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-    canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
-    canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
-    document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
-    document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
-      const gameWasRunning = state.gameState === "IN_WAVE";
-      if (gameWasRunning) {
-        state.gameState = "PAUSED";
-        updateTopUI(state);
-      }
-      showRocketInfoScreen(() => {
-        hideModal();
+    modalContainer.style.display = "flex";
+    modalContent.innerHTML = "<h1>Loading Assets...</h1>";
+    try {
+      await loadGameAssets();
+      const playerData = loadPlayerData();
+      state = createInitialState(playerData);
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+      canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
+      canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
+      document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
+      document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
+        const gameWasRunning = state.gameState === "IN_WAVE";
         if (gameWasRunning) {
-          state.gameState = "IN_WAVE";
+          state.gameState = "PAUSED";
           updateTopUI(state);
         }
+        showRocketInfoScreen(() => {
+          hideModal();
+          if (gameWasRunning) {
+            state.gameState = "IN_WAVE";
+            updateTopUI(state);
+          }
+        });
       });
-    });
-    canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
-    showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
-    animationFrameId = requestAnimationFrame(gameLoop);
+      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
+      showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
+      animationFrameId = requestAnimationFrame(gameLoop);
+    } catch (error) {
+      console.error("Failed to load game assets:", error);
+      modalContent.innerHTML = "<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>";
+    }
   }
   init();
 })();
