@@ -65,7 +65,7 @@ export class City implements CityType {
         ctx.restore();
     }
 
-    drawBunker(ctx: CanvasRenderingContext2D): void {
+    private drawBunker(ctx: CanvasRenderingContext2D): void {
         const h = this.height * 0.7;
         const y = this.y + (this.height - h);
 
@@ -87,7 +87,7 @@ export class City implements CityType {
         ctx.strokeRect(this.x, y, this.width, h);
     }
 
-    drawDome(ctx: CanvasRenderingContext2D, height: number): void {
+    private drawDome(ctx: CanvasRenderingContext2D, height: number): void {
         const centerX = this.x + this.width / 2;
         const radius = this.width / 1.8;
 
@@ -118,7 +118,7 @@ export class City implements CityType {
         ctx.restore();
     }
 
-    drawCommsTower(ctx: CanvasRenderingContext2D): void {
+    private drawCommsTower(ctx: CanvasRenderingContext2D): void {
         const towerWidth = this.width * 0.2;
         const towerX = this.x + (this.width - towerWidth) / 2;
 
@@ -155,7 +155,7 @@ export class City implements CityType {
         }
     }
 
-    drawEnergyShield(ctx: CanvasRenderingContext2D): void {
+    private drawEnergyShield(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         const shieldPadding = 8;
         const shieldX = this.x - shieldPadding;
@@ -177,7 +177,7 @@ export class City implements CityType {
         ctx.restore();
     }
 
-    drawRubble(ctx: CanvasRenderingContext2D, height: number): void {
+    private drawRubble(ctx: CanvasRenderingContext2D, height: number): void {
         if (!this.rubbleShape) return;
 
         this.rubbleShape.forEach((shape) => {
@@ -232,13 +232,14 @@ export class AutomatedTurret implements AutomatedTurretType {
     y: number;
     range: number;
     fireRate: number; // Now used as cooldown between targets
-    fireCooldown: number;
-    angle: number;
-    radarAngle: number;
-    currentTarget: RocketType | null;
-    isFiring: boolean;
-    shotTimer: number;
-    delayBetweenShots: number;
+    private fireCooldown: number;
+    private angle: number;
+    private radarAngle: number;
+    private currentTarget: RocketType | null;
+    private isFiring: boolean;
+    private shotTimer: number;
+    private readonly delayBetweenShots: number;
+    private readonly tracerSpeed = 25;
 
     constructor(x: number, y: number, range: number, fireRate: number) {
         this.x = x;
@@ -254,11 +255,23 @@ export class AutomatedTurret implements AutomatedTurretType {
         this.delayBetweenShots = 2; // Fires much faster
     }
 
-    update(rockets: RocketType[]): TracerRoundType[] {
-        const tracerSpeed = 25; // Faster projectiles
-        const newTracers: TracerRoundType[] = [];
+    public update(rockets: RocketType[]): TracerRoundType[] {
         if (this.fireCooldown > 0) this.fireCooldown--;
 
+        this.updateTarget(rockets);
+
+        if (this.currentTarget) {
+            return this.aimAndFire(this.currentTarget);
+        } else {
+            // If no target, scan with radar
+            this.radarAngle += 0.02;
+            this.isFiring = false;
+        }
+
+        return [];
+    }
+    
+    private updateTarget(rockets: RocketType[]): void {
         // Target validation: Check if current target is still valid
         if (this.currentTarget) {
             const targetExists = rockets.some((r) => r.id === this.currentTarget!.id);
@@ -266,46 +279,39 @@ export class AutomatedTurret implements AutomatedTurretType {
                 targetExists && Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y) < this.range;
             if (!targetExists || !targetInRange) {
                 this.currentTarget = null; // Target is gone, find a new one
-                this.isFiring = false;
             }
         }
 
-        // Target acquisition: If no target, find one
+        // Target acquisition: If no target and not cooling down, find one
         if (!this.currentTarget && this.fireCooldown <= 0) {
-            this.isFiring = false;
             this.currentTarget = this.findTarget(rockets);
             if (this.currentTarget) {
-                this.fireCooldown = this.fireRate; // Cooldown before switching to another target
+                this.fireCooldown = this.fireRate; // Start cooldown before switching to another target
             }
         }
-
-        // Firing logic
-        if (this.currentTarget) {
-            // Predictive Targeting
-            const dist = Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y);
-            const timeToImpact = dist / tracerSpeed;
-            const predictedX = this.currentTarget.x + this.currentTarget.vx * timeToImpact;
-            const predictedY = this.currentTarget.y + this.currentTarget.vy * timeToImpact;
-
-            // Aim at the predicted position
-            this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
-
-            this.isFiring = true;
-            this.shotTimer++;
-            if (this.shotTimer % this.delayBetweenShots === 0) {
-                // Add slight inaccuracy
-                const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
-                newTracers.push(new TracerRound(this.x, this.y, fireAngle, tracerSpeed));
-            }
-        } else {
-            // If no target, scan with radar
-            this.radarAngle += 0.02;
-        }
-
-        return newTracers;
     }
 
-    findTarget(rockets: RocketType[]): RocketType | null {
+    private aimAndFire(target: RocketType): TracerRoundType[] {
+         // Predictive Targeting
+        const dist = Math.hypot(this.x - target.x, this.y - target.y);
+        const timeToImpact = dist / this.tracerSpeed;
+        const predictedX = target.x + target.vx * timeToImpact;
+        const predictedY = target.y + target.vy * timeToImpact;
+        
+        // Aim at the predicted position
+        this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
+        
+        this.isFiring = true;
+        this.shotTimer++;
+        if (this.shotTimer % this.delayBetweenShots === 0) {
+            // Add slight inaccuracy
+            const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
+            return [new TracerRound(this.x, this.y, fireAngle, this.tracerSpeed)];
+        }
+        return [];
+    }
+
+    private findTarget(rockets: RocketType[]): RocketType | null {
         const inRange = rockets.filter((r) => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
         if (inRange.length === 0) return null;
 
@@ -330,7 +336,7 @@ export class AutomatedTurret implements AutomatedTurretType {
         });
     }
 
-    draw(ctx: CanvasRenderingContext2D): void {
+    public draw(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         ctx.translate(this.x, this.y);
 
@@ -356,17 +362,9 @@ export class AutomatedTurret implements AutomatedTurretType {
         // Rotate turret assembly
         ctx.rotate(this.angle);
 
-        // Muzzle flash (more intense)
+        // Muzzle flash
         if (this.isFiring) {
-            ctx.fillStyle = `rgba(255, ${random(180, 220)}, 0, ${random(0.5, 1)})`;
-            ctx.beginPath();
-            const flashLength = random(20, 40);
-            const flashWidth = random(8, 12);
-            ctx.moveTo(20, 0);
-            ctx.lineTo(20 + flashLength, -flashWidth / 2);
-            ctx.lineTo(20 + flashLength, flashWidth / 2);
-            ctx.closePath();
-            ctx.fill();
+           this.drawMuzzleFlash(ctx);
         }
 
         // Gun barrel
@@ -379,5 +377,17 @@ export class AutomatedTurret implements AutomatedTurretType {
         ctx.arc(0, 0, 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
+    }
+
+    private drawMuzzleFlash(ctx: CanvasRenderingContext2D): void {
+        ctx.fillStyle = `rgba(255, ${random(180, 220)}, 0, ${random(0.5, 1)})`;
+        ctx.beginPath();
+        const flashLength = random(20, 40);
+        const flashWidth = random(8, 12);
+        ctx.moveTo(20, 0);
+        ctx.lineTo(20 + flashLength, -flashWidth / 2);
+        ctx.lineTo(20 + flashLength, flashWidth / 2);
+        ctx.closePath();
+        ctx.fill();
     }
 }

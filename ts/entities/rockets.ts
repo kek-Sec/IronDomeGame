@@ -45,7 +45,12 @@ export class Rocket implements T.Rocket {
         this.life++;
     }
 
-    protected _drawTrail(ctx: CanvasRenderingContext2D): void {
+    draw(ctx: CanvasRenderingContext2D): void {
+        this.drawTrail(ctx);
+        this.drawHead(ctx);
+    }
+    
+    protected drawTrail(ctx: CanvasRenderingContext2D): void {
         if (!this.trail[0]) return;
         ctx.beginPath();
         ctx.moveTo(this.trail[0].x, this.trail[0].y);
@@ -61,7 +66,7 @@ export class Rocket implements T.Rocket {
         ctx.stroke();
     }
 
-    protected _drawHead(ctx: CanvasRenderingContext2D): void {
+    protected drawHead(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
@@ -102,18 +107,13 @@ export class Rocket implements T.Rocket {
 
         ctx.restore();
     }
-
-    draw(ctx: CanvasRenderingContext2D): void {
-        this._drawTrail(ctx);
-        this._drawHead(ctx);
-    }
 }
 
 // A rocket that requires multiple hits to destroy
 export class ArmoredRocket extends Rocket implements T.Rocket {
     health: number = 3;
     maxHealth: number = 3;
-    hitFlashTimer: number = 0;
+    private hitFlashTimer: number = 0;
 
     constructor(width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1) {
         super(
@@ -140,8 +140,24 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         this.hitFlashTimer = 10; // Activate flash on hit
         return this.health <= 0;
     }
+
+    private drawHealthBar(ctx: CanvasRenderingContext2D): void {
+        const barWidth = this.radius * 3;
+        const barHeight = 5;
+        const barX = this.x - barWidth / 2;
+        const barY = this.y - this.radius * 3;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        const healthPercentage = this.health / this.maxHealth;
+        ctx.fillStyle = healthPercentage > 0.6 ? '#43a047' : healthPercentage > 0.3 ? '#fdd835' : '#e53935';
+        ctx.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+    }
+
     draw(ctx: CanvasRenderingContext2D): void {
-        this._drawTrail(ctx);
+        this.drawTrail(ctx);
 
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -151,7 +167,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         const h = this.radius * 3;
 
         // Base rocket body (drawn again for layering)
-        this._drawHead(ctx);
+        this.drawHead(ctx);
 
         // Armor Plating
         ctx.fillStyle = '#495057';
@@ -169,20 +185,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         }
 
         ctx.restore();
-
-        // Health bar
-        const barWidth = this.radius * 3;
-        const barHeight = 5;
-        const barX = this.x - barWidth / 2;
-        const barY = this.y - this.radius * 3;
-        ctx.fillStyle = '#333';
-        ctx.fillRect(barX, barY, barWidth, barHeight);
-        const healthPercentage = this.health / this.maxHealth;
-        ctx.fillStyle = healthPercentage > 0.6 ? '#43a047' : healthPercentage > 0.3 ? '#fdd835' : '#e53935';
-        ctx.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
-        ctx.strokeStyle = '#222';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        this.drawHealthBar(ctx);
     }
 }
 
@@ -217,7 +220,7 @@ export class StealthRocket extends Rocket implements T.Rocket {
             ctx.restore();
         }
     }
-    protected _drawHead(ctx: CanvasRenderingContext2D) {
+    protected drawHead(ctx: CanvasRenderingContext2D) {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
@@ -267,7 +270,7 @@ export class Drone extends Rocket implements T.Rocket {
         this.trailColor = 'rgba(255, 255, 0, 0.5)';
         this.color = 'yellow';
     }
-    protected _drawHead(ctx: CanvasRenderingContext2D) {
+    protected drawHead(ctx: CanvasRenderingContext2D) {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
@@ -330,8 +333,8 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
         }
         return childDrones;
     }
-    protected _drawHead(ctx: CanvasRenderingContext2D) {
-        super._drawHead(ctx); // Draw the base missile shape
+    protected drawHead(ctx: CanvasRenderingContext2D) {
+        super.drawHead(ctx); // Draw the base missile shape
         // Add swarmer-specific details over the top
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -381,7 +384,7 @@ export class MirvRocket extends Rocket implements T.Rocket {
         }
         return childRockets;
     }
-    protected _drawHead(ctx: CanvasRenderingContext2D) {
+    protected drawHead(ctx: CanvasRenderingContext2D) {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
@@ -501,41 +504,47 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
         }
     }
 
+    private drawTargetingLaser(ctx: CanvasRenderingContext2D) {
+        if (!this.targetCity) return;
+        
+        const progress = this.designationTimer / this.designationDuration;
+        const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
+        const beamWidth = 1 + progress * 4;
+
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
+        ctx.strokeStyle = beamColor;
+        ctx.lineWidth = beamWidth;
+        ctx.shadowColor = 'red';
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const circleRadius = (this.targetCity.width / 2) * (1 - progress);
+        ctx.beginPath();
+        ctx.arc(
+            this.targetCity.x + this.targetCity.width / 2,
+            this.targetCity.y + this.targetCity.height / 2,
+            circleRadius,
+            0,
+            Math.PI * 2
+        );
+        ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
     draw(ctx: CanvasRenderingContext2D) {
-        this._drawTrail(ctx);
-        this._drawHead(ctx);
+        this.drawTrail(ctx);
+        this.drawHead(ctx);
 
-        if (this.isDesignating && this.targetCity) {
-            const progress = this.designationTimer / this.designationDuration;
-            const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
-            const beamWidth = 1 + progress * 4;
-
-            ctx.beginPath();
-            ctx.moveTo(this.x, this.y);
-            ctx.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
-            ctx.strokeStyle = beamColor;
-            ctx.lineWidth = beamWidth;
-            ctx.shadowColor = 'red';
-            ctx.shadowBlur = 15;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            const circleRadius = (this.targetCity.width / 2) * (1 - progress);
-            ctx.beginPath();
-            ctx.arc(
-                this.targetCity.x + this.targetCity.width / 2,
-                this.targetCity.y + this.targetCity.height / 2,
-                circleRadius,
-                0,
-                Math.PI * 2
-            );
-            ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+        if (this.isDesignating) {
+           this.drawTargetingLaser(ctx);
         }
     }
 
-    protected _drawHead(ctx: CanvasRenderingContext2D) {
+    protected drawHead(ctx: CanvasRenderingContext2D) {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);

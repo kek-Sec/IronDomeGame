@@ -634,6 +634,7 @@
   };
   var AutomatedTurret = class {
     constructor(x, y, range, fireRate) {
+      this.tracerSpeed = 25;
       this.x = x;
       this.y = y;
       this.range = range;
@@ -647,40 +648,44 @@
       this.delayBetweenShots = 2;
     }
     update(rockets) {
-      const tracerSpeed = 25;
-      const newTracers = [];
       if (this.fireCooldown > 0) this.fireCooldown--;
+      this.updateTarget(rockets);
+      if (this.currentTarget) {
+        return this.aimAndFire(this.currentTarget);
+      } else {
+        this.radarAngle += 0.02;
+        this.isFiring = false;
+      }
+      return [];
+    }
+    updateTarget(rockets) {
       if (this.currentTarget) {
         const targetExists = rockets.some((r) => r.id === this.currentTarget.id);
         const targetInRange = targetExists && Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y) < this.range;
         if (!targetExists || !targetInRange) {
           this.currentTarget = null;
-          this.isFiring = false;
         }
       }
       if (!this.currentTarget && this.fireCooldown <= 0) {
-        this.isFiring = false;
         this.currentTarget = this.findTarget(rockets);
         if (this.currentTarget) {
           this.fireCooldown = this.fireRate;
         }
       }
-      if (this.currentTarget) {
-        const dist = Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y);
-        const timeToImpact = dist / tracerSpeed;
-        const predictedX = this.currentTarget.x + this.currentTarget.vx * timeToImpact;
-        const predictedY = this.currentTarget.y + this.currentTarget.vy * timeToImpact;
-        this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
-        this.isFiring = true;
-        this.shotTimer++;
-        if (this.shotTimer % this.delayBetweenShots === 0) {
-          const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
-          newTracers.push(new TracerRound(this.x, this.y, fireAngle, tracerSpeed));
-        }
-      } else {
-        this.radarAngle += 0.02;
+    }
+    aimAndFire(target) {
+      const dist = Math.hypot(this.x - target.x, this.y - target.y);
+      const timeToImpact = dist / this.tracerSpeed;
+      const predictedX = target.x + target.vx * timeToImpact;
+      const predictedY = target.y + target.vy * timeToImpact;
+      this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
+      this.isFiring = true;
+      this.shotTimer++;
+      if (this.shotTimer % this.delayBetweenShots === 0) {
+        const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
+        return [new TracerRound(this.x, this.y, fireAngle, this.tracerSpeed)];
       }
-      return newTracers;
+      return [];
     }
     findTarget(rockets) {
       const inRange = rockets.filter((r) => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
@@ -717,15 +722,7 @@
       }
       ctx2.rotate(this.angle);
       if (this.isFiring) {
-        ctx2.fillStyle = `rgba(255, ${random(180, 220)}, 0, ${random(0.5, 1)})`;
-        ctx2.beginPath();
-        const flashLength = random(20, 40);
-        const flashWidth = random(8, 12);
-        ctx2.moveTo(20, 0);
-        ctx2.lineTo(20 + flashLength, -flashWidth / 2);
-        ctx2.lineTo(20 + flashLength, flashWidth / 2);
-        ctx2.closePath();
-        ctx2.fill();
+        this.drawMuzzleFlash(ctx2);
       }
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(0, -4, 25, 8);
@@ -734,6 +731,17 @@
       ctx2.arc(0, 0, 8, 0, Math.PI * 2);
       ctx2.fill();
       ctx2.restore();
+    }
+    drawMuzzleFlash(ctx2) {
+      ctx2.fillStyle = `rgba(255, ${random(180, 220)}, 0, ${random(0.5, 1)})`;
+      ctx2.beginPath();
+      const flashLength = random(20, 40);
+      const flashWidth = random(8, 12);
+      ctx2.moveTo(20, 0);
+      ctx2.lineTo(20 + flashLength, -flashWidth / 2);
+      ctx2.lineTo(20 + flashLength, flashWidth / 2);
+      ctx2.closePath();
+      ctx2.fill();
     }
   };
 
@@ -1340,7 +1348,11 @@
       this.angle = Math.atan2(this.vy, this.vx) - Math.PI / 2;
       this.life++;
     }
-    _drawTrail(ctx2) {
+    draw(ctx2) {
+      this.drawTrail(ctx2);
+      this.drawHead(ctx2);
+    }
+    drawTrail(ctx2) {
       if (!this.trail[0]) return;
       ctx2.beginPath();
       ctx2.moveTo(this.trail[0].x, this.trail[0].y);
@@ -1355,7 +1367,7 @@
       ctx2.lineWidth = 3 * (this.radius / 5);
       ctx2.stroke();
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1388,10 +1400,6 @@
       ctx2.fill();
       ctx2.restore();
     }
-    draw(ctx2) {
-      this._drawTrail(ctx2);
-      this._drawHead(ctx2);
-    }
   };
   var ArmoredRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
@@ -1422,14 +1430,28 @@
       this.hitFlashTimer = 10;
       return this.health <= 0;
     }
+    drawHealthBar(ctx2) {
+      const barWidth = this.radius * 3;
+      const barHeight = 5;
+      const barX = this.x - barWidth / 2;
+      const barY = this.y - this.radius * 3;
+      ctx2.fillStyle = "#333";
+      ctx2.fillRect(barX, barY, barWidth, barHeight);
+      const healthPercentage = this.health / this.maxHealth;
+      ctx2.fillStyle = healthPercentage > 0.6 ? "#43a047" : healthPercentage > 0.3 ? "#fdd835" : "#e53935";
+      ctx2.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
+      ctx2.strokeStyle = "#222";
+      ctx2.lineWidth = 1;
+      ctx2.strokeRect(barX, barY, barWidth, barHeight);
+    }
     draw(ctx2) {
-      this._drawTrail(ctx2);
+      this.drawTrail(ctx2);
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 3;
-      this._drawHead(ctx2);
+      this.drawHead(ctx2);
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       ctx2.strokeStyle = "#212529";
@@ -1443,18 +1465,7 @@
         ctx2.globalCompositeOperation = "source-over";
       }
       ctx2.restore();
-      const barWidth = this.radius * 3;
-      const barHeight = 5;
-      const barX = this.x - barWidth / 2;
-      const barY = this.y - this.radius * 3;
-      ctx2.fillStyle = "#333";
-      ctx2.fillRect(barX, barY, barWidth, barHeight);
-      const healthPercentage = this.health / this.maxHealth;
-      ctx2.fillStyle = healthPercentage > 0.6 ? "#43a047" : healthPercentage > 0.3 ? "#fdd835" : "#e53935";
-      ctx2.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
-      ctx2.strokeStyle = "#222";
-      ctx2.lineWidth = 1;
-      ctx2.strokeRect(barX, barY, barWidth, barHeight);
+      this.drawHealthBar(ctx2);
     }
   };
   var StealthRocket = class extends Rocket {
@@ -1486,7 +1497,7 @@
         ctx2.restore();
       }
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1521,7 +1532,7 @@
       this.trailColor = "rgba(255, 255, 0, 0.5)";
       this.color = "yellow";
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1574,8 +1585,8 @@
       }
       return childDrones;
     }
-    _drawHead(ctx2) {
-      super._drawHead(ctx2);
+    drawHead(ctx2) {
+      super.drawHead(ctx2);
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1618,7 +1629,7 @@
       }
       return childRockets;
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1711,37 +1722,41 @@
         this.angle = Math.atan2(this.vy, this.vx) - Math.PI / 2;
       }
     }
+    drawTargetingLaser(ctx2) {
+      if (!this.targetCity) return;
+      const progress = this.designationTimer / this.designationDuration;
+      const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
+      const beamWidth = 1 + progress * 4;
+      ctx2.beginPath();
+      ctx2.moveTo(this.x, this.y);
+      ctx2.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
+      ctx2.strokeStyle = beamColor;
+      ctx2.lineWidth = beamWidth;
+      ctx2.shadowColor = "red";
+      ctx2.shadowBlur = 15;
+      ctx2.stroke();
+      ctx2.shadowBlur = 0;
+      const circleRadius = this.targetCity.width / 2 * (1 - progress);
+      ctx2.beginPath();
+      ctx2.arc(
+        this.targetCity.x + this.targetCity.width / 2,
+        this.targetCity.y + this.targetCity.height / 2,
+        circleRadius,
+        0,
+        Math.PI * 2
+      );
+      ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
+      ctx2.lineWidth = 2;
+      ctx2.stroke();
+    }
     draw(ctx2) {
-      this._drawTrail(ctx2);
-      this._drawHead(ctx2);
-      if (this.isDesignating && this.targetCity) {
-        const progress = this.designationTimer / this.designationDuration;
-        const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
-        const beamWidth = 1 + progress * 4;
-        ctx2.beginPath();
-        ctx2.moveTo(this.x, this.y);
-        ctx2.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
-        ctx2.strokeStyle = beamColor;
-        ctx2.lineWidth = beamWidth;
-        ctx2.shadowColor = "red";
-        ctx2.shadowBlur = 15;
-        ctx2.stroke();
-        ctx2.shadowBlur = 0;
-        const circleRadius = this.targetCity.width / 2 * (1 - progress);
-        ctx2.beginPath();
-        ctx2.arc(
-          this.targetCity.x + this.targetCity.width / 2,
-          this.targetCity.y + this.targetCity.height / 2,
-          circleRadius,
-          0,
-          Math.PI * 2
-        );
-        ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
-        ctx2.lineWidth = 2;
-        ctx2.stroke();
+      this.drawTrail(ctx2);
+      this.drawHead(ctx2);
+      if (this.isDesignating) {
+        this.drawTargetingLaser(ctx2);
       }
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
