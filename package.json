@@ -10,10 +10,10 @@
         "scss:watch": "sass --watch scss/main.scss css/style.css",
         "ts:watch": "esbuild ts/main.ts --bundle --sourcemap --outfile=js/main.js --watch",
         "clean": "rimraf dist js",
+        "build:assets": "mkdir -p dist/assets && cp -r assets/* dist/assets",
         "build:html": "html-minifier index.prod.html -o dist/index.html --collapse-whitespace --remove-comments --remove-optional-tags",
         "build:css": "sass scss/main.scss dist/css/style.css && cssnano dist/css/style.css --no-map --o dist/css/style.css",
         "build:js": "esbuild ts/main.ts --bundle --minify --sourcemap --outfile=dist/js/main.min.js",
-        "build:assets": "cp -r assets dist/",
         "build:publish": "npm run clean && npm-run-all --parallel build:html build:css build:js build:assets",
         "format": "prettier --write \"**/*.{ts,scss,json,md}\"",
         "format:check": "prettier --check \"**/*.{ts,scss,json,md}\""
