@@ -10,7 +10,7 @@ export const difficultySettings: Record<string, DifficultySetting> = {
         waveDelayMultiplier: 1.25,
         missileSizeMultiplier: 1.5,
         turretFireRateMultiplier: 0.8,
-        enemySpeedBonus: 0.85, // Enemies are slightly slower
+        enemySpeedBonus: 0.85,
         startingCoins: 250,
     },
     normal: {
@@ -20,44 +20,59 @@ export const difficultySettings: Record<string, DifficultySetting> = {
         waveDelayMultiplier: 1.0,
         missileSizeMultiplier: 1.25,
         turretFireRateMultiplier: 1.0,
-        enemySpeedBonus: 1.0, // Standard enemy speed
+        enemySpeedBonus: 1.0,
         startingCoins: 150,
     },
     hard: {
         name: 'Elite',
         description:
             'For seasoned commanders only. The enemy is faster, smarter, and relentless. Expect smaller targets and less time to react.',
-        waveDelayMultiplier: 0.6, // Waves arrive much faster
-        missileSizeMultiplier: 0.9, // Missiles are smaller and harder to hit
-        turretFireRateMultiplier: 1.75, // Your turrets fire even slower
-        enemySpeedBonus: 1.2, // Enemies are 20% faster
-        startingCoins: 100, // Start with fewer resources
+        waveDelayMultiplier: 0.6,
+        missileSizeMultiplier: 0.9,
+        turretFireRateMultiplier: 1.75,
+        enemySpeedBonus: 1.2,
+        startingCoins: 100,
     },
 };
 
 // Game settings and balance values
 export const config = {
+    // Gameplay Constants
     cityCount: 5,
     initialInterceptorSpeed: 7,
     initialBlastRadius: 15,
     nukeBlastRadius: 150,
-    rocketPoints: 100,
-    mirvPoints: 200,
-    stealthPoints: 300,
-    swarmerPoints: 150,
-    dronePoints: 25,
-    flareRocketPoints: 200,
-    armoredPoints: 500,
-    artilleryDesignatorPoints: 400,
     maxTurrets: 2,
-    turretFireRate: 90,
+    turretFireRate: 90, // Lower is faster
     turretRange: 350,
     empSpawnChance: 0.0005,
-    empDuration: 300,
+    empDuration: 300, // 5 seconds at 60fps
     nukeEmpDuration: 120, // 2 seconds
-    maxParticles: 300,
+    rocketMaxLifetime: 2700, // 45 seconds
     homingMineDetonationRadius: 100,
-    rocketMaxLifetime: 2700, // 45 seconds at 60fps - Safeguard
+    homingMineDeploymentZone: 0.85, // Mines can only be placed in the bottom 15% of the screen
+    flareDistractionRadius: 100,
+    touchTargetingRadius: 100,
+    interceptorDamage: 3,
+    nukeDamage: 100,
+
+    // Particle & Effect Constants
+    maxParticles: 300,
+
+    // Point & Coin Values
+    points: {
+        standard: 100,
+        mirv: 200,
+        stealth: 300,
+        swarmer: 150,
+        drone: 25,
+        flare_rocket: 200,
+        armored: 500,
+        designator: 400,
+        boss: 5000,
+    },
+    
+    // Upgrade Costs
     upgradeCosts: {
         repairCity: 1000,
         automatedTurret: 2500,
@@ -72,56 +87,28 @@ export const config = {
         fieldReinforcement: 1250,
         targetingScrambler: 1750,
     },
+    
+    // Boss Configuration
     bosses: {
         hiveCarrier: {
             health: 250,
-            points: 5000,
-            droneSpawnRate: 90, // Every 1.5 seconds
+            droneSpawnRate: 90,
         },
     },
+
+    // Static Wave Definitions (used by waveManager)
+    waveDefinitions: [
+        { standard: 6, delay: 120 },
+        { standard: 8, mirv: 1, delay: 115 },
+        { standard: 7, stealth: 1, flare_rocket: 1, delay: 110 },
+        { standard: 8, mirv: 2, swarmer: 1, delay: 100 },
+        { isBossWave: true, bossType: 'hiveCarrier', delay: 95 },
+        { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
+        { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 },
+    ],
 };
 
-// Defines the base composition of enemy rockets for the pre-set waves
-export const waveDefinitions: WaveDefinition[] = [
-    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 120 },
-    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 115 },
-    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare_rocket: 1, armored: 0, delay: 110 },
-    { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
-    { isBossWave: true, bossType: 'hiveCarrier', delay: 95 },
-    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
-    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 },
-];
-
-export function getWaveDefinition(waveNumber: number): WaveDefinition {
-    if (waveNumber < waveDefinitions.length) {
-        return waveDefinitions[waveNumber];
-    }
-
-    const waveFactor = waveNumber - waveDefinitions.length + 1;
-    const totalRockets = 15 + waveFactor * 2;
-    const waveData: WaveDefinition = { isBossWave: false, composition: [] };
-
-    if (waveFactor > 0 && waveFactor % 5 === 0) {
-        waveData.isBossWave = true;
-        waveData.bossType = 'hiveCarrier';
-        return waveData;
-    }
-
-    const availableTypes = ['standard', 'standard', 'standard', 'mirv'];
-    if (waveNumber > 8) availableTypes.push('stealth');
-    if (waveNumber > 10) availableTypes.push('swarmer');
-    if (waveNumber > 12) availableTypes.push('armored');
-    if (waveNumber > 14) availableTypes.push('flare_rocket');
-    if (waveNumber > 6) availableTypes.push('designator');
-
-    for (let i = 0; i < totalRockets; i++) {
-        const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-        waveData.composition!.push(randomType);
-    }
-
-    return waveData;
-}
-
+// Static information about rocket types for UI display
 export const rocketInfo: Record<string, { name: string; threat: string; description: string }> = {
     standard: {
         name: 'Standard Rocket',

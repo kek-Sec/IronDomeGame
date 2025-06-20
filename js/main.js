@@ -9,7 +9,6 @@
       missileSizeMultiplier: 1.5,
       turretFireRateMultiplier: 0.8,
       enemySpeedBonus: 0.85,
-      // Enemies are slightly slower
       startingCoins: 250
     },
     normal: {
@@ -19,48 +18,57 @@
       missileSizeMultiplier: 1.25,
       turretFireRateMultiplier: 1,
       enemySpeedBonus: 1,
-      // Standard enemy speed
       startingCoins: 150
     },
     hard: {
       name: "Elite",
       description: "For seasoned commanders only. The enemy is faster, smarter, and relentless. Expect smaller targets and less time to react.",
       waveDelayMultiplier: 0.6,
-      // Waves arrive much faster
       missileSizeMultiplier: 0.9,
-      // Missiles are smaller and harder to hit
       turretFireRateMultiplier: 1.75,
-      // Your turrets fire even slower
       enemySpeedBonus: 1.2,
-      // Enemies are 20% faster
       startingCoins: 100
-      // Start with fewer resources
     }
   };
   var config = {
+    // Gameplay Constants
     cityCount: 5,
     initialInterceptorSpeed: 7,
     initialBlastRadius: 15,
     nukeBlastRadius: 150,
-    rocketPoints: 100,
-    mirvPoints: 200,
-    stealthPoints: 300,
-    swarmerPoints: 150,
-    dronePoints: 25,
-    flareRocketPoints: 200,
-    armoredPoints: 500,
-    artilleryDesignatorPoints: 400,
     maxTurrets: 2,
     turretFireRate: 90,
+    // Lower is faster
     turretRange: 350,
     empSpawnChance: 5e-4,
     empDuration: 300,
+    // 5 seconds at 60fps
     nukeEmpDuration: 120,
     // 2 seconds
-    maxParticles: 300,
-    homingMineDetonationRadius: 100,
     rocketMaxLifetime: 2700,
-    // 45 seconds at 60fps - Safeguard
+    // 45 seconds
+    homingMineDetonationRadius: 100,
+    homingMineDeploymentZone: 0.85,
+    // Mines can only be placed in the bottom 15% of the screen
+    flareDistractionRadius: 100,
+    touchTargetingRadius: 100,
+    interceptorDamage: 3,
+    nukeDamage: 100,
+    // Particle & Effect Constants
+    maxParticles: 300,
+    // Point & Coin Values
+    points: {
+      standard: 100,
+      mirv: 200,
+      stealth: 300,
+      swarmer: 150,
+      drone: 25,
+      flare_rocket: 200,
+      armored: 500,
+      designator: 400,
+      boss: 5e3
+    },
+    // Upgrade Costs
     upgradeCosts: {
       repairCity: 1e3,
       automatedTurret: 2500,
@@ -75,48 +83,24 @@
       fieldReinforcement: 1250,
       targetingScrambler: 1750
     },
+    // Boss Configuration
     bosses: {
       hiveCarrier: {
         health: 250,
-        points: 5e3,
         droneSpawnRate: 90
-        // Every 1.5 seconds
       }
-    }
+    },
+    // Static Wave Definitions (used by waveManager)
+    waveDefinitions: [
+      { standard: 6, delay: 120 },
+      { standard: 8, mirv: 1, delay: 115 },
+      { standard: 7, stealth: 1, flare_rocket: 1, delay: 110 },
+      { standard: 8, mirv: 2, swarmer: 1, delay: 100 },
+      { isBossWave: true, bossType: "hiveCarrier", delay: 95 },
+      { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
+      { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 }
+    ]
   };
-  var waveDefinitions = [
-    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 120 },
-    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 115 },
-    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare_rocket: 1, armored: 0, delay: 110 },
-    { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
-    { isBossWave: true, bossType: "hiveCarrier", delay: 95 },
-    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
-    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 }
-  ];
-  function getWaveDefinition(waveNumber) {
-    if (waveNumber < waveDefinitions.length) {
-      return waveDefinitions[waveNumber];
-    }
-    const waveFactor = waveNumber - waveDefinitions.length + 1;
-    const totalRockets = 15 + waveFactor * 2;
-    const waveData = { isBossWave: false, composition: [] };
-    if (waveFactor > 0 && waveFactor % 5 === 0) {
-      waveData.isBossWave = true;
-      waveData.bossType = "hiveCarrier";
-      return waveData;
-    }
-    const availableTypes = ["standard", "standard", "standard", "mirv"];
-    if (waveNumber > 8) availableTypes.push("stealth");
-    if (waveNumber > 10) availableTypes.push("swarmer");
-    if (waveNumber > 12) availableTypes.push("armored");
-    if (waveNumber > 14) availableTypes.push("flare_rocket");
-    if (waveNumber > 6) availableTypes.push("designator");
-    for (let i = 0; i < totalRockets; i++) {
-      const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-      waveData.composition.push(randomType);
-    }
-    return waveData;
-  }
   var rocketInfo = {
     standard: {
       name: "Standard Rocket",
@@ -274,7 +258,7 @@
       this.target = target;
       this.radius = type === "nuke" ? 10 : 3;
       this.speed = speed;
-      this.blastRadius = type === "nuke" ? 150 : blastRadius;
+      this.blastRadius = type === "nuke" ? config.nukeBlastRadius : blastRadius;
       this.type = type;
       this.isHoming = !!target;
       this.vx = 0;
@@ -291,7 +275,7 @@
       }
       if (this.isHoming && !this.hasBeenDistracted && this.target.type !== "flare") {
         for (const flare of flares) {
-          if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
+          if (Math.hypot(this.x - flare.x, this.y - flare.y) < config.flareDistractionRadius) {
             this.target = flare;
             this.hasBeenDistracted = true;
             break;
@@ -658,6 +642,7 @@
   };
   var AutomatedTurret = class {
     constructor(x, y, range, fireRate) {
+      this.tracerSpeed = 25;
       this.x = x;
       this.y = y;
       this.range = range;
@@ -671,40 +656,44 @@
       this.delayBetweenShots = 2;
     }
     update(rockets) {
-      const tracerSpeed = 25;
-      const newTracers = [];
       if (this.fireCooldown > 0) this.fireCooldown--;
+      this.updateTarget(rockets);
+      if (this.currentTarget) {
+        return this.aimAndFire(this.currentTarget);
+      } else {
+        this.radarAngle += 0.02;
+        this.isFiring = false;
+      }
+      return [];
+    }
+    updateTarget(rockets) {
       if (this.currentTarget) {
         const targetExists = rockets.some((r) => r.id === this.currentTarget.id);
         const targetInRange = targetExists && Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y) < this.range;
         if (!targetExists || !targetInRange) {
           this.currentTarget = null;
-          this.isFiring = false;
         }
       }
       if (!this.currentTarget && this.fireCooldown <= 0) {
-        this.isFiring = false;
         this.currentTarget = this.findTarget(rockets);
         if (this.currentTarget) {
           this.fireCooldown = this.fireRate;
         }
       }
-      if (this.currentTarget) {
-        const dist = Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y);
-        const timeToImpact = dist / tracerSpeed;
-        const predictedX = this.currentTarget.x + this.currentTarget.vx * timeToImpact;
-        const predictedY = this.currentTarget.y + this.currentTarget.vy * timeToImpact;
-        this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
-        this.isFiring = true;
-        this.shotTimer++;
-        if (this.shotTimer % this.delayBetweenShots === 0) {
-          const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
-          newTracers.push(new TracerRound(this.x, this.y, fireAngle, tracerSpeed));
-        }
-      } else {
-        this.radarAngle += 0.02;
+    }
+    aimAndFire(target) {
+      const dist = Math.hypot(this.x - target.x, this.y - target.y);
+      const timeToImpact = dist / this.tracerSpeed;
+      const predictedX = target.x + target.vx * timeToImpact;
+      const predictedY = target.y + target.vy * timeToImpact;
+      this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
+      this.isFiring = true;
+      this.shotTimer++;
+      if (this.shotTimer % this.delayBetweenShots === 0) {
+        const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
+        return [new TracerRound(this.x, this.y, fireAngle, this.tracerSpeed)];
       }
-      return newTracers;
+      return [];
     }
     findTarget(rockets) {
       const inRange = rockets.filter((r) => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
@@ -741,15 +730,7 @@
       }
       ctx2.rotate(this.angle);
       if (this.isFiring) {
-        ctx2.fillStyle = `rgba(255, ${random(180, 220)}, 0, ${random(0.5, 1)})`;
-        ctx2.beginPath();
-        const flashLength = random(20, 40);
-        const flashWidth = random(8, 12);
-        ctx2.moveTo(20, 0);
-        ctx2.lineTo(20 + flashLength, -flashWidth / 2);
-        ctx2.lineTo(20 + flashLength, flashWidth / 2);
-        ctx2.closePath();
-        ctx2.fill();
+        this.drawMuzzleFlash(ctx2);
       }
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(0, -4, 25, 8);
@@ -759,85 +740,20 @@
       ctx2.fill();
       ctx2.restore();
     }
-  };
-
-  // ts/perks.ts
-  var perks = {
-    veteranCommander: {
-      name: "Veteran Commander",
-      description: "Begin each run with 500 extra score.",
-      cost: 150
-    },
-    advancedFortifications: {
-      name: "Advanced Fortifications",
-      description: "Start each game with Base Armor already applied to all cities.",
-      cost: 400
-    },
-    rapidDeployment: {
-      name: "Rapid Deployment",
-      description: "The first upgrade purchased in the shop each wave is 25% cheaper.",
-      cost: 300
-    },
-    efficientInterceptors: {
-      name: "Efficient Interceptors",
-      description: 'All interceptors have a 10% chance to be a "Critical Hit", dealing triple damage.',
-      cost: 500
-    },
-    surplusValue: {
-      name: "Surplus Value",
-      description: "The Nuke Interceptor can be purchased every wave (instead of one per game).",
-      cost: 800
-    },
-    extraMine: {
-      name: "Reserve Mine",
-      description: "Start every game with one free Homing Mine available.",
-      cost: 200
+    drawMuzzleFlash(ctx2) {
+      ctx2.fillStyle = `rgba(255, ${random(180, 220)}, 0, ${random(0.5, 1)})`;
+      ctx2.beginPath();
+      const flashLength = random(20, 40);
+      const flashWidth = random(8, 12);
+      ctx2.moveTo(20, 0);
+      ctx2.lineTo(20 + flashLength, -flashWidth / 2);
+      ctx2.lineTo(20 + flashLength, flashWidth / 2);
+      ctx2.closePath();
+      ctx2.fill();
     }
   };
 
-  // ts/saveManager.ts
-  var SAVE_KEY = "ironDomePlayerData_TS";
-  function getInitialPlayerData() {
-    const unlockedPerks = {};
-    Object.keys(perks).forEach((key) => {
-      unlockedPerks[key] = false;
-    });
-    return {
-      prestigePoints: 0,
-      unlockedPerks,
-      highScores: {
-        easy: 0,
-        normal: 0,
-        hard: 0
-      }
-    };
-  }
-  function loadPlayerData() {
-    try {
-      const savedData = localStorage.getItem(SAVE_KEY);
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        if (!parsedData.highScores) {
-          parsedData.highScores = { easy: 0, normal: 0, hard: 0 };
-        }
-        if (parsedData.unlockedPerks && parsedData.hasOwnProperty("prestigePoints")) {
-          return parsedData;
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load player data:", error);
-    }
-    return getInitialPlayerData();
-  }
-  function savePlayerData(playerData) {
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
-    } catch (error) {
-      console.error("Failed to save player data:", error);
-    }
-  }
-
-  // ts/ui.ts
+  // ts/ui/domElements.ts
   var fpsCounterEl = document.getElementById("fps-counter");
   var scoreEl = document.getElementById("score");
   var coinsEl = document.getElementById("coins");
@@ -849,140 +765,8 @@
   var bossUiContainer = document.getElementById("boss-ui-container");
   var bossNameEl = document.getElementById("boss-name");
   var bossHealthBarEl = document.getElementById("boss-health-bar");
-  function updateTopUI(state2) {
-    fpsCounterEl.textContent = state2.fps.toString();
-    scoreEl.textContent = state2.score.toString();
-    coinsEl.textContent = state2.coins.toString();
-    waveEl.textContent = (state2.currentWave + 1).toString();
-    if (state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED") {
-      pauseButton.style.display = "flex";
-      pauseIcon.innerHTML = state2.gameState === "PAUSED" ? "\u25B6" : "||";
-    } else {
-      pauseButton.style.display = "none";
-    }
-  }
-  function updateBossUI(boss) {
-    if (boss) {
-      bossUiContainer.style.display = "block";
-      bossNameEl.textContent = boss.name;
-      const healthPercentage = boss.health / boss.maxHealth * 100;
-      bossHealthBarEl.style.width = `${Math.max(0, healthPercentage)}%`;
-    } else {
-      bossUiContainer.style.display = "none";
-    }
-  }
-  function showStartScreen(startGameCallback, showArmoryCallback) {
-    const playerData = loadPlayerData();
-    modalContainer.style.display = "flex";
-    modalContent.classList.remove("armory");
-    let difficultyCardsHTML = '<div class="difficulty-card-grid">';
-    for (const key in difficultySettings) {
-      const diff = difficultySettings[key];
-      const highScore = playerData.highScores[key] || 0;
-      difficultyCardsHTML += `
-            <div class="difficulty-card" id="start-${key}" data-difficulty="${key}">
-                <h3>${diff.name}</h3>
-                <p>${diff.description}</p>
-                <div class="card-footer">
-                    <div class="difficulty-summary">
-                        <span>Starts with ${diff.startingCoins} Coins</span>
-                    </div>
-                    <div class="high-score">
-                        \u{1F3C6} High Score: <span>${highScore.toLocaleString()}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    difficultyCardsHTML += "</div>";
-    modalContent.innerHTML = `
-        <div class="start-screen-header">
-            <h1>IRON DOME</h1>
-            <button id="armory-button" class="armory-button">
-                <span class="armory-icon">\u{1F6E1}\uFE0F</span> Armory
-            </button>
-        </div>
-        <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
-        ${difficultyCardsHTML}
-    `;
-    for (const key in difficultySettings) {
-      document.getElementById(`start-${key}`)?.addEventListener("click", (e) => {
-        let target = e.target;
-        while (target && !target.dataset.difficulty) {
-          target = target.parentElement;
-        }
-        if (target && target.dataset.difficulty) {
-          startGameCallback(target.dataset.difficulty);
-        }
-      });
-    }
-    document.getElementById("armory-button")?.addEventListener("click", showArmoryCallback);
-  }
-  var perkIcons = {
-    veteranCommander: "\u{1F3C6}",
-    advancedFortifications: "\u{1F9F1}",
-    rapidDeployment: "\u26A1",
-    efficientInterceptors: "\u{1F4A5}",
-    surplusValue: "\u2622\uFE0F",
-    extraMine: "\u{1F4A3}"
-  };
-  function showArmoryScreen(playerData, startGameCallback) {
-    modalContainer.style.display = "flex";
-    modalContent.classList.add("armory");
-    let perkHTML = '<div class="perk-grid">';
-    for (const key in perks) {
-      const perk = perks[key];
-      const isUnlocked = playerData.unlockedPerks[key];
-      const canAfford = playerData.prestigePoints >= perk.cost;
-      perkHTML += `
-            <div class="perk-card ${isUnlocked ? "unlocked" : ""} ${!canAfford && !isUnlocked ? "unaffordable" : ""}">
-                <div class="perk-header">
-                    <div class="perk-icon">${perkIcons[key] || "\u2699\uFE0F"}</div>
-                    <h3>${perk.name}</h3>
-                </div>
-                <p class="perk-description">${perk.description}</p>
-                <button
-                    class="perk-button"
-                    id="perk-${key}"
-                    ${isUnlocked || !canAfford ? "disabled" : ""}
-                >
-                    ${isUnlocked ? "UNLOCKED" : `COST: ${perk.cost}`}
-                </button>
-            </div>
-        `;
-    }
-    perkHTML += "</div>";
-    modalContent.innerHTML = `
-        <div class="armory-header">
-            <h1>ARMORY</h1>
-            <div class="prestige-points">
-                Prestige Points: <span>${playerData.prestigePoints}</span>
-            </div>
-        </div>
-        ${perkHTML}
-        <button id="back-to-menu-button" class="modal-button">Main Menu</button>
-    `;
-    for (const key in perks) {
-      if (!playerData.unlockedPerks[key]) {
-        const perkButton = document.getElementById(`perk-${key}`);
-        if (perkButton) {
-          perkButton.addEventListener("click", () => {
-            const perk = perks[key];
-            if (playerData.prestigePoints >= perk.cost) {
-              playerData.prestigePoints -= perk.cost;
-              playerData.unlockedPerks[key] = true;
-              savePlayerData(playerData);
-              showArmoryScreen(playerData, startGameCallback);
-            }
-          });
-        }
-      }
-    }
-    document.getElementById("back-to-menu-button")?.addEventListener(
-      "click",
-      () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData, startGameCallback))
-    );
-  }
+
+  // ts/ui/shopScreen.ts
   function showBetweenWaveScreen(state2, callbacks, gameConfig) {
     const {
       score,
@@ -1030,7 +814,6 @@
       }
     };
     const shopItems = [
-      // Permanent Upgrades
       {
         id: "speed",
         title: "Interceptor Speed",
@@ -1094,7 +877,6 @@
         available: !basesAreArmored,
         maxed: basesAreArmored
       },
-      // Tactical / Single-Use Items
       {
         id: "nuke",
         title: "Nuke (w/ EMP)",
@@ -1219,6 +1001,218 @@
     addListenerIfPresent("shop-repair", upgradeRepairCallback);
     addListenerIfPresent("next-wave-button", nextWaveCallback);
   }
+
+  // ts/perks.ts
+  var perks = {
+    veteranCommander: {
+      name: "Veteran Commander",
+      description: "Begin each run with 500 extra score.",
+      cost: 150
+    },
+    advancedFortifications: {
+      name: "Advanced Fortifications",
+      description: "Start each game with Base Armor already applied to all cities.",
+      cost: 400
+    },
+    rapidDeployment: {
+      name: "Rapid Deployment",
+      description: "The first upgrade purchased in the shop each wave is 25% cheaper.",
+      cost: 300
+    },
+    efficientInterceptors: {
+      name: "Efficient Interceptors",
+      description: 'All interceptors have a 10% chance to be a "Critical Hit", dealing triple damage.',
+      cost: 500
+    },
+    surplusValue: {
+      name: "Surplus Value",
+      description: "The Nuke Interceptor can be purchased every wave (instead of one per game).",
+      cost: 800
+    },
+    extraMine: {
+      name: "Reserve Mine",
+      description: "Start every game with one free Homing Mine available.",
+      cost: 200
+    }
+  };
+
+  // ts/saveManager.ts
+  var SAVE_KEY = "ironDomePlayerData_TS";
+  function getInitialPlayerData() {
+    const unlockedPerks = {};
+    Object.keys(perks).forEach((key) => {
+      unlockedPerks[key] = false;
+    });
+    return {
+      prestigePoints: 0,
+      unlockedPerks,
+      highScores: {
+        easy: 0,
+        normal: 0,
+        hard: 0
+      }
+    };
+  }
+  function loadPlayerData() {
+    try {
+      const savedData = localStorage.getItem(SAVE_KEY);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (!parsedData.highScores) {
+          parsedData.highScores = { easy: 0, normal: 0, hard: 0 };
+        }
+        if (parsedData.unlockedPerks && parsedData.hasOwnProperty("prestigePoints")) {
+          return parsedData;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load player data:", error);
+    }
+    return getInitialPlayerData();
+  }
+  function savePlayerData(playerData) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
+    } catch (error) {
+      console.error("Failed to save player data:", error);
+    }
+  }
+
+  // ts/ui/armoryScreen.ts
+  var perkIcons = {
+    veteranCommander: "\u{1F3C6}",
+    advancedFortifications: "\u{1F9F1}",
+    rapidDeployment: "\u26A1",
+    efficientInterceptors: "\u{1F4A5}",
+    surplusValue: "\u2622\uFE0F",
+    extraMine: "\u{1F4A3}"
+  };
+  function showArmoryScreen(playerData, startGameCallback) {
+    modalContainer.style.display = "flex";
+    modalContent.classList.add("armory");
+    let perkHTML = '<div class="perk-grid">';
+    for (const key in perks) {
+      const perk = perks[key];
+      const isUnlocked = playerData.unlockedPerks[key];
+      const canAfford = playerData.prestigePoints >= perk.cost;
+      perkHTML += `
+            <div class="perk-card ${isUnlocked ? "unlocked" : ""} ${!canAfford && !isUnlocked ? "unaffordable" : ""}">
+                <div class="perk-header">
+                    <div class="perk-icon">${perkIcons[key] || "\u2699\uFE0F"}</div>
+                    <h3>${perk.name}</h3>
+                </div>
+                <p class="perk-description">${perk.description}</p>
+                <button
+                    class="perk-button"
+                    id="perk-${key}"
+                    ${isUnlocked || !canAfford ? "disabled" : ""}
+                >
+                    ${isUnlocked ? "UNLOCKED" : `COST: ${perk.cost}`}
+                </button>
+            </div>
+        `;
+    }
+    perkHTML += "</div>";
+    modalContent.innerHTML = `
+        <div class="armory-header">
+            <h1>ARMORY</h1>
+            <div class="prestige-points">
+                Prestige Points: <span>${playerData.prestigePoints}</span>
+            </div>
+        </div>
+        ${perkHTML}
+        <button id="back-to-menu-button" class="modal-button">Main Menu</button>
+    `;
+    for (const key in perks) {
+      if (!playerData.unlockedPerks[key]) {
+        const perkButton = document.getElementById(`perk-${key}`);
+        if (perkButton) {
+          perkButton.addEventListener("click", () => {
+            const perk = perks[key];
+            if (playerData.prestigePoints >= perk.cost) {
+              playerData.prestigePoints -= perk.cost;
+              playerData.unlockedPerks[key] = true;
+              savePlayerData(playerData);
+              showArmoryScreen(playerData, startGameCallback);
+            }
+          });
+        }
+      }
+    }
+    const showArmoryAgain = () => showArmoryScreen(playerData, startGameCallback);
+    document.getElementById("back-to-menu-button")?.addEventListener("click", () => showStartScreen(startGameCallback, showArmoryAgain));
+  }
+
+  // ts/ui.ts
+  function updateTopUI(state2) {
+    fpsCounterEl.textContent = state2.fps.toString();
+    scoreEl.textContent = state2.score.toString();
+    coinsEl.textContent = state2.coins.toString();
+    waveEl.textContent = (state2.currentWave + 1).toString();
+    if (state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED") {
+      pauseButton.style.display = "flex";
+      pauseIcon.innerHTML = state2.gameState === "PAUSED" ? "\u25B6" : "||";
+    } else {
+      pauseButton.style.display = "none";
+    }
+  }
+  function updateBossUI(boss) {
+    if (boss) {
+      bossUiContainer.style.display = "block";
+      bossNameEl.textContent = boss.name;
+      const healthPercentage = boss.health / boss.maxHealth * 100;
+      bossHealthBarEl.style.width = `${Math.max(0, healthPercentage)}%`;
+    } else {
+      bossUiContainer.style.display = "none";
+    }
+  }
+  function showStartScreen(startGameCallback, showArmoryCallback) {
+    const playerData = loadPlayerData();
+    modalContainer.style.display = "flex";
+    modalContent.classList.remove("armory");
+    let difficultyCardsHTML = '<div class="difficulty-card-grid">';
+    for (const key in difficultySettings) {
+      const diff = difficultySettings[key];
+      const highScore = playerData.highScores[key] || 0;
+      difficultyCardsHTML += `
+            <div class="difficulty-card" id="start-${key}" data-difficulty="${key}">
+                <h3>${diff.name}</h3>
+                <p>${diff.description}</p>
+                <div class="card-footer">
+                    <div class="difficulty-summary">
+                        <span>Starts with ${diff.startingCoins} Coins</span>
+                    </div>
+                    <div class="high-score">
+                        \u{1F3C6} High Score: <span>${highScore.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    difficultyCardsHTML += "</div>";
+    modalContent.innerHTML = `
+        <div class="start-screen-header">
+            <h1>IRON DOME</h1>
+            <button id="armory-button" class="armory-button">
+                <span class="armory-icon">\u{1F6E1}\uFE0F</span> Armory
+            </button>
+        </div>
+        <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
+        ${difficultyCardsHTML}
+    `;
+    for (const key in difficultySettings) {
+      document.getElementById(`start-${key}`)?.addEventListener("click", (e) => {
+        let target = e.target;
+        while (target && !target.dataset.difficulty) {
+          target = target.parentElement;
+        }
+        if (target && target.dataset.difficulty) {
+          startGameCallback(target.dataset.difficulty);
+        }
+      });
+    }
+    document.getElementById("armory-button")?.addEventListener("click", showArmoryCallback);
+  }
   function showRocketInfoScreen(closeCallback) {
     modalContainer.style.display = "flex";
     let rocketHTML = '<div class="rocket-info-grid">';
@@ -1288,8 +1282,7 @@
   }
 
   // ts/state.ts
-  function getInitialState() {
-    const playerData = loadPlayerData();
+  function createInitialState(playerData) {
     const perks2 = playerData.unlockedPerks;
     return {
       gameState: "START_SCREEN",
@@ -1363,7 +1356,11 @@
       this.angle = Math.atan2(this.vy, this.vx) - Math.PI / 2;
       this.life++;
     }
-    _drawTrail(ctx2) {
+    draw(ctx2) {
+      this.drawTrail(ctx2);
+      this.drawHead(ctx2);
+    }
+    drawTrail(ctx2) {
       if (!this.trail[0]) return;
       ctx2.beginPath();
       ctx2.moveTo(this.trail[0].x, this.trail[0].y);
@@ -1378,7 +1375,7 @@
       ctx2.lineWidth = 3 * (this.radius / 5);
       ctx2.stroke();
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1411,10 +1408,6 @@
       ctx2.fill();
       ctx2.restore();
     }
-    draw(ctx2) {
-      this._drawTrail(ctx2);
-      this._drawHead(ctx2);
-    }
   };
   var ArmoredRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
@@ -1445,14 +1438,28 @@
       this.hitFlashTimer = 10;
       return this.health <= 0;
     }
+    drawHealthBar(ctx2) {
+      const barWidth = this.radius * 3;
+      const barHeight = 5;
+      const barX = this.x - barWidth / 2;
+      const barY = this.y - this.radius * 3;
+      ctx2.fillStyle = "#333";
+      ctx2.fillRect(barX, barY, barWidth, barHeight);
+      const healthPercentage = this.health / this.maxHealth;
+      ctx2.fillStyle = healthPercentage > 0.6 ? "#43a047" : healthPercentage > 0.3 ? "#fdd835" : "#e53935";
+      ctx2.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
+      ctx2.strokeStyle = "#222";
+      ctx2.lineWidth = 1;
+      ctx2.strokeRect(barX, barY, barWidth, barHeight);
+    }
     draw(ctx2) {
-      this._drawTrail(ctx2);
+      this.drawTrail(ctx2);
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 3;
-      this._drawHead(ctx2);
+      this.drawHead(ctx2);
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       ctx2.strokeStyle = "#212529";
@@ -1466,18 +1473,7 @@
         ctx2.globalCompositeOperation = "source-over";
       }
       ctx2.restore();
-      const barWidth = this.radius * 3;
-      const barHeight = 5;
-      const barX = this.x - barWidth / 2;
-      const barY = this.y - this.radius * 3;
-      ctx2.fillStyle = "#333";
-      ctx2.fillRect(barX, barY, barWidth, barHeight);
-      const healthPercentage = this.health / this.maxHealth;
-      ctx2.fillStyle = healthPercentage > 0.6 ? "#43a047" : healthPercentage > 0.3 ? "#fdd835" : "#e53935";
-      ctx2.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
-      ctx2.strokeStyle = "#222";
-      ctx2.lineWidth = 1;
-      ctx2.strokeRect(barX, barY, barWidth, barHeight);
+      this.drawHealthBar(ctx2);
     }
   };
   var StealthRocket = class extends Rocket {
@@ -1509,7 +1505,7 @@
         ctx2.restore();
       }
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1544,7 +1540,7 @@
       this.trailColor = "rgba(255, 255, 0, 0.5)";
       this.color = "yellow";
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1597,8 +1593,8 @@
       }
       return childDrones;
     }
-    _drawHead(ctx2) {
-      super._drawHead(ctx2);
+    drawHead(ctx2) {
+      super.drawHead(ctx2);
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1641,7 +1637,7 @@
       }
       return childRockets;
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1734,37 +1730,41 @@
         this.angle = Math.atan2(this.vy, this.vx) - Math.PI / 2;
       }
     }
+    drawTargetingLaser(ctx2) {
+      if (!this.targetCity) return;
+      const progress = this.designationTimer / this.designationDuration;
+      const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
+      const beamWidth = 1 + progress * 4;
+      ctx2.beginPath();
+      ctx2.moveTo(this.x, this.y);
+      ctx2.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
+      ctx2.strokeStyle = beamColor;
+      ctx2.lineWidth = beamWidth;
+      ctx2.shadowColor = "red";
+      ctx2.shadowBlur = 15;
+      ctx2.stroke();
+      ctx2.shadowBlur = 0;
+      const circleRadius = this.targetCity.width / 2 * (1 - progress);
+      ctx2.beginPath();
+      ctx2.arc(
+        this.targetCity.x + this.targetCity.width / 2,
+        this.targetCity.y + this.targetCity.height / 2,
+        circleRadius,
+        0,
+        Math.PI * 2
+      );
+      ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
+      ctx2.lineWidth = 2;
+      ctx2.stroke();
+    }
     draw(ctx2) {
-      this._drawTrail(ctx2);
-      this._drawHead(ctx2);
-      if (this.isDesignating && this.targetCity) {
-        const progress = this.designationTimer / this.designationDuration;
-        const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
-        const beamWidth = 1 + progress * 4;
-        ctx2.beginPath();
-        ctx2.moveTo(this.x, this.y);
-        ctx2.lineTo(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y);
-        ctx2.strokeStyle = beamColor;
-        ctx2.lineWidth = beamWidth;
-        ctx2.shadowColor = "red";
-        ctx2.shadowBlur = 15;
-        ctx2.stroke();
-        ctx2.shadowBlur = 0;
-        const circleRadius = this.targetCity.width / 2 * (1 - progress);
-        ctx2.beginPath();
-        ctx2.arc(
-          this.targetCity.x + this.targetCity.width / 2,
-          this.targetCity.y + this.targetCity.height / 2,
-          circleRadius,
-          0,
-          Math.PI * 2
-        );
-        ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
-        ctx2.lineWidth = 2;
-        ctx2.stroke();
+      this.drawTrail(ctx2);
+      this.drawHead(ctx2);
+      if (this.isDesignating) {
+        this.drawTargetingLaser(ctx2);
       }
     }
-    _drawHead(ctx2) {
+    drawHead(ctx2) {
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
@@ -1897,6 +1897,32 @@
       ctx2.restore();
     }
   };
+
+  // ts/waveManager.ts
+  function getWaveDefinition(waveNumber) {
+    if (waveNumber < config.waveDefinitions.length) {
+      return config.waveDefinitions[waveNumber];
+    }
+    const waveFactor = waveNumber - config.waveDefinitions.length + 1;
+    const totalRockets = 15 + waveFactor * 2;
+    const waveData = { isBossWave: false, composition: [] };
+    if (waveFactor > 0 && waveFactor % 5 === 0) {
+      waveData.isBossWave = true;
+      waveData.bossType = "hiveCarrier";
+      return waveData;
+    }
+    const availableTypes = ["standard", "standard", "standard", "mirv"];
+    if (waveNumber > 8) availableTypes.push("stealth");
+    if (waveNumber > 10) availableTypes.push("swarmer");
+    if (waveNumber > 12) availableTypes.push("armored");
+    if (waveNumber > 14) availableTypes.push("flare_rocket");
+    if (waveNumber > 6) availableTypes.push("designator");
+    for (let i = 0; i < totalRockets; i++) {
+      const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+      waveData.composition.push(randomType);
+    }
+    return waveData;
+  }
 
   // ts/logic/updateLogic.ts
   function findTargetedRocket(state2) {
@@ -2065,8 +2091,8 @@
         state2.tracerRounds.splice(i, 1);
         state2.flashes.push(new Flash(tracer.x, tracer.y, 20, "255, 255, 255"));
         if (isDestroyed) {
-          state2.score += config.bosses.hiveCarrier.points;
-          state2.coins += config.bosses.hiveCarrier.points;
+          state2.score += config.points.boss;
+          state2.coins += config.points.boss;
           createAdvancedExplosion(state2, state2.boss.x, state2.boss.y);
           triggerScreenShake(state2, 50, 120);
           state2.boss = null;
@@ -2084,14 +2110,14 @@
           }
           state2.tracerRounds.splice(i, 1);
           if (isDestroyed) {
-            let points = config.rocketPoints;
-            if (rocket.type === "mirv") points = config.mirvPoints;
-            else if (rocket.type === "stealth") points = config.stealthPoints;
-            else if (rocket.type === "swarmer") points = config.swarmerPoints;
-            else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
-            else if (rocket.type === "drone") points = config.dronePoints;
-            else if (rocket.type === "armored") points = config.armoredPoints;
-            else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
+            let points = config.points.standard;
+            if (rocket.type === "mirv") points = config.points.mirv;
+            else if (rocket.type === "stealth") points = config.points.stealth;
+            else if (rocket.type === "swarmer") points = config.points.swarmer;
+            else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
+            else if (rocket.type === "drone") points = config.points.drone;
+            else if (rocket.type === "armored") points = config.points.armored;
+            else if (rocket.type === "designator") points = config.points.designator;
             state2.score += points;
             state2.coins += points;
             state2.rockets.splice(j, 1);
@@ -2113,7 +2139,7 @@
         state2.interceptors.splice(i, 1);
         continue;
       }
-      let damage = interceptor.type === "nuke" ? 100 : 3;
+      let damage = interceptor.type === "nuke" ? config.nukeDamage : config.interceptorDamage;
       if (state2.activePerks.efficientInterceptors && Math.random() < 0.1) {
         damage *= 3;
       }
@@ -2123,8 +2149,8 @@
         state2.coins += damage * 10;
         detonated = true;
         if (isDestroyed) {
-          state2.score += config.bosses.hiveCarrier.points;
-          state2.coins += config.bosses.hiveCarrier.points;
+          state2.score += config.points.boss;
+          state2.coins += config.points.boss;
           createAdvancedExplosion(state2, state2.boss.x, state2.boss.y);
           triggerScreenShake(state2, 50, 120);
           state2.boss = null;
@@ -2150,14 +2176,14 @@
               isDestroyed = rocket.takeDamage(damage);
             }
             if (isDestroyed) {
-              let points = config.rocketPoints;
-              if (rocket.type === "mirv") points = config.mirvPoints;
-              else if (rocket.type === "stealth") points = config.stealthPoints;
-              else if (rocket.type === "swarmer") points = config.swarmerPoints;
-              else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
-              else if (rocket.type === "drone") points = config.dronePoints;
-              else if (rocket.type === "armored") points = config.armoredPoints;
-              else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
+              let points = config.points.standard;
+              if (rocket.type === "mirv") points = config.points.mirv;
+              else if (rocket.type === "stealth") points = config.points.stealth;
+              else if (rocket.type === "swarmer") points = config.points.swarmer;
+              else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
+              else if (rocket.type === "drone") points = config.points.drone;
+              else if (rocket.type === "armored") points = config.points.armored;
+              else if (rocket.type === "designator") points = config.points.designator;
               state2.score += points;
               state2.coins += points;
               state2.rockets.splice(j, 1);
@@ -2187,14 +2213,14 @@
         for (let j = state2.rockets.length - 1; j >= 0; j--) {
           const rocket = state2.rockets[j];
           if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
-            let points = config.rocketPoints;
-            if (rocket.type === "mirv") points = config.mirvPoints;
-            else if (rocket.type === "stealth") points = config.stealthPoints;
-            else if (rocket.type === "swarmer") points = config.swarmerPoints;
-            else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
-            else if (rocket.type === "drone") points = config.dronePoints;
-            else if (rocket.type === "armored") points = config.armoredPoints;
-            else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
+            let points = config.points.standard;
+            if (rocket.type === "mirv") points = config.points.mirv;
+            else if (rocket.type === "stealth") points = config.points.stealth;
+            else if (rocket.type === "swarmer") points = config.points.swarmer;
+            else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
+            else if (rocket.type === "drone") points = config.points.drone;
+            else if (rocket.type === "armored") points = config.points.armored;
+            else if (rocket.type === "designator") points = config.points.designator;
             state2.score += points;
             state2.coins += points;
             state2.rockets.splice(j, 1);
@@ -2222,11 +2248,9 @@
   }
 
   // ts/gameLogic.ts
-  function update(state2, width2, height2, refreshUpgradeScreen2, init2) {
-    state2.gameTime++;
-    updateTopUI(state2);
-    updateBossUI(state2.boss);
+  function update(state2, width2, height2, refreshUpgradeScreen2) {
     if (state2.gameState !== "IN_WAVE") return;
+    state2.gameTime++;
     const waveDef = getWaveDefinition(state2.currentWave);
     if (!waveDef.isBossWave && state2.rockets.length === 0 && state2.waveRocketSpawn.toSpawn.length === 0 && state2.boss === null) {
       state2.timeSinceLastRocket++;
@@ -2251,16 +2275,14 @@
     updateHomingMines(state2);
     updateParticles(state2);
     updateCityEffects(state2, height2);
-    for (let i = state2.flashes.length - 1; i >= 0; i--) {
-      const flash = state2.flashes[i];
+    state2.flashes.forEach((flash, i) => {
       flash.update();
       if (flash.alpha <= 0) state2.flashes.splice(i, 1);
-    }
-    for (let i = state2.shockwaves.length - 1; i >= 0; i--) {
-      const shockwave = state2.shockwaves[i];
+    });
+    state2.shockwaves.forEach((shockwave, i) => {
       shockwave.update();
       if (shockwave.alpha <= 0) state2.shockwaves.splice(i, 1);
-    }
+    });
     state2.empPowerUps.forEach((emp, i) => {
       emp.update();
       if (emp.life <= 0) state2.empPowerUps.splice(i, 1);
@@ -2295,19 +2317,18 @@
       state2.firstUpgradePurchased = false;
       state2.scramblerActive = false;
       refreshUpgradeScreen2();
+      return;
     }
     const destroyedCities = state2.cities.filter((c) => c.isDestroyed).length;
     if (destroyedCities === config.cityCount) {
       state2.gameState = "GAME_OVER";
-      let newHighScore = false;
-      if (state2.score > state2.playerData.highScores[state2.difficulty]) {
+      const newHighScore = state2.score > state2.playerData.highScores[state2.difficulty];
+      if (newHighScore) {
         state2.playerData.highScores[state2.difficulty] = state2.score;
-        newHighScore = true;
       }
       const pointsEarned = Math.floor(state2.score / 100) + state2.currentWave * 10;
       state2.playerData.prestigePoints += pointsEarned;
       savePlayerData(state2.playerData);
-      showGameOverScreen(state2, init2, pointsEarned, newHighScore);
     }
   }
 
@@ -2406,27 +2427,28 @@
     state2.mouse.x = e.clientX - rect.left;
     state2.mouse.y = e.clientY - rect.top;
   }
-  function handleClick(state2, canvas2, e) {
-    const rect = canvas2.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const { width: width2, height: height2 } = canvas2;
-    if (state2.homingMinesAvailable > 0 && y > height2 * 0.85 && state2.gameState === "IN_WAVE") {
+  function _handleMineDeployment(state2, x, y, height2) {
+    if (state2.homingMinesAvailable > 0 && y > height2 * config.homingMineDeploymentZone) {
       state2.homingMines.push(new HomingMine(x, height2 - 10));
       state2.homingMinesAvailable--;
-      updateTopUI(state2);
-      return;
+      return true;
     }
+    return false;
+  }
+  function _handleEmpClick(state2, x, y) {
     for (let i = state2.empPowerUps.length - 1; i >= 0; i--) {
       const emp = state2.empPowerUps[i];
       if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
         state2.empActiveTimer = config.empDuration;
         state2.empShockwave = { radius: 0, alpha: 1 };
         state2.empPowerUps.splice(i, 1);
-        return;
+        return true;
       }
     }
-    if (state2.gameState === "IN_WAVE" && state2.targetedRocket) {
+    return false;
+  }
+  function _handleInterceptorLaunch(state2, width2, height2) {
+    if (state2.targetedRocket) {
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
         state2.interceptors.push(
@@ -2459,49 +2481,55 @@
           );
         }
       }
-      updateTopUI(state2);
+      return true;
     }
+    return false;
+  }
+  function handleClick(state2, canvas2, e) {
+    if (state2.gameState !== "IN_WAVE") return;
+    const rect = canvas2.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const { width: width2, height: height2 } = canvas2;
+    if (_handleMineDeployment(state2, x, y, height2)) return;
+    if (_handleEmpClick(state2, x, y)) return;
+    if (_handleInterceptorLaunch(state2, width2, height2)) return;
   }
   function handleTouchStart(state2, canvas2, e) {
     e.preventDefault();
+    if (state2.gameState !== "IN_WAVE") return;
     const rect = canvas2.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
     const { width: width2, height: height2 } = canvas2;
-    if (state2.gameState === "IN_WAVE") {
-      let closestDist = 100;
-      let touchTarget = null;
-      const potentialTargets = [...state2.rockets, ...state2.flares];
-      for (const target of potentialTargets) {
-        if (target.type === "stealth" && "isVisible" in target && !target.isVisible) continue;
-        const dist = Math.hypot(target.x - x, target.y - y);
-        if (dist < closestDist) {
-          closestDist = dist;
-          touchTarget = target;
-        }
-      }
-      if (touchTarget) {
-        state2.interceptors.push(
-          new Interceptor(
-            width2 / 2,
-            height2,
-            touchTarget,
-            state2.interceptorSpeed,
-            state2.interceptorBlastRadius,
-            "standard"
-          )
-        );
-        updateTopUI(state2);
+    let closestDist = config.touchTargetingRadius;
+    let touchTarget = null;
+    const potentialTargets = [...state2.rockets, ...state2.flares];
+    for (const target of potentialTargets) {
+      if (target.type === "stealth" && "isVisible" in target && !target.isVisible) continue;
+      const dist = Math.hypot(target.x - x, target.y - y);
+      if (dist < closestDist) {
+        closestDist = dist;
+        touchTarget = target;
       }
     }
+    if (touchTarget) {
+      state2.interceptors.push(
+        new Interceptor(
+          width2 / 2,
+          height2,
+          touchTarget,
+          state2.interceptorSpeed,
+          state2.interceptorBlastRadius,
+          "standard"
+        )
+      );
+    }
   }
-  function togglePause(state2, init2) {
+  function togglePause(state2, restartCallback) {
     if (state2.gameState === "IN_WAVE") {
       state2.gameState = "PAUSED";
-      showPauseScreen(
-        () => togglePause(state2, init2),
-        () => init2()
-      );
+      showPauseScreen(() => togglePause(state2, restartCallback), restartCallback);
     } else if (state2.gameState === "PAUSED") {
       state2.gameState = "IN_WAVE";
       hideModal();
@@ -2638,7 +2666,7 @@
     state2.waveStartTime = state2.gameTime;
     if (waveDef.isBossWave) {
       if (waveDef.bossType === "hiveCarrier") {
-        const waveFactor = state2.currentWave - waveDefinitions.length + 1;
+        const waveFactor = state2.currentWave - config.waveDefinitions.length + 1;
         const healthMultiplier = waveFactor > 0 ? 1 + Math.floor(waveFactor / 5) * 0.75 : 1;
         state2.boss = new HiveCarrier(canvas2.width, healthMultiplier);
       }
@@ -2691,25 +2719,41 @@
   var width;
   var height;
   var animationFrameId;
-  var state = getInitialState();
+  var state;
   function gameLoop(timestamp) {
+    if (state.gameState === "IN_WAVE") {
+      update(state, width, height, () => refreshUpgradeScreen(state, canvas));
+    }
+    if (state.gameState === "GAME_OVER") {
+      cancelAnimationFrame(animationFrameId);
+      const newHighScore = state.score > state.playerData.highScores[state.difficulty];
+      const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
+      showGameOverScreen(state, init, pointsEarned, newHighScore);
+      return;
+    }
+    updateTopUI(state);
+    updateBossUI(state.boss);
     state.frameCount++;
     if (timestamp - state.lastFpsUpdate > 1e3) {
       state.fps = state.frameCount;
       state.frameCount = 0;
       state.lastFpsUpdate = timestamp;
     }
-    update(state, width, height, () => refreshUpgradeScreen(state, canvas), init);
     draw(ctx, state, width, height);
     animationFrameId = requestAnimationFrame(gameLoop);
   }
   var resetAndStartGame = (difficulty = "normal") => {
-    state = getInitialState();
+    const playerData = loadPlayerData();
+    state = createInitialState(playerData);
     state.difficulty = difficulty;
     state.coins = difficultySettings[difficulty].startingCoins;
     state.currentWave = -1;
     createCities();
     startNextWave(state, canvas);
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
+    animationFrameId = requestAnimationFrame(gameLoop);
   };
   function createCities() {
     state.cities = [];
@@ -2726,7 +2770,7 @@
   var resizeCanvas = () => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-    if (state.gameState && state.gameState !== "IN_WAVE") {
+    if (state && state.gameState !== "IN_WAVE") {
       if (state.cities && state.cities.length > 0) {
         const citySlotWidth = width / config.cityCount;
         state.cities.forEach((city, i) => {
@@ -2747,7 +2791,8 @@
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
     }
-    state = getInitialState();
+    const playerData = loadPlayerData();
+    state = createInitialState(playerData);
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
@@ -2768,7 +2813,6 @@
       });
     });
     canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
-    const playerData = loadPlayerData();
     showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
     animationFrameId = requestAnimationFrame(gameLoop);
   }
