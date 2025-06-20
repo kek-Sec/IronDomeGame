@@ -6,7 +6,7 @@ const SAVE_KEY = 'ironDomePlayerData_TS';
 
 function getInitialPlayerData(): PlayerData {
     const unlockedPerks: Record<string, boolean> = {};
-    Object.keys(perks).forEach(key => {
+    Object.keys(perks).forEach((key) => {
         unlockedPerks[key] = false;
     });
 
@@ -16,8 +16,8 @@ function getInitialPlayerData(): PlayerData {
         highScores: {
             easy: 0,
             normal: 0,
-            hard: 0
-        }
+            hard: 0,
+        },
     };
 }
 
@@ -36,7 +36,7 @@ export function loadPlayerData(): PlayerData {
             }
         }
     } catch (error) {
-        console.error("Failed to load player data:", error);
+        console.error('Failed to load player data:', error);
     }
     return getInitialPlayerData();
 }
@@ -45,6 +45,6 @@ export function savePlayerData(playerData: PlayerData): void {
     try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
     } catch (error) {
-        console.error("Failed to save player data:", error);
+        console.error('Failed to save player data:', error);
     }
 }

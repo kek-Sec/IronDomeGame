@@ -58,7 +58,10 @@ export class Particle implements Drawable, Updatable {
             ctx.lineWidth = this.radius * 0.8;
             ctx.stroke();
         } else {
-            const color = this.type === 'smoke' ? this.color.replace('1)', `${alpha * 0.5})`) : this.color.replace('1)', `${alpha})`);
+            const color =
+                this.type === 'smoke'
+                    ? this.color.replace('1)', `${alpha * 0.5})`)
+                    : this.color.replace('1)', `${alpha})`);
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.fill();

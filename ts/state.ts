@@ -57,6 +57,6 @@ export function getInitialState(): GameState {
         scramblerActive: false,
 
         playerData: playerData,
-        activePerks: perks
+        activePerks: perks,
     };
 }

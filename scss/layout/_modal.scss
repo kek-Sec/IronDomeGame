@@ -26,7 +26,9 @@
     text-align: center;
     max-width: 950px;
     width: 95%;
-    box-shadow: 0 0 30px rgba(0, 221, 255, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
+    box-shadow:
+        0 0 30px rgba(0, 221, 255, 0.2),
+        inset 0 0 20px rgba(0, 0, 0, 0.6);
     animation: fadeIn 0.5s ease-out;
     max-height: 95vh;
     display: flex;
@@ -95,7 +97,7 @@
     flex-wrap: wrap;
     margin: 15px 0 30px 0;
     padding: 15px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     border: 1px solid $border-color;
 
@@ -125,7 +127,7 @@
     border-radius: 5px;
     animation: pulseButton 2s infinite ease-in-out;
     border: 2px solid color.adjust($prestige-color, $lightness: -10%);
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     width: fit-content;
 }
 
@@ -170,10 +172,11 @@ p.start-screen-subtitle {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-
 .modal-content.armory {
     border-color: $prestige-color;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
+    box-shadow:
+        0 0 30px rgba(255, 215, 0, 0.2),
+        inset 0 0 20px rgba(0, 0, 0, 0.6);
     h1 {
         color: $prestige-color;
     }
@@ -184,7 +187,9 @@ p.start-screen-subtitle {
         &:hover:not(:disabled) {
             background-color: rgba(255, 215, 0, 0.2);
             color: white;
-            box-shadow: 0 0 20px $prestige-color, 0 0 30px $prestige-color;
+            box-shadow:
+                0 0 20px $prestige-color,
+                0 0 30px $prestige-color;
         }
     }
 }
@@ -235,7 +240,7 @@ p.start-screen-subtitle {
     margin-left: 8px;
     background-color: $prestige-color;
     border-radius: 50%;
-    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.4);
     position: relative;
 
     &::before {
@@ -296,7 +301,7 @@ p.start-screen-subtitle {
     line-height: 1.5;
     z-index: 20;
     pointer-events: none;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
 }
 
 .shop-card:hover .info-tooltip {
@@ -311,7 +316,8 @@ p.start-screen-subtitle {
         top: 80px;
         width: 80%;
     }
-    .pause-btn, .info-btn {
+    .pause-btn,
+    .info-btn {
         width: 50px;
         height: 50px;
         font-size: 1.5em;
@@ -326,11 +332,14 @@ p.start-screen-subtitle {
             font-size: 1em;
         }
     }
-    .modal-button, .armory-button {
+    .modal-button,
+    .armory-button {
         padding: 12px 24px;
         font-size: 1.2em;
     }
-    .shop-grid, .perk-grid, .rocket-info-grid {
+    .shop-grid,
+    .perk-grid,
+    .rocket-info-grid {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 15px;
     }
@@ -350,14 +359,18 @@ p.start-screen-subtitle {
         top: 10px;
         right: 10px;
     }
-    .pause-btn, .info-btn {
+    .pause-btn,
+    .info-btn {
         width: 45px;
         height: 45px;
     }
     .ui-box h2 {
         font-size: 1em;
     }
-    .shop-grid, .perk-grid, .rocket-info-grid, .difficulty-card-grid {
+    .shop-grid,
+    .perk-grid,
+    .rocket-info-grid,
+    .difficulty-card-grid {
         grid-template-columns: 1fr;
     }
     .modal-content h1 {

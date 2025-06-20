@@ -48,7 +48,7 @@ const resetAndStartGame: StartGameCallback = (difficulty = 'normal') => {
     state.currentWave = -1;
     createCities();
     startNextWave(state, canvas);
-}
+};
 
 // --- Helper Functions ---
 function createCities(): void {
@@ -60,7 +60,7 @@ function createCities(): void {
     for (let i = 0; i < config.cityCount; i++) {
         const h = random(minHeight, maxHeight);
         const w = cityWidth * random(0.6, 0.8);
-        const x = (i * cityWidth) + (cityWidth - w) / 2;
+        const x = i * cityWidth + (cityWidth - w) / 2;
         state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
     }
 }
@@ -73,7 +73,7 @@ const resizeCanvas = (): void => {
         if (state.cities && state.cities.length > 0) {
             const citySlotWidth = width / config.cityCount;
             state.cities.forEach((city, i) => {
-                city.x = (i * citySlotWidth) + (citySlotWidth - city.width) / 2;
+                city.x = i * citySlotWidth + (citySlotWidth - city.width) / 2;
                 city.y = height - city.height;
             });
         }

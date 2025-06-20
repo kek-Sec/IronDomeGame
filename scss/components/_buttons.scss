@@ -1,7 +1,8 @@
 @use '../abstracts/variables' as *;
 
 /* --- Button Styling --- */
-.modal-button, .armory-button {
+.modal-button,
+.armory-button {
     padding: 15px 30px;
     font-size: 1.5em;
     font-family: 'Orbitron', sans-serif;
@@ -12,25 +13,29 @@
     border-radius: 8px;
     transition: all 0.2s ease-in-out;
     text-shadow: 0 0 8px $glow-color;
-    box-shadow: 0 0 10px rgba(0, 221, 255, 0.3), inset 0 0 10px rgba(0, 221, 255, 0.2);
+    box-shadow:
+        0 0 10px rgba(0, 221, 255, 0.3),
+        inset 0 0 10px rgba(0, 221, 255, 0.2);
     pointer-events: all;
     margin-top: 20px;
 
     &:hover:not(:disabled) {
         background-color: rgba(0, 221, 255, 0.2);
         color: white;
-        box-shadow: 0 0 20px $glow-color, 0 0 30px $glow-color;
+        box-shadow:
+            0 0 20px $glow-color,
+            0 0 30px $glow-color;
         transform: scale(1.02);
     }
 
     &:active:not(:disabled) {
-        transform: scale(1.0);
+        transform: scale(1);
     }
 
     &:disabled {
         border-color: $disabled-color;
         background-image: none;
-        background-color: rgba(30,30,30,0.5);
+        background-color: rgba(30, 30, 30, 0.5);
         color: $disabled-color;
         cursor: not-allowed;
         box-shadow: none;
@@ -51,7 +56,9 @@
     color: $prestige-color;
     background-image: linear-gradient(rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0));
     text-shadow: 0 0 8px $prestige-color;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 215, 0, 0.2);
+    box-shadow:
+        0 0 10px rgba(255, 215, 0, 0.3),
+        inset 0 0 10px rgba(255, 215, 0, 0.2);
     font-size: 1.2em;
     padding: 12px 24px;
     margin: 0;
@@ -60,7 +67,8 @@
     gap: 10px;
 }
 
-.pause-btn, .info-btn {
+.pause-btn,
+.info-btn {
     width: 60px;
     height: 60px;
     background: rgba(13, 17, 23, 0.8);

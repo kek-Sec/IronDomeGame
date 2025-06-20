@@ -4,7 +4,6 @@ import { Flare } from './playerAbilities';
 import * as T from '../types';
 import { City } from './structures';
 
-
 // Base class for all enemy projectiles
 export class Rocket implements T.Rocket {
     id: number;
@@ -20,7 +19,15 @@ export class Rocket implements T.Rocket {
     protected color: string = 'red';
     protected trailColor: string = 'rgba(255, 100, 100, 0.6)';
 
-    constructor(startX: number | undefined, startY: number | undefined, targetVx: number | undefined, targetVy: number | undefined, width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1) {
+    constructor(
+        startX: number | undefined,
+        startY: number | undefined,
+        targetVx: number | undefined,
+        targetVy: number | undefined,
+        width: number,
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1
+    ) {
         this.id = random(0, 1000000);
         this.x = startX ?? random(width * 0.1, width * 0.9);
         this.y = startY ?? 0;
@@ -109,7 +116,15 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
     hitFlashTimer: number = 0;
 
     constructor(width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1) {
-        super(undefined, undefined, random(-0.5, 0.5), random(1, 1.5), width, sizeMultiplier * 1.5, speedMultiplier * 0.7);
+        super(
+            undefined,
+            undefined,
+            random(-0.5, 0.5),
+            random(1, 1.5),
+            width,
+            sizeMultiplier * 1.5,
+            speedMultiplier * 0.7
+        );
         this.type = 'armored';
         this.color = '#c0c0c0';
         this.trailColor = 'rgba(192, 192, 192, 0.5)';
@@ -156,13 +171,18 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         ctx.restore();
 
         // Health bar
-        const barWidth = this.radius * 3; const barHeight = 5;
-        const barX = this.x - barWidth / 2; const barY = this.y - this.radius * 3;
-        ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barWidth, barHeight);
+        const barWidth = this.radius * 3;
+        const barHeight = 5;
+        const barX = this.x - barWidth / 2;
+        const barY = this.y - this.radius * 3;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
         const healthPercentage = this.health / this.maxHealth;
         ctx.fillStyle = healthPercentage > 0.6 ? '#43a047' : healthPercentage > 0.3 ? '#fdd835' : '#e53935';
         ctx.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
-        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(barX, barY, barWidth, barHeight);
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 }
 
@@ -177,7 +197,9 @@ export class StealthRocket extends Rocket implements T.Rocket {
     }
     update() {
         super.update();
-        if (this.life % 45 === 0) { this.isVisible = !this.isVisible; }
+        if (this.life % 45 === 0) {
+            this.isVisible = !this.isVisible;
+        }
     }
     draw(ctx: CanvasRenderingContext2D) {
         if (this.isVisible) {
@@ -231,7 +253,14 @@ export class StealthRocket extends Rocket implements T.Rocket {
 
 // A small, fast-moving projectile spawned by a Swarmer or Boss
 export class Drone extends Rocket implements T.Rocket {
-    constructor(startX: number, startY: number, targetVx: number, targetVy: number, width: number, speedMultiplier: number = 1) {
+    constructor(
+        startX: number,
+        startY: number,
+        targetVx: number,
+        targetVy: number,
+        width: number,
+        speedMultiplier: number = 1
+    ) {
         super(startX, startY, targetVx, targetVy, width, 0.6, speedMultiplier * 1.5);
         this.type = 'drone';
         this.radius = 3;
@@ -285,13 +314,18 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
     }
     update() {
         super.update();
-        if (this.y > this.splitHeight && !this.hasSplit) { this.hasSplit = true; }
+        if (this.y > this.splitHeight && !this.hasSplit) {
+            this.hasSplit = true;
+        }
     }
     split(): T.Rocket[] {
-        const childDrones: T.Rocket[] = []; const childCount = 6;
+        const childDrones: T.Rocket[] = [];
+        const childCount = 6;
         for (let i = 0; i < childCount; i++) {
-            const angle = random(0, Math.PI * 2); const speed = random(1, 3);
-            const newVx = Math.cos(angle) * speed; const newVy = Math.sin(angle) * speed;
+            const angle = random(0, Math.PI * 2);
+            const speed = random(1, 3);
+            const newVx = Math.cos(angle) * speed;
+            const newVy = Math.sin(angle) * speed;
             childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier));
         }
         return childDrones;
@@ -312,7 +346,6 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
     }
 }
 
-
 // A rocket that splits into multiple standard rockets
 export class MirvRocket extends Rocket implements T.Rocket {
     width: number;
@@ -331,14 +364,20 @@ export class MirvRocket extends Rocket implements T.Rocket {
     }
     update() {
         super.update();
-        if (this.y > this.splitHeight && !this.hasSplit) { this.hasSplit = true; }
+        if (this.y > this.splitHeight && !this.hasSplit) {
+            this.hasSplit = true;
+        }
     }
     split() {
-        const childRockets: T.Rocket[] = []; const childCount = 3;
-        const childSizeMultiplier = (this.radius / 8);
+        const childRockets: T.Rocket[] = [];
+        const childCount = 3;
+        const childSizeMultiplier = this.radius / 8;
         for (let i = 0; i < childCount; i++) {
-            const newVx = this.vx + random(-1.5, 1.5); const newVy = this.vy + random(-0.5, 0.5);
-            childRockets.push(new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier, this.speedMultiplier));
+            const newVx = this.vx + random(-1.5, 1.5);
+            const newVy = this.vy + random(-0.5, 0.5);
+            childRockets.push(
+                new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier, this.speedMultiplier)
+            );
         }
         return childRockets;
     }
@@ -407,14 +446,23 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
     isDesignating: boolean = false;
     designationTimer: number = 0;
     designationDuration: number = 180; // 3 seconds at 60fps
-    constructor(width: number, height: number, cities: T.City[], sizeMultiplier: number = 1, speedMultiplier: number = 1) {
+    constructor(
+        width: number,
+        height: number,
+        cities: T.City[],
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1
+    ) {
         super(undefined, 0, 0, 0, width, sizeMultiplier, speedMultiplier);
         this.type = 'designator';
         this.color = '#ff9800';
         this.trailColor = 'rgba(255, 152, 0, 0.5)';
 
-        const availableCities = cities.filter(c => !c.isDestroyed);
-        this.targetCity = availableCities.length > 0 ? availableCities[Math.floor(random(0, availableCities.length))] as City : null;
+        const availableCities = cities.filter((c) => !c.isDestroyed);
+        this.targetCity =
+            availableCities.length > 0
+                ? (availableCities[Math.floor(random(0, availableCities.length))] as City)
+                : null;
 
         if (this.targetCity) {
             this.targetX = this.targetCity.x + this.targetCity.width / 2;
@@ -474,7 +522,13 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
 
             const circleRadius = (this.targetCity.width / 2) * (1 - progress);
             ctx.beginPath();
-            ctx.arc(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y + this.targetCity.height / 2, circleRadius, 0, Math.PI * 2);
+            ctx.arc(
+                this.targetCity.x + this.targetCity.width / 2,
+                this.targetCity.y + this.targetCity.height / 2,
+                circleRadius,
+                0,
+                Math.PI * 2
+            );
             ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
             ctx.lineWidth = 2;
             ctx.stroke();
@@ -528,7 +582,7 @@ export class ArtilleryShell implements T.ArtilleryShell {
         return this.timeLeft <= 0;
     }
     draw(ctx: CanvasRenderingContext2D) {
-        const progress = 1 - (this.timeLeft / 30);
+        const progress = 1 - this.timeLeft / 30;
         const currentY = this.startY + (this.targetY - this.startY) * progress;
 
         ctx.beginPath();

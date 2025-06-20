@@ -1,37 +1,40 @@
 {
-  "name": "iron-dome-game",
-  "version": "1.4.0",
-  "description": "A web-based tower defense game inspired by the Iron Dome system.",
-  "main": "ts/main.ts",
-  "scripts": {
-    "dev": "npm-run-all --parallel scss:watch ts:watch serve",
-    "serve": "live-server",
-    "start": "npm run build:publish && http-server dist -c-1",
-    "scss:watch": "sass --watch scss/main.scss css/style.css",
-    "ts:watch": "esbuild ts/main.ts --bundle --sourcemap --outfile=js/main.js --watch",
-    "clean": "rimraf dist js",
-    "build:html": "html-minifier index.prod.html -o dist/index.html --collapse-whitespace --remove-comments --remove-optional-tags",
-    "build:css": "sass scss/main.scss dist/css/style.css && cssnano dist/css/style.css --no-map --o dist/css/style.css",
-    "build:js": "esbuild ts/main.ts --bundle --minify --sourcemap --outfile=dist/js/main.min.js",
-    "build:publish": "npm run clean && npm-run-all --parallel build:html build:css build:js"
-  },
-  "keywords": [
-    "game",
-    "tower-defense",
-    "html5",
-    "canvas",
-    "javascript"
-  ],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "cssnano-cli": "^1.0.5",
-    "esbuild": "^0.25.0",
-    "html-minifier": "^4.0.0",
-    "live-server": "^1.2.2",
-    "npm-run-all": "^4.1.5",
-    "rimraf": "^5.0.7",
-    "sass": "^1.77.4",
-    "typescript": "^5.8.3"
-  }
+    "name": "iron-dome-game",
+    "version": "1.4.0",
+    "description": "A web-based tower defense game inspired by the Iron Dome system.",
+    "main": "ts/main.ts",
+    "scripts": {
+        "dev": "npm-run-all --parallel scss:watch ts:watch serve",
+        "serve": "live-server",
+        "start": "npm run build:publish && http-server dist -c-1",
+        "scss:watch": "sass --watch scss/main.scss css/style.css",
+        "ts:watch": "esbuild ts/main.ts --bundle --sourcemap --outfile=js/main.js --watch",
+        "clean": "rimraf dist js",
+        "build:html": "html-minifier index.prod.html -o dist/index.html --collapse-whitespace --remove-comments --remove-optional-tags",
+        "build:css": "sass scss/main.scss dist/css/style.css && cssnano dist/css/style.css --no-map --o dist/css/style.css",
+        "build:js": "esbuild ts/main.ts --bundle --minify --sourcemap --outfile=dist/js/main.min.js",
+        "build:publish": "npm run clean && npm-run-all --parallel build:html build:css build:js",
+        "format": "prettier --write \"**/*.{ts,scss,json,md}\"",
+        "format:check": "prettier --check \"**/*.{ts,scss,json,md}\""
+    },
+    "keywords": [
+        "game",
+        "tower-defense",
+        "html5",
+        "canvas",
+        "javascript"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "cssnano-cli": "^1.0.5",
+        "esbuild": "^0.25.0",
+        "html-minifier": "^4.0.0",
+        "live-server": "^1.2.2",
+        "npm-run-all": "^4.1.5",
+        "prettier": "^3.3.2",
+        "rimraf": "^5.0.7",
+        "sass": "^1.77.4",
+        "typescript": "^5.8.3"
+    }
 }

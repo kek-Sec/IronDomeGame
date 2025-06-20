@@ -4,11 +4,29 @@
 import { config, getWaveDefinition } from './config';
 import * as UI from './ui';
 import { savePlayerData } from './saveManager';
-import { updateParticles, updateCityEffects, updateHomingMines, updateTracerRounds, updateInterceptors, updateTurrets, updateFlares, updateArtilleryShells, updateRockets, updateBoss, handleSpawning, findTargetedRocket } from './logic/updateLogic';
+import {
+    updateParticles,
+    updateCityEffects,
+    updateHomingMines,
+    updateTracerRounds,
+    updateInterceptors,
+    updateTurrets,
+    updateFlares,
+    updateArtilleryShells,
+    updateRockets,
+    updateBoss,
+    handleSpawning,
+    findTargetedRocket,
+} from './logic/updateLogic';
 import type { GameState } from './types';
 
-
-export function update(state: GameState, width: number, height: number, refreshUpgradeScreen: () => void, init: () => void): void {
+export function update(
+    state: GameState,
+    width: number,
+    height: number,
+    refreshUpgradeScreen: () => void,
+    init: () => void
+): void {
     state.gameTime++;
     UI.updateTopUI(state);
     UI.updateBossUI(state.boss);
@@ -16,7 +34,12 @@ export function update(state: GameState, width: number, height: number, refreshU
 
     const waveDef = getWaveDefinition(state.currentWave);
 
-    if (!waveDef.isBossWave && state.rockets.length === 0 && state.waveRocketSpawn.toSpawn.length === 0 && state.boss === null) {
+    if (
+        !waveDef.isBossWave &&
+        state.rockets.length === 0 &&
+        state.waveRocketSpawn.toSpawn.length === 0 &&
+        state.boss === null
+    ) {
         state.timeSinceLastRocket++;
     } else {
         state.timeSinceLastRocket = 0;
@@ -62,15 +85,17 @@ export function update(state: GameState, width: number, height: number, refreshU
     let waveIsOver = false;
 
     const waveDuration = state.gameTime - state.waveStartTime;
-    if (waveDuration > 10800) { // 3 minutes timeout
+    if (waveDuration > 10800) {
+        // 3 minutes timeout
         waveIsOver = true;
         console.warn(`Failsafe triggered: Wave ${state.currentWave + 1} ended due to absolute timeout.`);
         state.rockets = [];
     }
 
-    if (state.timeSinceLastRocket > 1200) { // 20 seconds of no activity
+    if (state.timeSinceLastRocket > 1200) {
+        // 20 seconds of no activity
         waveIsOver = true;
-        console.warn("Failsafe triggered: Wave ended due to 20s of no activity.");
+        console.warn('Failsafe triggered: Wave ended due to 20s of no activity.');
         state.waveRocketSpawn.toSpawn = [];
     }
 
@@ -94,7 +119,7 @@ export function update(state: GameState, width: number, height: number, refreshU
         refreshUpgradeScreen();
     }
 
-    const destroyedCities = state.cities.filter(c => c.isDestroyed).length;
+    const destroyedCities = state.cities.filter((c) => c.isDestroyed).length;
     if (destroyedCities === config.cityCount) {
         state.gameState = 'GAME_OVER';
 

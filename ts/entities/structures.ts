@@ -1,7 +1,12 @@
 // ts/entities/structures.ts
 import { random } from '../utils';
 import { TracerRound } from './playerAbilities';
-import type { City as CityType, AutomatedTurret as AutomatedTurretType, Rocket as RocketType, TracerRound as TracerRoundType } from '../types';
+import type {
+    City as CityType,
+    AutomatedTurret as AutomatedTurretType,
+    Rocket as RocketType,
+    TracerRound as TracerRoundType,
+} from '../types';
 
 // Represents a city/base to be defended
 export class City implements CityType {
@@ -12,11 +17,23 @@ export class City implements CityType {
     isDestroyed: boolean;
     structureType: number;
     isArmored: boolean;
-    rubbleShape: { w: number; h: number; xOffset: number; yOffset: number; color: string; points: { x: number; y: number; }[]; }[] | null;
+    rubbleShape:
+        | {
+              w: number;
+              h: number;
+              xOffset: number;
+              yOffset: number;
+              color: string;
+              points: { x: number; y: number }[];
+          }[]
+        | null;
     isSmoking: boolean;
 
     constructor(x: number, y: number, w: number, h: number, isArmored: boolean = false) {
-        this.x = x; this.y = y; this.width = w; this.height = h;
+        this.x = x;
+        this.y = y;
+        this.width = w;
+        this.height = h;
         this.isDestroyed = false;
         this.structureType = Math.floor(random(0, 3));
         this.isArmored = isArmored;
@@ -30,9 +47,15 @@ export class City implements CityType {
         } else {
             // Draw the structure based on its type
             switch (this.structureType) {
-                case 0: this.drawBunker(ctx); break;
-                case 1: this.drawDome(ctx, height); break;
-                case 2: this.drawCommsTower(ctx); break;
+                case 0:
+                    this.drawBunker(ctx);
+                    break;
+                case 1:
+                    this.drawDome(ctx, height);
+                    break;
+                case 2:
+                    this.drawCommsTower(ctx);
+                    break;
             }
             // Draw the energy shield if armored
             if (this.isArmored) {
@@ -71,10 +94,17 @@ export class City implements CityType {
         // Dome structure with a glowing gradient
         ctx.beginPath();
         ctx.arc(centerX, height, radius, Math.PI, 0);
-        const gradient = ctx.createRadialGradient(centerX, height - radius * 0.5, radius * 0.2, centerX, height, radius);
+        const gradient = ctx.createRadialGradient(
+            centerX,
+            height - radius * 0.5,
+            radius * 0.2,
+            centerX,
+            height,
+            radius
+        );
         gradient.addColorStop(0, 'rgba(173, 216, 230, 0.8)'); // Light blue center
-        gradient.addColorStop(0.7, 'rgba(0, 191, 255, 0.6)');   // Deep sky blue
-        gradient.addColorStop(1, 'rgba(70, 130, 180, 0.3)');    // Steel blue transparent
+        gradient.addColorStop(0.7, 'rgba(0, 191, 255, 0.6)'); // Deep sky blue
+        gradient.addColorStop(1, 'rgba(70, 130, 180, 0.3)'); // Steel blue transparent
         ctx.fillStyle = gradient;
         ctx.fill();
 
@@ -150,7 +180,7 @@ export class City implements CityType {
     drawRubble(ctx: CanvasRenderingContext2D, height: number): void {
         if (!this.rubbleShape) return;
 
-        this.rubbleShape.forEach(shape => {
+        this.rubbleShape.forEach((shape) => {
             ctx.fillStyle = shape.color;
             const x = this.x + shape.xOffset;
             const y = height - shape.h - shape.yOffset;
@@ -178,10 +208,13 @@ export class City implements CityType {
                 xOffset: random(0, this.width * 0.4),
                 yOffset: random(-this.height * 0.1, this.height * 0.2),
                 color: rubbleColors[i % rubbleColors.length],
-                points: [ // Pre-calculate jagged points for a static shape
-                    { x: 0, y: 1 }, { x: random(0.1, 0.3), y: random(0.1, 0.3) },
-                    { x: random(0.7, 0.9), y: random(0.1, 0.3) }, { x: 1, y: 1 }
-                ]
+                points: [
+                    // Pre-calculate jagged points for a static shape
+                    { x: 0, y: 1 },
+                    { x: random(0.1, 0.3), y: random(0.1, 0.3) },
+                    { x: random(0.7, 0.9), y: random(0.1, 0.3) },
+                    { x: 1, y: 1 },
+                ],
             });
         }
     }
@@ -228,8 +261,9 @@ export class AutomatedTurret implements AutomatedTurretType {
 
         // Target validation: Check if current target is still valid
         if (this.currentTarget) {
-            const targetExists = rockets.some(r => r.id === this.currentTarget!.id);
-            const targetInRange = targetExists && Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y) < this.range;
+            const targetExists = rockets.some((r) => r.id === this.currentTarget!.id);
+            const targetInRange =
+                targetExists && Math.hypot(this.x - this.currentTarget.x, this.y - this.currentTarget.y) < this.range;
             if (!targetExists || !targetInRange) {
                 this.currentTarget = null; // Target is gone, find a new one
                 this.isFiring = false;
@@ -260,7 +294,7 @@ export class AutomatedTurret implements AutomatedTurretType {
             this.shotTimer++;
             if (this.shotTimer % this.delayBetweenShots === 0) {
                 // Add slight inaccuracy
-                const fireAngle = this.angle + (random(-0.5, 0.5) * 0.02);
+                const fireAngle = this.angle + random(-0.5, 0.5) * 0.02;
                 newTracers.push(new TracerRound(this.x, this.y, fireAngle, tracerSpeed));
             }
         } else {
@@ -272,11 +306,18 @@ export class AutomatedTurret implements AutomatedTurretType {
     }
 
     findTarget(rockets: RocketType[]): RocketType | null {
-        const inRange = rockets.filter(r => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
+        const inRange = rockets.filter((r) => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
         if (inRange.length === 0) return null;
 
         // Prioritize more dangerous rockets
-        const highPriority = inRange.filter(r => r.type === 'swarmer' || r.type === 'stealth' || r.type === 'mirv' || r.type === 'flare' || r.type === 'armored');
+        const highPriority = inRange.filter(
+            (r) =>
+                r.type === 'swarmer' ||
+                r.type === 'stealth' ||
+                r.type === 'mirv' ||
+                r.type === 'flare' ||
+                r.type === 'armored'
+        );
         if (highPriority.length > 0) {
             return highPriority.sort((a, b) => a.y - b.y)[0]; // Target the highest one
         }

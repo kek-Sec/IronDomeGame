@@ -1,6 +1,15 @@
 // ts/logic/updateLogic.ts
 import { config, getWaveDefinition, difficultySettings } from '../config';
-import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredRocket, ArtilleryDesignator, ArtilleryShell } from '../entities/rockets';
+import {
+    Rocket,
+    MirvRocket,
+    StealthRocket,
+    SwarmerRocket,
+    FlareRocket,
+    ArmoredRocket,
+    ArtilleryDesignator,
+    ArtilleryShell,
+} from '../entities/rockets';
 import { EMP, Flare } from '../entities/playerAbilities';
 import { HiveCarrier } from '../entities/bosses';
 import { createAdvancedExplosion, triggerScreenShake, random } from '../utils';
@@ -19,7 +28,7 @@ export function findTargetedRocket(state: T.GameState): void {
         if (target.type === 'stealth' && 'isVisible' in target && !target.isVisible) continue;
 
         const dist = Math.hypot(target.x - state.mouse.x, target.y - state.mouse.y);
-        const targetableRadius = (target instanceof HiveCarrier) ? target.radius : 50;
+        const targetableRadius = target instanceof HiveCarrier ? target.radius : 50;
 
         if (dist < targetableRadius && dist < closestDist) {
             closestDist = dist;
@@ -34,10 +43,10 @@ export function handleSpawning(state: T.GameState, width: number, height: number
 
     const difficulty = difficultySettings[state.difficulty];
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
-    const currentWaveDelay = (waveDef.delay || 85) * difficulty.waveDelayMultiplier / difficultyScale;
+    const currentWaveDelay = ((waveDef.delay || 85) * difficulty.waveDelayMultiplier) / difficultyScale;
 
     const speedBonus = difficulty.enemySpeedBonus || 1;
-    const speedMultiplier = (1 + (state.currentWave * 0.05)) * difficultyScale * speedBonus;
+    const speedMultiplier = (1 + state.currentWave * 0.05) * difficultyScale * speedBonus;
 
     state.waveRocketSpawn.timer++;
 
@@ -46,13 +55,21 @@ export function handleSpawning(state: T.GameState, width: number, height: number
         const sizeMultiplier = difficulty.missileSizeMultiplier;
 
         let newRocket: T.Rocket | undefined;
-        if (rocketType === 'standard') { newRocket = new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier); }
-        else if (rocketType === 'mirv') { newRocket = new MirvRocket(width, height, sizeMultiplier, speedMultiplier); }
-        else if (rocketType === 'stealth') { newRocket = new StealthRocket(width, sizeMultiplier, speedMultiplier); }
-        else if (rocketType === 'swarmer') { newRocket = new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier); }
-        else if (rocketType === 'flare') { newRocket = new FlareRocket(width, sizeMultiplier, speedMultiplier); }
-        else if (rocketType === 'armored') { newRocket = new ArmoredRocket(width, sizeMultiplier, speedMultiplier); }
-        else if (rocketType === 'designator') { newRocket = new ArtilleryDesignator(width, height, state.cities, sizeMultiplier, speedMultiplier); }
+        if (rocketType === 'standard') {
+            newRocket = new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
+        } else if (rocketType === 'mirv') {
+            newRocket = new MirvRocket(width, height, sizeMultiplier, speedMultiplier);
+        } else if (rocketType === 'stealth') {
+            newRocket = new StealthRocket(width, sizeMultiplier, speedMultiplier);
+        } else if (rocketType === 'swarmer') {
+            newRocket = new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier);
+        } else if (rocketType === 'flare') {
+            newRocket = new FlareRocket(width, sizeMultiplier, speedMultiplier);
+        } else if (rocketType === 'armored') {
+            newRocket = new ArmoredRocket(width, sizeMultiplier, speedMultiplier);
+        } else if (rocketType === 'designator') {
+            newRocket = new ArtilleryDesignator(width, height, state.cities, sizeMultiplier, speedMultiplier);
+        }
 
         if (newRocket) {
             if (state.scramblerActive && Math.random() < 0.25) {
@@ -85,8 +102,10 @@ export function updateRockets(state: T.GameState, width: number, height: number)
 
         if (rocket instanceof ArtilleryDesignator && rocket.isDesignating) {
             if (rocket.designationTimer > rocket.designationDuration) {
-                if(rocket.targetCity) {
-                     state.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y));
+                if (rocket.targetCity) {
+                    state.artilleryShells.push(
+                        new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y)
+                    );
                 }
                 state.rockets.splice(i, 1);
                 continue;
@@ -155,12 +174,13 @@ export function updateArtilleryShells(state: T.GameState) {
     }
 }
 
-
 export function updateFlares(state: T.GameState) {
     for (let i = state.flares.length - 1; i >= 0; i--) {
         const flare = state.flares[i];
         flare.update();
-        if (flare.life <= 0) { state.flares.splice(i, 1); }
+        if (flare.life <= 0) {
+            state.flares.splice(i, 1);
+        }
     }
 }
 
@@ -247,7 +267,7 @@ export function updateInterceptors(state: T.GameState, width: number) {
         }
 
         let damage = interceptor.type === 'nuke' ? 100 : 3;
-        if (state.activePerks.efficientInterceptors && Math.random() < 0.10) {
+        if (state.activePerks.efficientInterceptors && Math.random() < 0.1) {
             damage *= 3;
         }
 
@@ -269,7 +289,10 @@ export function updateInterceptors(state: T.GameState, width: number) {
         if (!detonated) {
             for (let f = state.flares.length - 1; f >= 0; f--) {
                 const flare = state.flares[f];
-                if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
+                if (
+                    Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) <
+                    interceptor.blastRadius + flare.radius
+                ) {
                     state.flares.splice(f, 1);
                     detonated = true;
                     break;
@@ -280,7 +303,10 @@ export function updateInterceptors(state: T.GameState, width: number) {
         if (!detonated) {
             for (let j = state.rockets.length - 1; j >= 0; j--) {
                 const rocket = state.rockets[j];
-                if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
+                if (
+                    Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) <
+                    interceptor.blastRadius + rocket.radius
+                ) {
                     let isDestroyed = true;
                     if (typeof rocket.takeDamage === 'function') {
                         isDestroyed = rocket.takeDamage(damage);
@@ -356,7 +382,7 @@ export function updateParticles(state: T.GameState) {
 }
 
 export function updateCityEffects(state: T.GameState, height: number) {
-    state.cities.forEach(city => {
+    state.cities.forEach((city) => {
         if (city.isSmoking && Math.random() < 0.03) {
             const smokeX = city.x + random(0, city.width);
             const smokeY = height - random(0, city.height * 0.5);

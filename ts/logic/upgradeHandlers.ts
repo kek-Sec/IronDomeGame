@@ -16,7 +16,7 @@ function applyCost(state: GameState, baseCost: number): number {
 export function handleUpgradeRepair(state: GameState, refreshUpgradeScreen: () => void): void {
     const cost = applyCost(state, config.upgradeCosts.repairCity);
     if (state.coins >= cost) {
-        const cityToRepair = state.cities.find(c => c.isDestroyed);
+        const cityToRepair = state.cities.find((c) => c.isDestroyed);
         if (cityToRepair) {
             state.coins -= cost;
             cityToRepair.repair();
@@ -25,7 +25,11 @@ export function handleUpgradeRepair(state: GameState, refreshUpgradeScreen: () =
     }
 }
 
-export function handleUpgradeTurret(state: GameState, canvas: HTMLCanvasElement, refreshUpgradeScreen: () => void): void {
+export function handleUpgradeTurret(
+    state: GameState,
+    canvas: HTMLCanvasElement,
+    refreshUpgradeScreen: () => void
+): void {
     const cost = applyCost(state, config.upgradeCosts.automatedTurret);
     if (state.coins >= cost && state.turrets.length < config.maxTurrets) {
         state.coins -= cost;
@@ -80,7 +84,7 @@ export function handleUpgradeBaseArmor(state: GameState, refreshUpgradeScreen: (
     if (state.coins >= cost && !state.basesAreArmored) {
         state.coins -= cost;
         state.basesAreArmored = true;
-        state.cities.forEach(c => c.isArmored = true);
+        state.cities.forEach((c) => (c.isArmored = true));
         refreshUpgradeScreen();
     }
 }
@@ -90,7 +94,7 @@ export function handleUpgradeTurretSpeed(state: GameState, refreshUpgradeScreen:
     if (state.coins >= cost && state.turretFireRateLevel < 3) {
         state.coins -= cost;
         state.turretFireRateLevel++;
-        state.turrets.forEach(t => t.fireRate *= 0.75);
+        state.turrets.forEach((t) => (t.fireRate *= 0.75));
         refreshUpgradeScreen();
     }
 }
@@ -100,7 +104,7 @@ export function handleUpgradeTurretRange(state: GameState, refreshUpgradeScreen:
     if (state.coins >= cost && state.turretRangeLevel < 3) {
         state.coins -= cost;
         state.turretRangeLevel++;
-        state.turrets.forEach(t => t.range *= 1.15);
+        state.turrets.forEach((t) => (t.range *= 1.15));
         refreshUpgradeScreen();
     }
 }
@@ -118,7 +122,7 @@ export function handleUpgradeFieldReinforcement(state: GameState, refreshUpgrade
     const cost = applyCost(state, config.upgradeCosts.fieldReinforcement);
     if (state.coins >= cost) {
         state.coins -= cost;
-        state.cities.forEach(c => {
+        state.cities.forEach((c) => {
             if (!c.isDestroyed && !c.isArmored) {
                 c.isArmored = true;
             }

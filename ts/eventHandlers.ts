@@ -6,7 +6,6 @@ import { Interceptor, HomingMine } from './entities/playerAbilities';
 import * as UI from './ui';
 import type { GameState, Rocket, Flare } from './types';
 
-
 export function handleMouseMove(state: GameState, canvas: HTMLCanvasElement, e: MouseEvent): void {
     const rect = canvas.getBoundingClientRect();
     state.mouse.x = e.clientX - rect.left;
@@ -41,7 +40,16 @@ export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: Mous
         const nukeIsAvailable = state.nukeAvailable && !state.activePerks.surplusValue;
 
         if (nukeIsAvailable) {
-            state.interceptors.push(new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, config.nukeBlastRadius, 'nuke'));
+            state.interceptors.push(
+                new Interceptor(
+                    width / 2,
+                    height,
+                    state.targetedRocket,
+                    state.interceptorSpeed,
+                    config.nukeBlastRadius,
+                    'nuke'
+                )
+            );
             state.nukeAvailable = false;
         } else {
             const numShots = 1 + state.multishotLevel;
@@ -51,7 +59,16 @@ export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: Mous
 
             for (let i = 0; i < numShots; i++) {
                 const launchX = startX + i * 10;
-                state.interceptors.push(new Interceptor(launchX, height, state.targetedRocket, state.interceptorSpeed, state.interceptorBlastRadius, 'standard'));
+                state.interceptors.push(
+                    new Interceptor(
+                        launchX,
+                        height,
+                        state.targetedRocket,
+                        state.interceptorSpeed,
+                        state.interceptorBlastRadius,
+                        'standard'
+                    )
+                );
             }
         }
         UI.updateTopUI(state);
@@ -78,7 +95,16 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
             }
         }
         if (touchTarget) {
-            state.interceptors.push(new Interceptor(width / 2, height, touchTarget, state.interceptorSpeed, state.interceptorBlastRadius, 'standard'));
+            state.interceptors.push(
+                new Interceptor(
+                    width / 2,
+                    height,
+                    touchTarget,
+                    state.interceptorSpeed,
+                    state.interceptorBlastRadius,
+                    'standard'
+                )
+            );
             UI.updateTopUI(state);
         }
     }
@@ -87,7 +113,10 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
 export function togglePause(state: GameState, init: () => void): void {
     if (state.gameState === 'IN_WAVE') {
         state.gameState = 'PAUSED';
-        UI.showPauseScreen(() => togglePause(state, init), () => init());
+        UI.showPauseScreen(
+            () => togglePause(state, init),
+            () => init()
+        );
     } else if (state.gameState === 'PAUSED') {
         state.gameState = 'IN_WAVE';
         UI.hideModal();

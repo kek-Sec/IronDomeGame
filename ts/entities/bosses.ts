@@ -4,7 +4,6 @@ import { random } from '../utils';
 import { Drone } from './rockets';
 import * as T from '../types';
 
-
 // Boss Class for Hive Carrier
 export class HiveCarrier implements T.HiveCarrier {
     id: number;
@@ -53,10 +52,10 @@ export class HiveCarrier implements T.HiveCarrier {
         this.x += this.vx;
 
         // Correct boundary detection to allow the boss to enter the screen and turn around correctly.
-        if (this.vx > 0 && (this.x + this.radius) > this.width) {
+        if (this.vx > 0 && this.x + this.radius > this.width) {
             // If moving right and right edge is past screen width
             this.vx *= -1;
-        } else if (this.vx < 0 && (this.x - this.radius) < 0) {
+        } else if (this.vx < 0 && this.x - this.radius < 0) {
             // If moving left and left edge is past screen left
             this.vx *= -1;
         }
@@ -83,7 +82,14 @@ export class HiveCarrier implements T.HiveCarrier {
         ctx.fillStyle = '#3c4043'; // Dark grey main body
         ctx.beginPath();
         ctx.moveTo(this.x - this.radius, this.y);
-        ctx.bezierCurveTo(this.x - this.radius, this.y - 80, this.x + this.radius, this.y - 80, this.x + this.radius, this.y);
+        ctx.bezierCurveTo(
+            this.x - this.radius,
+            this.y - 80,
+            this.x + this.radius,
+            this.y - 80,
+            this.x + this.radius,
+            this.y
+        );
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = '#2a2c2e';

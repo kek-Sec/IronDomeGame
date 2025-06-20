@@ -112,7 +112,7 @@
     @extend %card;
     padding: 20px;
     justify-content: space-between;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     position: relative;
 
     &:not(.disabled):not(.maxed) {
@@ -142,14 +142,15 @@
     &.disabled {
         color: $disabled-color;
         border-color: $disabled-color;
-        background: rgba(10,10,10,0.5);
+        background: rgba(10, 10, 10, 0.5);
         box-shadow: none;
         filter: grayscale(80%);
         &:hover {
             transform: none;
             border-color: $disabled-color;
         }
-        h3, .cost {
+        h3,
+        .cost {
             color: $disabled-color;
         }
     }
@@ -177,7 +178,13 @@
         font-size: 0.9em;
         font-weight: bold;
     }
-    .threat-low { color: $threat-low; }
-    .threat-medium { color: $threat-medium; }
-    .threat-high { color: $threat-high; }
+    .threat-low {
+        color: $threat-low;
+    }
+    .threat-medium {
+        color: $threat-medium;
+    }
+    .threat-high {
+        color: $threat-high;
+    }
 }

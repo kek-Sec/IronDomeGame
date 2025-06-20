@@ -2,12 +2,19 @@
 
 /* --- Keyframe Animations --- */
 @keyframes pulseGlow {
-    0%, 100% {
-        box-shadow: 0 0 5px $glow-color-transparent, 0 0 10px $glow-color-transparent, inset 0 0 8px $glow-color-transparent;
+    0%,
+    100% {
+        box-shadow:
+            0 0 5px $glow-color-transparent,
+            0 0 10px $glow-color-transparent,
+            inset 0 0 8px $glow-color-transparent;
         text-shadow: 0 0 4px $glow-color-transparent;
     }
     50% {
-        box-shadow: 0 0 8px $glow-color, 0 0 15px $glow-color, inset 0 0 10px $glow-color;
+        box-shadow:
+            0 0 8px $glow-color,
+            0 0 15px $glow-color,
+            inset 0 0 10px $glow-color;
         text-shadow: 0 0 7px $glow-color;
     }
 }
@@ -24,26 +31,45 @@
 }
 
 @keyframes textFlicker {
-    0%, 100% { text-shadow: 0 0 10px $glow-color, 0 0 20px $glow-color; }
-    50% { text-shadow: 0 0 8px $glow-color, 0 0 15px $glow-color; }
+    0%,
+    100% {
+        text-shadow:
+            0 0 10px $glow-color,
+            0 0 20px $glow-color;
+    }
+    50% {
+        text-shadow:
+            0 0 8px $glow-color,
+            0 0 15px $glow-color;
+    }
 }
 
 @keyframes twinkle {
-    0% { background-position: 0 0; }
-    100% { background-position: -10000px 5000px; }
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: -10000px 5000px;
+    }
 }
 
 @keyframes pulseButton {
     0% {
-        box-shadow: 0 0 15px $glow-color, 0 0 25px $glow-color;
+        box-shadow:
+            0 0 15px $glow-color,
+            0 0 25px $glow-color;
         transform: scale(1);
     }
     50% {
-        box-shadow: 0 0 25px $glow-color, 0 0 45px $glow-color;
+        box-shadow:
+            0 0 25px $glow-color,
+            0 0 45px $glow-color;
         transform: scale(1.03);
     }
     100% {
-        box-shadow: 0 0 15px $glow-color, 0 0 25px $glow-color;
+        box-shadow:
+            0 0 15px $glow-color,
+            0 0 25px $glow-color;
         transform: scale(1);
     }
 }
