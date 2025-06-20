@@ -9,7 +9,6 @@
       missileSizeMultiplier: 1.5,
       turretFireRateMultiplier: 0.8,
       enemySpeedBonus: 0.85,
-      // Enemies are slightly slower
       startingCoins: 250
     },
     normal: {
@@ -19,48 +18,57 @@
       missileSizeMultiplier: 1.25,
       turretFireRateMultiplier: 1,
       enemySpeedBonus: 1,
-      // Standard enemy speed
       startingCoins: 150
     },
     hard: {
       name: "Elite",
       description: "For seasoned commanders only. The enemy is faster, smarter, and relentless. Expect smaller targets and less time to react.",
       waveDelayMultiplier: 0.6,
-      // Waves arrive much faster
       missileSizeMultiplier: 0.9,
-      // Missiles are smaller and harder to hit
       turretFireRateMultiplier: 1.75,
-      // Your turrets fire even slower
       enemySpeedBonus: 1.2,
-      // Enemies are 20% faster
       startingCoins: 100
-      // Start with fewer resources
     }
   };
   var config = {
+    // Gameplay Constants
     cityCount: 5,
     initialInterceptorSpeed: 7,
     initialBlastRadius: 15,
     nukeBlastRadius: 150,
-    rocketPoints: 100,
-    mirvPoints: 200,
-    stealthPoints: 300,
-    swarmerPoints: 150,
-    dronePoints: 25,
-    flareRocketPoints: 200,
-    armoredPoints: 500,
-    artilleryDesignatorPoints: 400,
     maxTurrets: 2,
     turretFireRate: 90,
+    // Lower is faster
     turretRange: 350,
     empSpawnChance: 5e-4,
     empDuration: 300,
+    // 5 seconds at 60fps
     nukeEmpDuration: 120,
     // 2 seconds
-    maxParticles: 300,
-    homingMineDetonationRadius: 100,
     rocketMaxLifetime: 2700,
-    // 45 seconds at 60fps - Safeguard
+    // 45 seconds
+    homingMineDetonationRadius: 100,
+    homingMineDeploymentZone: 0.85,
+    // Mines can only be placed in the bottom 15% of the screen
+    flareDistractionRadius: 100,
+    touchTargetingRadius: 100,
+    interceptorDamage: 3,
+    nukeDamage: 100,
+    // Particle & Effect Constants
+    maxParticles: 300,
+    // Point & Coin Values
+    points: {
+      standard: 100,
+      mirv: 200,
+      stealth: 300,
+      swarmer: 150,
+      drone: 25,
+      flare_rocket: 200,
+      armored: 500,
+      designator: 400,
+      boss: 5e3
+    },
+    // Upgrade Costs
     upgradeCosts: {
       repairCity: 1e3,
       automatedTurret: 2500,
@@ -75,24 +83,24 @@
       fieldReinforcement: 1250,
       targetingScrambler: 1750
     },
+    // Boss Configuration
     bosses: {
       hiveCarrier: {
         health: 250,
-        points: 5e3,
         droneSpawnRate: 90
-        // Every 1.5 seconds
       }
-    }
+    },
+    // Static Wave Definitions (used by waveManager)
+    waveDefinitions: [
+      { standard: 6, delay: 120 },
+      { standard: 8, mirv: 1, delay: 115 },
+      { standard: 7, stealth: 1, flare_rocket: 1, delay: 110 },
+      { standard: 8, mirv: 2, swarmer: 1, delay: 100 },
+      { isBossWave: true, bossType: "hiveCarrier", delay: 95 },
+      { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
+      { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 }
+    ]
   };
-  var waveDefinitions = [
-    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 120 },
-    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 115 },
-    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare_rocket: 1, armored: 0, delay: 110 },
-    { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
-    { isBossWave: true, bossType: "hiveCarrier", delay: 95 },
-    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
-    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 }
-  ];
   var rocketInfo = {
     standard: {
       name: "Standard Rocket",
@@ -250,7 +258,7 @@
       this.target = target;
       this.radius = type === "nuke" ? 10 : 3;
       this.speed = speed;
-      this.blastRadius = type === "nuke" ? 150 : blastRadius;
+      this.blastRadius = type === "nuke" ? config.nukeBlastRadius : blastRadius;
       this.type = type;
       this.isHoming = !!target;
       this.vx = 0;
@@ -267,7 +275,7 @@
       }
       if (this.isHoming && !this.hasBeenDistracted && this.target.type !== "flare") {
         for (const flare of flares) {
-          if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
+          if (Math.hypot(this.x - flare.x, this.y - flare.y) < config.flareDistractionRadius) {
             this.target = flare;
             this.hasBeenDistracted = true;
             break;
@@ -1892,10 +1900,10 @@
 
   // ts/waveManager.ts
   function getWaveDefinition(waveNumber) {
-    if (waveNumber < waveDefinitions.length) {
-      return waveDefinitions[waveNumber];
+    if (waveNumber < config.waveDefinitions.length) {
+      return config.waveDefinitions[waveNumber];
     }
-    const waveFactor = waveNumber - waveDefinitions.length + 1;
+    const waveFactor = waveNumber - config.waveDefinitions.length + 1;
     const totalRockets = 15 + waveFactor * 2;
     const waveData = { isBossWave: false, composition: [] };
     if (waveFactor > 0 && waveFactor % 5 === 0) {
@@ -2083,8 +2091,8 @@
         state2.tracerRounds.splice(i, 1);
         state2.flashes.push(new Flash(tracer.x, tracer.y, 20, "255, 255, 255"));
         if (isDestroyed) {
-          state2.score += config.bosses.hiveCarrier.points;
-          state2.coins += config.bosses.hiveCarrier.points;
+          state2.score += config.points.boss;
+          state2.coins += config.points.boss;
           createAdvancedExplosion(state2, state2.boss.x, state2.boss.y);
           triggerScreenShake(state2, 50, 120);
           state2.boss = null;
@@ -2102,14 +2110,14 @@
           }
           state2.tracerRounds.splice(i, 1);
           if (isDestroyed) {
-            let points = config.rocketPoints;
-            if (rocket.type === "mirv") points = config.mirvPoints;
-            else if (rocket.type === "stealth") points = config.stealthPoints;
-            else if (rocket.type === "swarmer") points = config.swarmerPoints;
-            else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
-            else if (rocket.type === "drone") points = config.dronePoints;
-            else if (rocket.type === "armored") points = config.armoredPoints;
-            else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
+            let points = config.points.standard;
+            if (rocket.type === "mirv") points = config.points.mirv;
+            else if (rocket.type === "stealth") points = config.points.stealth;
+            else if (rocket.type === "swarmer") points = config.points.swarmer;
+            else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
+            else if (rocket.type === "drone") points = config.points.drone;
+            else if (rocket.type === "armored") points = config.points.armored;
+            else if (rocket.type === "designator") points = config.points.designator;
             state2.score += points;
             state2.coins += points;
             state2.rockets.splice(j, 1);
@@ -2131,7 +2139,7 @@
         state2.interceptors.splice(i, 1);
         continue;
       }
-      let damage = interceptor.type === "nuke" ? 100 : 3;
+      let damage = interceptor.type === "nuke" ? config.nukeDamage : config.interceptorDamage;
       if (state2.activePerks.efficientInterceptors && Math.random() < 0.1) {
         damage *= 3;
       }
@@ -2141,8 +2149,8 @@
         state2.coins += damage * 10;
         detonated = true;
         if (isDestroyed) {
-          state2.score += config.bosses.hiveCarrier.points;
-          state2.coins += config.bosses.hiveCarrier.points;
+          state2.score += config.points.boss;
+          state2.coins += config.points.boss;
           createAdvancedExplosion(state2, state2.boss.x, state2.boss.y);
           triggerScreenShake(state2, 50, 120);
           state2.boss = null;
@@ -2168,14 +2176,14 @@
               isDestroyed = rocket.takeDamage(damage);
             }
             if (isDestroyed) {
-              let points = config.rocketPoints;
-              if (rocket.type === "mirv") points = config.mirvPoints;
-              else if (rocket.type === "stealth") points = config.stealthPoints;
-              else if (rocket.type === "swarmer") points = config.swarmerPoints;
-              else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
-              else if (rocket.type === "drone") points = config.dronePoints;
-              else if (rocket.type === "armored") points = config.armoredPoints;
-              else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
+              let points = config.points.standard;
+              if (rocket.type === "mirv") points = config.points.mirv;
+              else if (rocket.type === "stealth") points = config.points.stealth;
+              else if (rocket.type === "swarmer") points = config.points.swarmer;
+              else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
+              else if (rocket.type === "drone") points = config.points.drone;
+              else if (rocket.type === "armored") points = config.points.armored;
+              else if (rocket.type === "designator") points = config.points.designator;
               state2.score += points;
               state2.coins += points;
               state2.rockets.splice(j, 1);
@@ -2205,14 +2213,14 @@
         for (let j = state2.rockets.length - 1; j >= 0; j--) {
           const rocket = state2.rockets[j];
           if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
-            let points = config.rocketPoints;
-            if (rocket.type === "mirv") points = config.mirvPoints;
-            else if (rocket.type === "stealth") points = config.stealthPoints;
-            else if (rocket.type === "swarmer") points = config.swarmerPoints;
-            else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
-            else if (rocket.type === "drone") points = config.dronePoints;
-            else if (rocket.type === "armored") points = config.armoredPoints;
-            else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
+            let points = config.points.standard;
+            if (rocket.type === "mirv") points = config.points.mirv;
+            else if (rocket.type === "stealth") points = config.points.stealth;
+            else if (rocket.type === "swarmer") points = config.points.swarmer;
+            else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
+            else if (rocket.type === "drone") points = config.points.drone;
+            else if (rocket.type === "armored") points = config.points.armored;
+            else if (rocket.type === "designator") points = config.points.designator;
             state2.score += points;
             state2.coins += points;
             state2.rockets.splice(j, 1);
@@ -2419,27 +2427,28 @@
     state2.mouse.x = e.clientX - rect.left;
     state2.mouse.y = e.clientY - rect.top;
   }
-  function handleClick(state2, canvas2, e) {
-    const rect = canvas2.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const { width: width2, height: height2 } = canvas2;
-    if (state2.homingMinesAvailable > 0 && y > height2 * 0.85 && state2.gameState === "IN_WAVE") {
+  function _handleMineDeployment(state2, x, y, height2) {
+    if (state2.homingMinesAvailable > 0 && y > height2 * config.homingMineDeploymentZone) {
       state2.homingMines.push(new HomingMine(x, height2 - 10));
       state2.homingMinesAvailable--;
-      updateTopUI(state2);
-      return;
+      return true;
     }
+    return false;
+  }
+  function _handleEmpClick(state2, x, y) {
     for (let i = state2.empPowerUps.length - 1; i >= 0; i--) {
       const emp = state2.empPowerUps[i];
       if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
         state2.empActiveTimer = config.empDuration;
         state2.empShockwave = { radius: 0, alpha: 1 };
         state2.empPowerUps.splice(i, 1);
-        return;
+        return true;
       }
     }
-    if (state2.gameState === "IN_WAVE" && state2.targetedRocket) {
+    return false;
+  }
+  function _handleInterceptorLaunch(state2, width2, height2) {
+    if (state2.targetedRocket) {
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
         state2.interceptors.push(
@@ -2472,49 +2481,55 @@
           );
         }
       }
-      updateTopUI(state2);
+      return true;
     }
+    return false;
+  }
+  function handleClick(state2, canvas2, e) {
+    if (state2.gameState !== "IN_WAVE") return;
+    const rect = canvas2.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const { width: width2, height: height2 } = canvas2;
+    if (_handleMineDeployment(state2, x, y, height2)) return;
+    if (_handleEmpClick(state2, x, y)) return;
+    if (_handleInterceptorLaunch(state2, width2, height2)) return;
   }
   function handleTouchStart(state2, canvas2, e) {
     e.preventDefault();
+    if (state2.gameState !== "IN_WAVE") return;
     const rect = canvas2.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
     const { width: width2, height: height2 } = canvas2;
-    if (state2.gameState === "IN_WAVE") {
-      let closestDist = 100;
-      let touchTarget = null;
-      const potentialTargets = [...state2.rockets, ...state2.flares];
-      for (const target of potentialTargets) {
-        if (target.type === "stealth" && "isVisible" in target && !target.isVisible) continue;
-        const dist = Math.hypot(target.x - x, target.y - y);
-        if (dist < closestDist) {
-          closestDist = dist;
-          touchTarget = target;
-        }
-      }
-      if (touchTarget) {
-        state2.interceptors.push(
-          new Interceptor(
-            width2 / 2,
-            height2,
-            touchTarget,
-            state2.interceptorSpeed,
-            state2.interceptorBlastRadius,
-            "standard"
-          )
-        );
-        updateTopUI(state2);
+    let closestDist = config.touchTargetingRadius;
+    let touchTarget = null;
+    const potentialTargets = [...state2.rockets, ...state2.flares];
+    for (const target of potentialTargets) {
+      if (target.type === "stealth" && "isVisible" in target && !target.isVisible) continue;
+      const dist = Math.hypot(target.x - x, target.y - y);
+      if (dist < closestDist) {
+        closestDist = dist;
+        touchTarget = target;
       }
     }
+    if (touchTarget) {
+      state2.interceptors.push(
+        new Interceptor(
+          width2 / 2,
+          height2,
+          touchTarget,
+          state2.interceptorSpeed,
+          state2.interceptorBlastRadius,
+          "standard"
+        )
+      );
+    }
   }
-  function togglePause(state2, init2) {
+  function togglePause(state2, restartCallback) {
     if (state2.gameState === "IN_WAVE") {
       state2.gameState = "PAUSED";
-      showPauseScreen(
-        () => togglePause(state2, init2),
-        () => init2()
-      );
+      showPauseScreen(() => togglePause(state2, restartCallback), restartCallback);
     } else if (state2.gameState === "PAUSED") {
       state2.gameState = "IN_WAVE";
       hideModal();
@@ -2651,7 +2666,7 @@
     state2.waveStartTime = state2.gameTime;
     if (waveDef.isBossWave) {
       if (waveDef.bossType === "hiveCarrier") {
-        const waveFactor = state2.currentWave - waveDefinitions.length + 1;
+        const waveFactor = state2.currentWave - config.waveDefinitions.length + 1;
         const healthMultiplier = waveFactor > 0 ? 1 + Math.floor(waveFactor / 5) * 0.75 : 1;
         state2.boss = new HiveCarrier(canvas2.width, healthMultiplier);
       }

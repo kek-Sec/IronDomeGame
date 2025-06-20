@@ -1,5 +1,5 @@
 // ts/waveManager.ts
-import { waveDefinitions } from './config';
+import { config } from './config';
 import { WaveDefinition } from './types';
 
 /**
@@ -10,12 +10,12 @@ import { WaveDefinition } from './types';
  */
 export function getWaveDefinition(waveNumber: number): WaveDefinition {
     // Return a pre-defined wave if it exists
-    if (waveNumber < waveDefinitions.length) {
-        return waveDefinitions[waveNumber];
+    if (waveNumber < config.waveDefinitions.length) {
+        return config.waveDefinitions[waveNumber];
     }
 
     // --- Procedural Generation for Endless Waves ---
-    const waveFactor = waveNumber - waveDefinitions.length + 1;
+    const waveFactor = waveNumber - config.waveDefinitions.length + 1;
     const totalRockets = 15 + waveFactor * 2;
     const waveData: WaveDefinition = { isBossWave: false, composition: [] };
 

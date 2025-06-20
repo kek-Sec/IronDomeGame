@@ -1,6 +1,6 @@
 // ts/flow.ts
 // * Manages the overall flow of the game, like starting waves and handling upgrades.
-import { config, waveDefinitions } from './config';
+import { config } from './config';
 import * as UI from './ui';
 import * as upgradeHandlers from './logic/upgradeHandlers';
 import { HiveCarrier } from './entities/bosses';
@@ -23,7 +23,7 @@ export function startNextWave(state: T.GameState, canvas: HTMLCanvasElement): vo
 
     if (waveDef.isBossWave) {
         if (waveDef.bossType === 'hiveCarrier') {
-            const waveFactor = state.currentWave - waveDefinitions.length + 1;
+            const waveFactor = state.currentWave - config.waveDefinitions.length + 1;
             const healthMultiplier = waveFactor > 0 ? 1 + Math.floor(waveFactor / 5) * 0.75 : 1;
             state.boss = new HiveCarrier(canvas.width, healthMultiplier);
         }

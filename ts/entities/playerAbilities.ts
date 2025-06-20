@@ -1,8 +1,8 @@
 // ts/entities/playerAbilities.ts
 import { random } from '../utils';
 import * as T from '../types';
-import { Rocket } from './rockets';
 import { HiveCarrier } from './bosses';
+import { config } from '../config';
 
 export class Interceptor implements T.Interceptor {
     x: number;
@@ -31,7 +31,7 @@ export class Interceptor implements T.Interceptor {
         this.target = target;
         this.radius = type === 'nuke' ? 10 : 3;
         this.speed = speed;
-        this.blastRadius = type === 'nuke' ? 150 : blastRadius;
+        this.blastRadius = type === 'nuke' ? config.nukeBlastRadius : blastRadius;
         this.type = type;
         this.isHoming = !!target;
         this.vx = 0;
@@ -51,9 +51,10 @@ export class Interceptor implements T.Interceptor {
             }
         }
 
+        // Check for flare distraction
         if (this.isHoming && !this.hasBeenDistracted && this.target.type !== 'flare') {
             for (const flare of flares) {
-                if (Math.hypot(this.x - flare.x, this.y - flare.y) < 100) {
+                if (Math.hypot(this.x - flare.x, this.y - flare.y) < config.flareDistractionRadius) {
                     this.target = flare;
                     this.hasBeenDistracted = true;
                     break;

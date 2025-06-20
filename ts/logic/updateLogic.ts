@@ -211,8 +211,8 @@ export function updateTracerRounds(state: T.GameState) {
             state.tracerRounds.splice(i, 1);
             state.flashes.push(new Flash(tracer.x, tracer.y, 20, '255, 255, 255'));
             if (isDestroyed) {
-                state.score += config.bosses.hiveCarrier.points;
-                state.coins += config.bosses.hiveCarrier.points;
+                state.score += config.points.boss;
+                state.coins += config.points.boss;
                 createAdvancedExplosion(state, state.boss.x, state.boss.y);
                 triggerScreenShake(state, 50, 120);
                 state.boss = null;
@@ -234,14 +234,14 @@ export function updateTracerRounds(state: T.GameState) {
                 state.tracerRounds.splice(i, 1);
 
                 if (isDestroyed) {
-                    let points = config.rocketPoints;
-                    if (rocket.type === 'mirv') points = config.mirvPoints;
-                    else if (rocket.type === 'stealth') points = config.stealthPoints;
-                    else if (rocket.type === 'swarmer') points = config.swarmerPoints;
-                    else if (rocket.type === 'flare_rocket') points = config.flareRocketPoints;
-                    else if (rocket.type === 'drone') points = config.dronePoints;
-                    else if (rocket.type === 'armored') points = config.armoredPoints;
-                    else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
+                    let points = config.points.standard;
+                    if (rocket.type === 'mirv') points = config.points.mirv;
+                    else if (rocket.type === 'stealth') points = config.points.stealth;
+                    else if (rocket.type === 'swarmer') points = config.points.swarmer;
+                    else if (rocket.type === 'flare_rocket') points = config.points.flare_rocket;
+                    else if (rocket.type === 'drone') points = config.points.drone;
+                    else if (rocket.type === 'armored') points = config.points.armored;
+                    else if (rocket.type === 'designator') points = config.points.designator;
 
                     state.score += points;
                     state.coins += points;
@@ -267,7 +267,7 @@ export function updateInterceptors(state: T.GameState, width: number) {
             continue;
         }
 
-        let damage = interceptor.type === 'nuke' ? 100 : 3;
+        let damage = interceptor.type === 'nuke' ? config.nukeDamage : config.interceptorDamage;
         if (state.activePerks.efficientInterceptors && Math.random() < 0.1) {
             damage *= 3;
         }
@@ -278,8 +278,8 @@ export function updateInterceptors(state: T.GameState, width: number) {
             state.coins += damage * 10;
             detonated = true;
             if (isDestroyed) {
-                state.score += config.bosses.hiveCarrier.points;
-                state.coins += config.bosses.hiveCarrier.points;
+                state.score += config.points.boss;
+                state.coins += config.points.boss;
                 createAdvancedExplosion(state, state.boss.x, state.boss.y);
                 triggerScreenShake(state, 50, 120);
                 state.boss = null;
@@ -314,14 +314,14 @@ export function updateInterceptors(state: T.GameState, width: number) {
                     }
 
                     if (isDestroyed) {
-                        let points = config.rocketPoints;
-                        if (rocket.type === 'mirv') points = config.mirvPoints;
-                        else if (rocket.type === 'stealth') points = config.stealthPoints;
-                        else if (rocket.type === 'swarmer') points = config.swarmerPoints;
-                        else if (rocket.type === 'flare_rocket') points = config.flareRocketPoints;
-                        else if (rocket.type === 'drone') points = config.dronePoints;
-                        else if (rocket.type === 'armored') points = config.armoredPoints;
-                        else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
+                        let points = config.points.standard;
+                        if (rocket.type === 'mirv') points = config.points.mirv;
+                        else if (rocket.type === 'stealth') points = config.points.stealth;
+                        else if (rocket.type === 'swarmer') points = config.points.swarmer;
+                        else if (rocket.type === 'flare_rocket') points = config.points.flare_rocket;
+                        else if (rocket.type === 'drone') points = config.points.drone;
+                        else if (rocket.type === 'armored') points = config.points.armored;
+                        else if (rocket.type === 'designator') points = config.points.designator;
 
                         state.score += points;
                         state.coins += points;
@@ -355,14 +355,14 @@ export function updateHomingMines(state: T.GameState) {
             for (let j = state.rockets.length - 1; j >= 0; j--) {
                 const rocket = state.rockets[j];
                 if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
-                    let points = config.rocketPoints;
-                    if (rocket.type === 'mirv') points = config.mirvPoints;
-                    else if (rocket.type === 'stealth') points = config.stealthPoints;
-                    else if (rocket.type === 'swarmer') points = config.swarmerPoints;
-                    else if (rocket.type === 'flare_rocket') points = config.flareRocketPoints;
-                    else if (rocket.type === 'drone') points = config.dronePoints;
-                    else if (rocket.type === 'armored') points = config.armoredPoints;
-                    else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
+                    let points = config.points.standard;
+                    if (rocket.type === 'mirv') points = config.points.mirv;
+                    else if (rocket.type === 'stealth') points = config.points.stealth;
+                    else if (rocket.type === 'swarmer') points = config.points.swarmer;
+                    else if (rocket.type === 'flare_rocket') points = config.points.flare_rocket;
+                    else if (rocket.type === 'drone') points = config.points.drone;
+                    else if (rocket.type === 'armored') points = config.points.armored;
+                    else if (rocket.type === 'designator') points = config.points.designator;
 
                     state.score += points;
                     state.coins += points;
