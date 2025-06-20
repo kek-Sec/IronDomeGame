@@ -1,10 +1,11 @@
 // ts/flow.ts
 // * Manages the overall flow of the game, like starting waves and handling upgrades.
-import { getWaveDefinition, config, waveDefinitions } from './config';
+import { config, waveDefinitions } from './config';
 import * as UI from './ui';
 import * as upgradeHandlers from './logic/upgradeHandlers';
 import { HiveCarrier } from './entities/bosses';
 import * as T from './types';
+import { getWaveDefinition } from './waveManager';
 
 /**
  * Starts the next wave of enemies.

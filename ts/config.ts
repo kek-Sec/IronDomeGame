@@ -1,5 +1,5 @@
 // ts/config.ts
-import { DifficultySetting, WaveDefinition } from './types';
+import { DifficultySetting, WaveDefinition, Perk } from './types';
 
 // Difficulty settings to adjust game balance.
 export const difficultySettings: Record<string, DifficultySetting> = {
@@ -92,36 +92,7 @@ export const waveDefinitions: WaveDefinition[] = [
     { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 },
 ];
 
-export function getWaveDefinition(waveNumber: number): WaveDefinition {
-    if (waveNumber < waveDefinitions.length) {
-        return waveDefinitions[waveNumber];
-    }
-
-    const waveFactor = waveNumber - waveDefinitions.length + 1;
-    const totalRockets = 15 + waveFactor * 2;
-    const waveData: WaveDefinition = { isBossWave: false, composition: [] };
-
-    if (waveFactor > 0 && waveFactor % 5 === 0) {
-        waveData.isBossWave = true;
-        waveData.bossType = 'hiveCarrier';
-        return waveData;
-    }
-
-    const availableTypes = ['standard', 'standard', 'standard', 'mirv'];
-    if (waveNumber > 8) availableTypes.push('stealth');
-    if (waveNumber > 10) availableTypes.push('swarmer');
-    if (waveNumber > 12) availableTypes.push('armored');
-    if (waveNumber > 14) availableTypes.push('flare_rocket');
-    if (waveNumber > 6) availableTypes.push('designator');
-
-    for (let i = 0; i < totalRockets; i++) {
-        const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-        waveData.composition!.push(randomType);
-    }
-
-    return waveData;
-}
-
+// Static information about rocket types for UI display
 export const rocketInfo: Record<string, { name: string; threat: string; description: string }> = {
     standard: {
         name: 'Standard Rocket',

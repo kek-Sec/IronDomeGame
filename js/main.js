@@ -93,30 +93,6 @@
     { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
     { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 }
   ];
-  function getWaveDefinition(waveNumber) {
-    if (waveNumber < waveDefinitions.length) {
-      return waveDefinitions[waveNumber];
-    }
-    const waveFactor = waveNumber - waveDefinitions.length + 1;
-    const totalRockets = 15 + waveFactor * 2;
-    const waveData = { isBossWave: false, composition: [] };
-    if (waveFactor > 0 && waveFactor % 5 === 0) {
-      waveData.isBossWave = true;
-      waveData.bossType = "hiveCarrier";
-      return waveData;
-    }
-    const availableTypes = ["standard", "standard", "standard", "mirv"];
-    if (waveNumber > 8) availableTypes.push("stealth");
-    if (waveNumber > 10) availableTypes.push("swarmer");
-    if (waveNumber > 12) availableTypes.push("armored");
-    if (waveNumber > 14) availableTypes.push("flare_rocket");
-    if (waveNumber > 6) availableTypes.push("designator");
-    for (let i = 0; i < totalRockets; i++) {
-      const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-      waveData.composition.push(randomType);
-    }
-    return waveData;
-  }
   var rocketInfo = {
     standard: {
       name: "Standard Rocket",
@@ -1896,6 +1872,32 @@
       ctx2.restore();
     }
   };
+
+  // ts/waveManager.ts
+  function getWaveDefinition(waveNumber) {
+    if (waveNumber < waveDefinitions.length) {
+      return waveDefinitions[waveNumber];
+    }
+    const waveFactor = waveNumber - waveDefinitions.length + 1;
+    const totalRockets = 15 + waveFactor * 2;
+    const waveData = { isBossWave: false, composition: [] };
+    if (waveFactor > 0 && waveFactor % 5 === 0) {
+      waveData.isBossWave = true;
+      waveData.bossType = "hiveCarrier";
+      return waveData;
+    }
+    const availableTypes = ["standard", "standard", "standard", "mirv"];
+    if (waveNumber > 8) availableTypes.push("stealth");
+    if (waveNumber > 10) availableTypes.push("swarmer");
+    if (waveNumber > 12) availableTypes.push("armored");
+    if (waveNumber > 14) availableTypes.push("flare_rocket");
+    if (waveNumber > 6) availableTypes.push("designator");
+    for (let i = 0; i < totalRockets; i++) {
+      const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+      waveData.composition.push(randomType);
+    }
+    return waveData;
+  }
 
   // ts/logic/updateLogic.ts
   function findTargetedRocket(state2) {

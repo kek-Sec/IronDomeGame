@@ -1,7 +1,7 @@
 // ts/gameLogic.ts
 // * Contains the core game logic for updating the game state each frame.
 
-import { config, getWaveDefinition } from './config';
+import { config } from './config';
 import { savePlayerData } from './saveManager';
 import {
     updateParticles,
@@ -18,6 +18,7 @@ import {
     findTargetedRocket,
 } from './logic/updateLogic';
 import type { GameState } from './types';
+import { getWaveDefinition } from './waveManager';
 
 export function update(
     state: GameState,

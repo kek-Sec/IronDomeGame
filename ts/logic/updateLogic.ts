@@ -1,5 +1,5 @@
 // ts/logic/updateLogic.ts
-import { config, getWaveDefinition, difficultySettings } from '../config';
+import { config, difficultySettings } from '../config';
 import {
     Rocket,
     MirvRocket,
@@ -15,6 +15,7 @@ import { HiveCarrier } from '../entities/bosses';
 import { createAdvancedExplosion, triggerScreenShake, random } from '../utils';
 import { Flash, Particle } from '../entities/effects';
 import * as T from '../types';
+import { getWaveDefinition } from '../waveManager';
 
 export function findTargetedRocket(state: T.GameState): void {
     let closestDist = Infinity;
