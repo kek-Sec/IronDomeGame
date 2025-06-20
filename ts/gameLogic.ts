@@ -2,7 +2,6 @@
 // * Contains the core game logic for updating the game state each frame.
 
 import { config, getWaveDefinition } from './config';
-import * as UI from './ui';
 import { savePlayerData } from './saveManager';
 import {
     updateParticles,
@@ -24,16 +23,14 @@ export function update(
     state: GameState,
     width: number,
     height: number,
-    refreshUpgradeScreen: () => void,
-    init: () => void
+    refreshUpgradeScreen: () => void
 ): void {
-    state.gameTime++;
-    UI.updateTopUI(state);
-    UI.updateBossUI(state.boss);
     if (state.gameState !== 'IN_WAVE') return;
 
+    state.gameTime++;
     const waveDef = getWaveDefinition(state.currentWave);
 
+    // --- Failsafe & Wave Completion Logic ---
     if (
         !waveDef.isBossWave &&
         state.rockets.length === 0 &&
@@ -45,6 +42,7 @@ export function update(
         state.timeSinceLastRocket = 0;
     }
 
+    // --- Update Game Entities and Effects ---
     if (state.empActiveTimer > 0) {
         state.empActiveTimer--;
         state.empShockwave.radius += 20;
@@ -65,16 +63,14 @@ export function update(
     updateParticles(state);
     updateCityEffects(state, height);
 
-    for (let i = state.flashes.length - 1; i >= 0; i--) {
-        const flash = state.flashes[i];
+    state.flashes.forEach((flash, i) => {
         flash.update();
         if (flash.alpha <= 0) state.flashes.splice(i, 1);
-    }
-    for (let i = state.shockwaves.length - 1; i >= 0; i--) {
-        const shockwave = state.shockwaves[i];
+    });
+    state.shockwaves.forEach((shockwave, i) => {
         shockwave.update();
         if (shockwave.alpha <= 0) state.shockwaves.splice(i, 1);
-    }
+    });
 
     state.empPowerUps.forEach((emp, i) => {
         emp.update();
@@ -82,14 +78,14 @@ export function update(
     });
     findTargetedRocket(state);
 
+    // --- Check Wave and Game Over Conditions ---
     let waveIsOver = false;
-
     const waveDuration = state.gameTime - state.waveStartTime;
     if (waveDuration > 10800) {
         // 3 minutes timeout
         waveIsOver = true;
         console.warn(`Failsafe triggered: Wave ${state.currentWave + 1} ended due to absolute timeout.`);
-        state.rockets = [];
+        state.rockets = []; // Clear remaining rockets
     }
 
     if (state.timeSinceLastRocket > 1200) {
@@ -117,22 +113,20 @@ export function update(
         state.firstUpgradePurchased = false;
         state.scramblerActive = false;
         refreshUpgradeScreen();
+        return; // Exit early to avoid game over check on the same frame
     }
 
     const destroyedCities = state.cities.filter((c) => c.isDestroyed).length;
     if (destroyedCities === config.cityCount) {
         state.gameState = 'GAME_OVER';
 
-        let newHighScore = false;
-        if (state.score > state.playerData.highScores[state.difficulty]) {
+        // Finalize player data, but don't show UI
+        const newHighScore = state.score > state.playerData.highScores[state.difficulty];
+        if (newHighScore) {
             state.playerData.highScores[state.difficulty] = state.score;
-            newHighScore = true;
         }
-
         const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
         state.playerData.prestigePoints += pointsEarned;
         savePlayerData(state.playerData);
-
-        UI.showGameOverScreen(state, init, pointsEarned, newHighScore);
     }
 }

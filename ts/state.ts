@@ -1,10 +1,8 @@
 // ts/state.ts
 import { config } from './config';
-import { loadPlayerData } from './saveManager';
-import { GameState } from './types';
+import { GameState, PlayerData } from './types';
 
-export function getInitialState(): GameState {
-    const playerData = loadPlayerData();
+export function createInitialState(playerData: PlayerData): GameState {
     const perks = playerData.unlockedPerks;
 
     return {

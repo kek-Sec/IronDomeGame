@@ -1288,8 +1288,7 @@
   }
 
   // ts/state.ts
-  function getInitialState() {
-    const playerData = loadPlayerData();
+  function createInitialState(playerData) {
     const perks2 = playerData.unlockedPerks;
     return {
       gameState: "START_SCREEN",
@@ -2222,11 +2221,9 @@
   }
 
   // ts/gameLogic.ts
-  function update(state2, width2, height2, refreshUpgradeScreen2, init2) {
-    state2.gameTime++;
-    updateTopUI(state2);
-    updateBossUI(state2.boss);
+  function update(state2, width2, height2, refreshUpgradeScreen2) {
     if (state2.gameState !== "IN_WAVE") return;
+    state2.gameTime++;
     const waveDef = getWaveDefinition(state2.currentWave);
     if (!waveDef.isBossWave && state2.rockets.length === 0 && state2.waveRocketSpawn.toSpawn.length === 0 && state2.boss === null) {
       state2.timeSinceLastRocket++;
@@ -2251,16 +2248,14 @@
     updateHomingMines(state2);
     updateParticles(state2);
     updateCityEffects(state2, height2);
-    for (let i = state2.flashes.length - 1; i >= 0; i--) {
-      const flash = state2.flashes[i];
+    state2.flashes.forEach((flash, i) => {
       flash.update();
       if (flash.alpha <= 0) state2.flashes.splice(i, 1);
-    }
-    for (let i = state2.shockwaves.length - 1; i >= 0; i--) {
-      const shockwave = state2.shockwaves[i];
+    });
+    state2.shockwaves.forEach((shockwave, i) => {
       shockwave.update();
       if (shockwave.alpha <= 0) state2.shockwaves.splice(i, 1);
-    }
+    });
     state2.empPowerUps.forEach((emp, i) => {
       emp.update();
       if (emp.life <= 0) state2.empPowerUps.splice(i, 1);
@@ -2295,19 +2290,18 @@
       state2.firstUpgradePurchased = false;
       state2.scramblerActive = false;
       refreshUpgradeScreen2();
+      return;
     }
     const destroyedCities = state2.cities.filter((c) => c.isDestroyed).length;
     if (destroyedCities === config.cityCount) {
       state2.gameState = "GAME_OVER";
-      let newHighScore = false;
-      if (state2.score > state2.playerData.highScores[state2.difficulty]) {
+      const newHighScore = state2.score > state2.playerData.highScores[state2.difficulty];
+      if (newHighScore) {
         state2.playerData.highScores[state2.difficulty] = state2.score;
-        newHighScore = true;
       }
       const pointsEarned = Math.floor(state2.score / 100) + state2.currentWave * 10;
       state2.playerData.prestigePoints += pointsEarned;
       savePlayerData(state2.playerData);
-      showGameOverScreen(state2, init2, pointsEarned, newHighScore);
     }
   }
 
@@ -2691,25 +2685,41 @@
   var width;
   var height;
   var animationFrameId;
-  var state = getInitialState();
+  var state;
   function gameLoop(timestamp) {
+    if (state.gameState === "IN_WAVE") {
+      update(state, width, height, () => refreshUpgradeScreen(state, canvas));
+    }
+    if (state.gameState === "GAME_OVER") {
+      cancelAnimationFrame(animationFrameId);
+      const newHighScore = state.score > state.playerData.highScores[state.difficulty];
+      const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
+      showGameOverScreen(state, init, pointsEarned, newHighScore);
+      return;
+    }
+    updateTopUI(state);
+    updateBossUI(state.boss);
     state.frameCount++;
     if (timestamp - state.lastFpsUpdate > 1e3) {
       state.fps = state.frameCount;
       state.frameCount = 0;
       state.lastFpsUpdate = timestamp;
     }
-    update(state, width, height, () => refreshUpgradeScreen(state, canvas), init);
     draw(ctx, state, width, height);
     animationFrameId = requestAnimationFrame(gameLoop);
   }
   var resetAndStartGame = (difficulty = "normal") => {
-    state = getInitialState();
+    const playerData = loadPlayerData();
+    state = createInitialState(playerData);
     state.difficulty = difficulty;
     state.coins = difficultySettings[difficulty].startingCoins;
     state.currentWave = -1;
     createCities();
     startNextWave(state, canvas);
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
+    animationFrameId = requestAnimationFrame(gameLoop);
   };
   function createCities() {
     state.cities = [];
@@ -2726,7 +2736,7 @@
   var resizeCanvas = () => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-    if (state.gameState && state.gameState !== "IN_WAVE") {
+    if (state && state.gameState !== "IN_WAVE") {
       if (state.cities && state.cities.length > 0) {
         const citySlotWidth = width / config.cityCount;
         state.cities.forEach((city, i) => {
@@ -2747,7 +2757,8 @@
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
     }
-    state = getInitialState();
+    const playerData = loadPlayerData();
+    state = createInitialState(playerData);
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
@@ -2768,7 +2779,6 @@
       });
     });
     canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
-    const playerData = loadPlayerData();
     showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
     animationFrameId = requestAnimationFrame(gameLoop);
   }

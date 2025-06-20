@@ -7,14 +7,13 @@ import { config, difficultySettings } from './config';
 import { random } from './utils';
 import { City } from './entities/structures';
 import * as UI from './ui';
-import { getInitialState } from './state';
+import { createInitialState } from './state';
 import { update } from './gameLogic';
 import { draw } from './drawing';
 import * as events from './eventHandlers';
 import { startNextWave, refreshUpgradeScreen } from './flow';
 import { loadPlayerData } from './saveManager';
-import type { GameState } from './types';
-import { StartGameCallback } from './types';
+import type { GameState, StartGameCallback } from './types';
 
 // --- DOM & Canvas Setup ---
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -23,10 +22,33 @@ let width: number, height: number;
 
 // --- Game State ---
 let animationFrameId: number;
-let state: GameState = getInitialState();
+let state: GameState;
 
 // --- Core Game Flow ---
 function gameLoop(timestamp: number): void {
+    // --- State-based Game Flow Control ---
+    // Only run the core game logic if the state is 'IN_WAVE'
+    if (state.gameState === 'IN_WAVE') {
+        update(state, width, height, () => refreshUpgradeScreen(state, canvas));
+    }
+
+    // --- Post-Update UI Handling ---
+    // Check if the game is over after the update
+    if (state.gameState === 'GAME_OVER') {
+        // Stop the loop and show the game over screen
+        cancelAnimationFrame(animationFrameId);
+        const newHighScore = state.score > state.playerData.highScores[state.difficulty];
+        const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
+        UI.showGameOverScreen(state, init, pointsEarned, newHighScore);
+        return; // Exit the loop
+    }
+
+    // --- Rendering ---
+    // Update UI elements that change every frame
+    UI.updateTopUI(state);
+    UI.updateBossUI(state.boss);
+
+    // Calculate FPS
     state.frameCount++;
     if (timestamp - state.lastFpsUpdate > 1000) {
         state.fps = state.frameCount;
@@ -34,20 +56,29 @@ function gameLoop(timestamp: number): void {
         state.lastFpsUpdate = timestamp;
     }
 
-    update(state, width, height, () => refreshUpgradeScreen(state, canvas), init);
+    // Draw the entire scene
     draw(ctx, state, width, height);
 
+    // Request the next frame
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 const resetAndStartGame: StartGameCallback = (difficulty = 'normal') => {
-    state = getInitialState();
+    // Re-load player data to ensure perks are current
+    const playerData = loadPlayerData();
+    state = createInitialState(playerData);
     state.difficulty = difficulty;
     state.coins = difficultySettings[difficulty].startingCoins;
 
     state.currentWave = -1;
     createCities();
     startNextWave(state, canvas);
+
+    // If the game loop was stopped, restart it
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+    animationFrameId = requestAnimationFrame(gameLoop);
 };
 
 // --- Helper Functions ---
@@ -69,7 +100,7 @@ const resizeCanvas = (): void => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
 
-    if (state.gameState && state.gameState !== 'IN_WAVE') {
+    if (state && state.gameState !== 'IN_WAVE') {
         if (state.cities && state.cities.length > 0) {
             const citySlotWidth = width / config.cityCount;
             state.cities.forEach((city, i) => {
@@ -94,7 +125,8 @@ function init(): void {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
     }
-    state = getInitialState();
+    const playerData = loadPlayerData();
+    state = createInitialState(playerData);
     resizeCanvas();
 
     window.addEventListener('resize', resizeCanvas);
@@ -120,7 +152,6 @@ function init(): void {
 
     canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e));
 
-    const playerData = loadPlayerData();
     UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData, resetAndStartGame));
     animationFrameId = requestAnimationFrame(gameLoop);
 }
