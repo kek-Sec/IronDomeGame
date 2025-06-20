@@ -63,7 +63,7 @@ export function handleSpawning(state: T.GameState, width: number, height: number
             newRocket = new StealthRocket(width, sizeMultiplier, speedMultiplier);
         } else if (rocketType === 'swarmer') {
             newRocket = new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier);
-        } else if (rocketType === 'flare') {
+        } else if (rocketType === 'flare_rocket') {
             newRocket = new FlareRocket(width, sizeMultiplier, speedMultiplier);
         } else if (rocketType === 'armored') {
             newRocket = new ArmoredRocket(width, sizeMultiplier, speedMultiplier);
@@ -237,7 +237,7 @@ export function updateTracerRounds(state: T.GameState) {
                     if (rocket.type === 'mirv') points = config.mirvPoints;
                     else if (rocket.type === 'stealth') points = config.stealthPoints;
                     else if (rocket.type === 'swarmer') points = config.swarmerPoints;
-                    else if (rocket.type === 'flare') points = config.flareRocketPoints;
+                    else if (rocket.type === 'flare_rocket') points = config.flareRocketPoints;
                     else if (rocket.type === 'drone') points = config.dronePoints;
                     else if (rocket.type === 'armored') points = config.armoredPoints;
                     else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
@@ -317,7 +317,7 @@ export function updateInterceptors(state: T.GameState, width: number) {
                         if (rocket.type === 'mirv') points = config.mirvPoints;
                         else if (rocket.type === 'stealth') points = config.stealthPoints;
                         else if (rocket.type === 'swarmer') points = config.swarmerPoints;
-                        else if (rocket.type === 'flare') points = config.flareRocketPoints;
+                        else if (rocket.type === 'flare_rocket') points = config.flareRocketPoints;
                         else if (rocket.type === 'drone') points = config.dronePoints;
                         else if (rocket.type === 'armored') points = config.armoredPoints;
                         else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;
@@ -358,7 +358,7 @@ export function updateHomingMines(state: T.GameState) {
                     if (rocket.type === 'mirv') points = config.mirvPoints;
                     else if (rocket.type === 'stealth') points = config.stealthPoints;
                     else if (rocket.type === 'swarmer') points = config.swarmerPoints;
-                    else if (rocket.type === 'flare') points = config.flareRocketPoints;
+                    else if (rocket.type === 'flare_rocket') points = config.flareRocketPoints;
                     else if (rocket.type === 'drone') points = config.dronePoints;
                     else if (rocket.type === 'armored') points = config.armoredPoints;
                     else if (rocket.type === 'designator') points = config.artilleryDesignatorPoints;

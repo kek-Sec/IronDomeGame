@@ -85,13 +85,13 @@
     }
   };
   var waveDefinitions = [
-    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 120 },
-    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 115 },
-    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare: 1, armored: 0, delay: 110 },
+    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 120 },
+    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 115 },
+    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare_rocket: 1, armored: 0, delay: 110 },
     { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
     { isBossWave: true, bossType: "hiveCarrier", delay: 95 },
-    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, armored: 1, delay: 90 },
-    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, designator: 1, delay: 85 }
+    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
+    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 }
   ];
   function getWaveDefinition(waveNumber) {
     if (waveNumber < waveDefinitions.length) {
@@ -109,7 +109,7 @@
     if (waveNumber > 8) availableTypes.push("stealth");
     if (waveNumber > 10) availableTypes.push("swarmer");
     if (waveNumber > 12) availableTypes.push("armored");
-    if (waveNumber > 14) availableTypes.push("flare");
+    if (waveNumber > 14) availableTypes.push("flare_rocket");
     if (waveNumber > 6) availableTypes.push("designator");
     for (let i = 0; i < totalRockets; i++) {
       const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
@@ -118,14 +118,34 @@
     return waveData;
   }
   var rocketInfo = {
-    standard: { name: "Standard Rocket", threat: "Low", description: "A common, straightforward projectile. Predictable and unarmored." },
-    armored: { name: "Armored Rocket", threat: "Medium", description: "A slow but tough rocket that requires multiple hits to destroy." },
+    standard: {
+      name: "Standard Rocket",
+      threat: "Low",
+      description: "A common, straightforward projectile. Predictable and unarmored."
+    },
+    armored: {
+      name: "Armored Rocket",
+      threat: "Medium",
+      description: "A slow but tough rocket that requires multiple hits to destroy."
+    },
     mirv: { name: "MIRV", threat: "High", description: "Splits into three standard rockets mid-flight." },
     swarmer: { name: "Swarmer", threat: "High", description: "Deploys a swarm of six fast-moving but fragile drones." },
-    drone: { name: "Drone", threat: "Low", description: "A small, fast-moving projectile deployed by Swarmer rockets." },
+    drone: {
+      name: "Drone",
+      threat: "Low",
+      description: "A small, fast-moving projectile deployed by Swarmer rockets."
+    },
     stealth: { name: "Stealth Rocket", threat: "Medium", description: "Periodically cloaks, making it untargetable." },
-    flare: { name: "Flare Rocket", threat: "Medium", description: "Continuously deploys decoy flares that distract interceptors." },
-    designator: { name: "Artillery Designator", threat: "Critical", description: "Targets a city for a devastating artillery strike. Must be destroyed quickly." }
+    flare_rocket: {
+      name: "Flare Rocket",
+      threat: "Medium",
+      description: "Continuously deploys decoy flares that distract interceptors."
+    },
+    designator: {
+      name: "Artillery Designator",
+      threat: "Critical",
+      description: "Targets a city for a devastating artillery strike. Must be destroyed quickly."
+    }
   };
 
   // ts/entities/effects.ts
@@ -524,7 +544,14 @@
       const radius = this.width / 1.8;
       ctx2.beginPath();
       ctx2.arc(centerX, height2, radius, Math.PI, 0);
-      const gradient = ctx2.createRadialGradient(centerX, height2 - radius * 0.5, radius * 0.2, centerX, height2, radius);
+      const gradient = ctx2.createRadialGradient(
+        centerX,
+        height2 - radius * 0.5,
+        radius * 0.2,
+        centerX,
+        height2,
+        radius
+      );
       gradient.addColorStop(0, "rgba(173, 216, 230, 0.8)");
       gradient.addColorStop(0.7, "rgba(0, 191, 255, 0.6)");
       gradient.addColorStop(1, "rgba(70, 130, 180, 0.3)");
@@ -682,7 +709,9 @@
     findTarget(rockets) {
       const inRange = rockets.filter((r) => Math.hypot(this.x - r.x, this.y - r.y) < this.range && r.y < this.y);
       if (inRange.length === 0) return null;
-      const highPriority = inRange.filter((r) => r.type === "swarmer" || r.type === "stealth" || r.type === "mirv" || r.type === "flare" || r.type === "armored");
+      const highPriority = inRange.filter(
+        (r) => r.type === "swarmer" || r.type === "stealth" || r.type === "mirv" || r.type === "flare_rocket" || r.type === "armored"
+      );
       if (highPriority.length > 0) {
         return highPriority.sort((a, b) => a.y - b.y)[0];
       }
@@ -949,10 +978,25 @@
         }
       }
     }
-    document.getElementById("back-to-menu-button")?.addEventListener("click", () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData, startGameCallback)));
+    document.getElementById("back-to-menu-button")?.addEventListener(
+      "click",
+      () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData, startGameCallback))
+    );
   }
   function showBetweenWaveScreen(state2, callbacks, gameConfig) {
-    const { score, coins, currentWave, cities, turrets, basesAreArmored, turretFireRateLevel, turretRangeLevel, activePerks, multishotLevel, blastRadiusLevel } = state2;
+    const {
+      score,
+      coins,
+      currentWave,
+      cities,
+      turrets,
+      basesAreArmored,
+      turretFireRateLevel,
+      turretRangeLevel,
+      activePerks,
+      multishotLevel,
+      blastRadiusLevel
+    } = state2;
     const {
       upgradeRepairCallback,
       nextWaveCallback,
@@ -987,25 +1031,123 @@
     };
     const shopItems = [
       // Permanent Upgrades
-      { id: "speed", title: "Interceptor Speed", desc: "Permanently increase the speed of your interceptors.", detailedDesc: "A permanent, stacking buff to the velocity of all interceptors you launch.", cost: upgradeCosts.interceptorSpeed, available: true, maxed: false },
-      { id: "multishot", title: `Multishot (Lvl ${multishotLevel})`, desc: "Fire an additional interceptor per shot. Max Lvl 3.", detailedDesc: "Increases the number of interceptors launched with each click. Each interceptor will target the same rocket.", cost: upgradeCosts.multishot * (multishotLevel + 1), available: multishotLevel < 3, maxed: multishotLevel >= 3 },
-      { id: "blastRadius", title: `Flak Warheads (Lvl ${blastRadiusLevel})`, desc: "Increase the blast radius of standard interceptors. Max Lvl 5.", detailedDesc: "Increases the explosion radius of your interceptors, making them more effective against dense groups of rockets.", cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1), available: blastRadiusLevel < 5, maxed: blastRadiusLevel >= 5 },
-      { id: "turret", title: "Build Turret", desc: "Construct an automated defense turret. Max 2.", detailedDesc: "Builds a C-RAM turret that automatically fires at nearby rockets. Limited to two turrets.", cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets },
-      { id: "turretSpeed", title: `Turret Speed (Lvl ${turretFireRateLevel})`, desc: "Permanently increase the fire rate of all turrets. Max Lvl 3.", detailedDesc: "Reduces the cooldown between bursts for all owned turrets. Stacks up to 3 times.", cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3 },
-      { id: "turretRange", title: `Turret Range (Lvl ${turretRangeLevel})`, desc: "Permanently increase the engagement range of all turrets. Max Lvl 3.", detailedDesc: "Increases the detection and firing radius for all owned turrets. Stacks up to 3 times.", cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3 },
-      { id: "baseArmor", title: "Permanent Armor", desc: "Permanently armor all bases, allowing them to survive one extra hit.", detailedDesc: "All cities will start with one layer of armor for the rest of the game. Armor is consumed upon being hit.", cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored },
+      {
+        id: "speed",
+        title: "Interceptor Speed",
+        desc: "Permanently increase the speed of your interceptors.",
+        detailedDesc: "A permanent, stacking buff to the velocity of all interceptors you launch.",
+        cost: upgradeCosts.interceptorSpeed,
+        available: true,
+        maxed: false
+      },
+      {
+        id: "multishot",
+        title: `Multishot (Lvl ${multishotLevel})`,
+        desc: "Fire an additional interceptor per shot. Max Lvl 3.",
+        detailedDesc: "Increases the number of interceptors launched with each click. Each interceptor will target the same rocket.",
+        cost: upgradeCosts.multishot * (multishotLevel + 1),
+        available: multishotLevel < 3,
+        maxed: multishotLevel >= 3
+      },
+      {
+        id: "blastRadius",
+        title: `Flak Warheads (Lvl ${blastRadiusLevel})`,
+        desc: "Increase the blast radius of standard interceptors. Max Lvl 5.",
+        detailedDesc: "Increases the explosion radius of your interceptors, making them more effective against dense groups of rockets.",
+        cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1),
+        available: blastRadiusLevel < 5,
+        maxed: blastRadiusLevel >= 5
+      },
+      {
+        id: "turret",
+        title: "Build Turret",
+        desc: "Construct an automated defense turret. Max 2.",
+        detailedDesc: "Builds a C-RAM turret that automatically fires at nearby rockets. Limited to two turrets.",
+        cost: upgradeCosts.automatedTurret,
+        available: turrets.length < maxTurrets,
+        maxed: turrets.length >= maxTurrets
+      },
+      {
+        id: "turretSpeed",
+        title: `Turret Speed (Lvl ${turretFireRateLevel})`,
+        desc: "Permanently increase the fire rate of all turrets. Max Lvl 3.",
+        detailedDesc: "Reduces the cooldown between bursts for all owned turrets. Stacks up to 3 times.",
+        cost: upgradeCosts.turretSpeed,
+        available: turrets.length > 0 && turretFireRateLevel < 3,
+        maxed: turretFireRateLevel >= 3
+      },
+      {
+        id: "turretRange",
+        title: `Turret Range (Lvl ${turretRangeLevel})`,
+        desc: "Permanently increase the engagement range of all turrets. Max Lvl 3.",
+        detailedDesc: "Increases the detection and firing radius for all owned turrets. Stacks up to 3 times.",
+        cost: upgradeCosts.turretRange,
+        available: turrets.length > 0 && turretRangeLevel < 3,
+        maxed: turretRangeLevel >= 3
+      },
+      {
+        id: "baseArmor",
+        title: "Permanent Armor",
+        desc: "Permanently armor all bases, allowing them to survive one extra hit.",
+        detailedDesc: "All cities will start with one layer of armor for the rest of the game. Armor is consumed upon being hit.",
+        cost: upgradeCosts.baseArmor,
+        available: !basesAreArmored,
+        maxed: basesAreArmored
+      },
       // Tactical / Single-Use Items
-      { id: "nuke", title: "Nuke (w/ EMP)", desc: "A single-use interceptor with a massive blast and EMP effect.", detailedDesc: "Your next interceptor is a Nuke. Its massive blast destroys most rockets instantly and also triggers a 2-second global EMP, disabling all rockets on screen.", cost: upgradeCosts.nuke, available: nukeIsPurchasable, maxed: !nukeIsPurchasable && !activePerks.surplusValue },
-      { id: "homingMine", title: "Buy Proximity Mine", desc: "An AOE mine that explodes when rockets get near.", detailedDesc: "Deploys a mine on the ground at your cursor. When an enemy gets close, it detonates, destroying all rockets within a large radius.", cost: upgradeCosts.homingMine, available: true, maxed: false },
-      { id: "fieldReinforcement", title: "Field Reinforcement", desc: "Apply one layer of armor to all standing, unarmored bases.", detailedDesc: "A temporary, one-time boost. Instantly adds one layer of armor to any of your cities that are not already armored or destroyed. The armor is consumed on the next hit.", cost: upgradeCosts.fieldReinforcement, available: reinforcementNeeded, maxed: !reinforcementNeeded },
-      { id: "targetingScrambler", title: "Targeting Scrambler", desc: "25% chance for new rockets to be scrambled next wave.", detailedDesc: "Activates a passive system for the next wave only. Each new rocket has a 25% chance to have its trajectory scrambled, causing it to fly off-target.", cost: upgradeCosts.targetingScrambler, available: !state2.scramblerActive, maxed: state2.scramblerActive },
-      { id: "repair", title: "Repair Base", desc: "Repair one of your destroyed bases.", detailedDesc: "Rebuilds a single destroyed city, restoring it to full functionality.", cost: upgradeCosts.repairCity, available: cities.some((c) => c.isDestroyed), maxed: false }
+      {
+        id: "nuke",
+        title: "Nuke (w/ EMP)",
+        desc: "A single-use interceptor with a massive blast and EMP effect.",
+        detailedDesc: "Your next interceptor is a Nuke. Its massive blast destroys most rockets instantly and also triggers a 2-second global EMP, disabling all rockets on screen.",
+        cost: upgradeCosts.nuke,
+        available: nukeIsPurchasable,
+        maxed: !nukeIsPurchasable && !activePerks.surplusValue
+      },
+      {
+        id: "homingMine",
+        title: "Buy Proximity Mine",
+        desc: "An AOE mine that explodes when rockets get near.",
+        detailedDesc: "Deploys a mine on the ground at your cursor. When an enemy gets close, it detonates, destroying all rockets within a large radius.",
+        cost: upgradeCosts.homingMine,
+        available: true,
+        maxed: false
+      },
+      {
+        id: "fieldReinforcement",
+        title: "Field Reinforcement",
+        desc: "Apply one layer of armor to all standing, unarmored bases.",
+        detailedDesc: "A temporary, one-time boost. Instantly adds one layer of armor to any of your cities that are not already armored or destroyed. The armor is consumed on the next hit.",
+        cost: upgradeCosts.fieldReinforcement,
+        available: reinforcementNeeded,
+        maxed: !reinforcementNeeded
+      },
+      {
+        id: "targetingScrambler",
+        title: "Targeting Scrambler",
+        desc: "25% chance for new rockets to be scrambled next wave.",
+        detailedDesc: "Activates a passive system for the next wave only. Each new rocket has a 25% chance to have its trajectory scrambled, causing it to fly off-target.",
+        cost: upgradeCosts.targetingScrambler,
+        available: !state2.scramblerActive,
+        maxed: state2.scramblerActive
+      },
+      {
+        id: "repair",
+        title: "Repair Base",
+        desc: "Repair one of your destroyed bases.",
+        detailedDesc: "Rebuilds a single destroyed city, restoring it to full functionality.",
+        cost: upgradeCosts.repairCity,
+        available: cities.some((c) => c.isDestroyed),
+        maxed: false
+      }
     ];
     let shopHTML = '<div class="shop-container">';
     for (const categoryKey in categories) {
       const category = categories[categoryKey];
       const itemsInCategory = shopItems.filter((item) => category.ids.includes(item.id));
-      const isCategoryRelevant = itemsInCategory.some((item) => item.available || item.maxed === false && item.id !== "repair");
+      const isCategoryRelevant = itemsInCategory.some(
+        (item) => item.available || item.maxed === false && item.id !== "repair"
+      );
       if (isCategoryRelevant || categoryKey === "maintenance" && itemsInCategory.some((item) => item.available)) {
         shopHTML += `
                 <div class="shop-category">
@@ -1276,7 +1418,15 @@
   };
   var ArmoredRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, random(-0.5, 0.5), random(1, 1.5), width2, sizeMultiplier * 1.5, speedMultiplier * 0.7);
+      super(
+        void 0,
+        void 0,
+        random(-0.5, 0.5),
+        random(1, 1.5),
+        width2,
+        sizeMultiplier * 1.5,
+        speedMultiplier * 0.7
+      );
       this.health = 3;
       this.maxHealth = 3;
       this.hitFlashTimer = 0;
@@ -1485,7 +1635,9 @@
       for (let i = 0; i < childCount; i++) {
         const newVx = this.vx + random(-1.5, 1.5);
         const newVy = this.vy + random(-0.5, 0.5);
-        childRockets.push(new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier, this.speedMultiplier));
+        childRockets.push(
+          new Rocket(this.x, this.y, newVx, newVy, this.width, childSizeMultiplier, this.speedMultiplier)
+        );
       }
       return childRockets;
     }
@@ -1522,7 +1674,7 @@
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
       this.flareCooldown = 0;
       this.flareDeployInterval = 90;
-      this.type = "flare";
+      this.type = "flare_rocket";
       this.color = "#00ced1";
       this.trailColor = "rgba(0, 206, 209, 0.5)";
     }
@@ -1600,7 +1752,13 @@
         ctx2.shadowBlur = 0;
         const circleRadius = this.targetCity.width / 2 * (1 - progress);
         ctx2.beginPath();
-        ctx2.arc(this.targetCity.x + this.targetCity.width / 2, this.targetCity.y + this.targetCity.height / 2, circleRadius, 0, Math.PI * 2);
+        ctx2.arc(
+          this.targetCity.x + this.targetCity.width / 2,
+          this.targetCity.y + this.targetCity.height / 2,
+          circleRadius,
+          0,
+          Math.PI * 2
+        );
         ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
         ctx2.lineWidth = 2;
         ctx2.stroke();
@@ -1711,7 +1869,14 @@
       ctx2.fillStyle = "#3c4043";
       ctx2.beginPath();
       ctx2.moveTo(this.x - this.radius, this.y);
-      ctx2.bezierCurveTo(this.x - this.radius, this.y - 80, this.x + this.radius, this.y - 80, this.x + this.radius, this.y);
+      ctx2.bezierCurveTo(
+        this.x - this.radius,
+        this.y - 80,
+        this.x + this.radius,
+        this.y - 80,
+        this.x + this.radius,
+        this.y
+      );
       ctx2.closePath();
       ctx2.fill();
       ctx2.strokeStyle = "#2a2c2e";
@@ -1772,7 +1937,7 @@
         newRocket = new StealthRocket(width2, sizeMultiplier, speedMultiplier);
       } else if (rocketType === "swarmer") {
         newRocket = new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "flare") {
+      } else if (rocketType === "flare_rocket") {
         newRocket = new FlareRocket(width2, sizeMultiplier, speedMultiplier);
       } else if (rocketType === "armored") {
         newRocket = new ArmoredRocket(width2, sizeMultiplier, speedMultiplier);
@@ -1804,7 +1969,9 @@
       if (rocket instanceof ArtilleryDesignator && rocket.isDesignating) {
         if (rocket.designationTimer > rocket.designationDuration) {
           if (rocket.targetCity) {
-            state2.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y));
+            state2.artilleryShells.push(
+              new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y)
+            );
           }
           state2.rockets.splice(i, 1);
           continue;
@@ -1921,7 +2088,7 @@
             if (rocket.type === "mirv") points = config.mirvPoints;
             else if (rocket.type === "stealth") points = config.stealthPoints;
             else if (rocket.type === "swarmer") points = config.swarmerPoints;
-            else if (rocket.type === "flare") points = config.flareRocketPoints;
+            else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
             else if (rocket.type === "drone") points = config.dronePoints;
             else if (rocket.type === "armored") points = config.armoredPoints;
             else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
@@ -1987,7 +2154,7 @@
               if (rocket.type === "mirv") points = config.mirvPoints;
               else if (rocket.type === "stealth") points = config.stealthPoints;
               else if (rocket.type === "swarmer") points = config.swarmerPoints;
-              else if (rocket.type === "flare") points = config.flareRocketPoints;
+              else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
               else if (rocket.type === "drone") points = config.dronePoints;
               else if (rocket.type === "armored") points = config.armoredPoints;
               else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
@@ -2024,7 +2191,7 @@
             if (rocket.type === "mirv") points = config.mirvPoints;
             else if (rocket.type === "stealth") points = config.stealthPoints;
             else if (rocket.type === "swarmer") points = config.swarmerPoints;
-            else if (rocket.type === "flare") points = config.flareRocketPoints;
+            else if (rocket.type === "flare_rocket") points = config.flareRocketPoints;
             else if (rocket.type === "drone") points = config.dronePoints;
             else if (rocket.type === "armored") points = config.armoredPoints;
             else if (rocket.type === "designator") points = config.artilleryDesignatorPoints;
@@ -2171,7 +2338,10 @@
   function draw(ctx2, state2, width2, height2) {
     ctx2.save();
     if (state2.screenShake.duration > 0) {
-      ctx2.translate((Math.random() - 0.5) * state2.screenShake.intensity, (Math.random() - 0.5) * state2.screenShake.intensity);
+      ctx2.translate(
+        (Math.random() - 0.5) * state2.screenShake.intensity,
+        (Math.random() - 0.5) * state2.screenShake.intensity
+      );
       state2.screenShake.duration--;
     }
     ctx2.clearRect(0, 0, width2, height2);
@@ -2259,7 +2429,16 @@
     if (state2.gameState === "IN_WAVE" && state2.targetedRocket) {
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
-        state2.interceptors.push(new Interceptor(width2 / 2, height2, state2.targetedRocket, state2.interceptorSpeed, config.nukeBlastRadius, "nuke"));
+        state2.interceptors.push(
+          new Interceptor(
+            width2 / 2,
+            height2,
+            state2.targetedRocket,
+            state2.interceptorSpeed,
+            config.nukeBlastRadius,
+            "nuke"
+          )
+        );
         state2.nukeAvailable = false;
       } else {
         const numShots = 1 + state2.multishotLevel;
@@ -2268,7 +2447,16 @@
         const startX = centralLauncherX - spread / 2;
         for (let i = 0; i < numShots; i++) {
           const launchX = startX + i * 10;
-          state2.interceptors.push(new Interceptor(launchX, height2, state2.targetedRocket, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard"));
+          state2.interceptors.push(
+            new Interceptor(
+              launchX,
+              height2,
+              state2.targetedRocket,
+              state2.interceptorSpeed,
+              state2.interceptorBlastRadius,
+              "standard"
+            )
+          );
         }
       }
       updateTopUI(state2);
@@ -2293,7 +2481,16 @@
         }
       }
       if (touchTarget) {
-        state2.interceptors.push(new Interceptor(width2 / 2, height2, touchTarget, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard"));
+        state2.interceptors.push(
+          new Interceptor(
+            width2 / 2,
+            height2,
+            touchTarget,
+            state2.interceptorSpeed,
+            state2.interceptorBlastRadius,
+            "standard"
+          )
+        );
         updateTopUI(state2);
       }
     }
@@ -2301,7 +2498,10 @@
   function togglePause(state2, init2) {
     if (state2.gameState === "IN_WAVE") {
       state2.gameState = "PAUSED";
-      showPauseScreen(() => togglePause(state2, init2), () => init2());
+      showPauseScreen(
+        () => togglePause(state2, init2),
+        () => init2()
+      );
     } else if (state2.gameState === "PAUSED") {
       state2.gameState = "IN_WAVE";
       hideModal();
@@ -2449,7 +2649,7 @@
         for (let i = 0; i < (waveDef.mirv || 0); i++) composition.push("mirv");
         for (let i = 0; i < (waveDef.stealth || 0); i++) composition.push("stealth");
         for (let i = 0; i < (waveDef.swarmer || 0); i++) composition.push("swarmer");
-        for (let i = 0; i < (waveDef.flare || 0); i++) composition.push("flare");
+        for (let i = 0; i < (waveDef.flare_rocket || 0); i++) composition.push("flare_rocket");
         for (let i = 0; i < (waveDef.armored || 0); i++) composition.push("armored");
         for (let i = 0; i < (waveDef.designator || 0); i++) composition.push("designator");
       }
@@ -2464,21 +2664,25 @@
   function refreshUpgradeScreen(state2, canvas2) {
     updateTopUI(state2);
     const refreshCallback = () => refreshUpgradeScreen(state2, canvas2);
-    showBetweenWaveScreen(state2, {
-      upgradeRepairCallback: () => handleUpgradeRepair(state2, refreshCallback),
-      upgradeTurretCallback: () => handleUpgradeTurret(state2, canvas2, refreshCallback),
-      upgradeSpeedCallback: () => handleUpgradeSpeed(state2, refreshCallback),
-      upgradeMultishotCallback: () => handleUpgradeMultishot(state2, refreshCallback),
-      upgradeBlastRadiusCallback: () => handleUpgradeBlastRadius(state2, refreshCallback),
-      upgradeNukeCallback: () => handleUpgradeNuke(state2, refreshCallback),
-      upgradeBaseArmorCallback: () => handleUpgradeBaseArmor(state2, refreshCallback),
-      upgradeTurretSpeedCallback: () => handleUpgradeTurretSpeed(state2, refreshCallback),
-      upgradeTurretRangeCallback: () => handleUpgradeTurretRange(state2, refreshCallback),
-      upgradeHomingMineCallback: () => handleUpgradeHomingMine(state2, refreshCallback),
-      upgradeFieldReinforcementCallback: () => handleUpgradeFieldReinforcement(state2, refreshCallback),
-      upgradeTargetingScramblerCallback: () => handleUpgradeTargetingScrambler(state2, refreshCallback),
-      nextWaveCallback: () => startNextWave(state2, canvas2)
-    }, config);
+    showBetweenWaveScreen(
+      state2,
+      {
+        upgradeRepairCallback: () => handleUpgradeRepair(state2, refreshCallback),
+        upgradeTurretCallback: () => handleUpgradeTurret(state2, canvas2, refreshCallback),
+        upgradeSpeedCallback: () => handleUpgradeSpeed(state2, refreshCallback),
+        upgradeMultishotCallback: () => handleUpgradeMultishot(state2, refreshCallback),
+        upgradeBlastRadiusCallback: () => handleUpgradeBlastRadius(state2, refreshCallback),
+        upgradeNukeCallback: () => handleUpgradeNuke(state2, refreshCallback),
+        upgradeBaseArmorCallback: () => handleUpgradeBaseArmor(state2, refreshCallback),
+        upgradeTurretSpeedCallback: () => handleUpgradeTurretSpeed(state2, refreshCallback),
+        upgradeTurretRangeCallback: () => handleUpgradeTurretRange(state2, refreshCallback),
+        upgradeHomingMineCallback: () => handleUpgradeHomingMine(state2, refreshCallback),
+        upgradeFieldReinforcementCallback: () => handleUpgradeFieldReinforcement(state2, refreshCallback),
+        upgradeTargetingScramblerCallback: () => handleUpgradeTargetingScrambler(state2, refreshCallback),
+        nextWaveCallback: () => startNextWave(state2, canvas2)
+      },
+      config
+    );
   }
 
   // ts/main.ts

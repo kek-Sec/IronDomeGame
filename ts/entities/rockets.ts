@@ -424,7 +424,7 @@ export class FlareRocket extends Rocket implements T.Rocket {
     flareDeployInterval: number = 90;
     constructor(width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
-        this.type = 'flare';
+        this.type = 'flare_rocket';
         this.color = '#00ced1';
         this.trailColor = 'rgba(0, 206, 209, 0.5)';
     }

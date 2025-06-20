@@ -33,7 +33,7 @@ export function startNextWave(state: T.GameState, canvas: HTMLCanvasElement): vo
             for (let i = 0; i < (waveDef.mirv || 0); i++) composition.push('mirv');
             for (let i = 0; i < (waveDef.stealth || 0); i++) composition.push('stealth');
             for (let i = 0; i < (waveDef.swarmer || 0); i++) composition.push('swarmer');
-            for (let i = 0; i < (waveDef.flare || 0); i++) composition.push('flare');
+            for (let i = 0; i < (waveDef.flare_rocket || 0); i++) composition.push('flare_rocket');
             for (let i = 0; i < (waveDef.armored || 0); i++) composition.push('armored');
             for (let i = 0; i < (waveDef.designator || 0); i++) composition.push('designator');
         }

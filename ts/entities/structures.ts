@@ -315,7 +315,7 @@ export class AutomatedTurret implements AutomatedTurretType {
                 r.type === 'swarmer' ||
                 r.type === 'stealth' ||
                 r.type === 'mirv' ||
-                r.type === 'flare' ||
+                r.type === 'flare_rocket' ||
                 r.type === 'armored'
         );
         if (highPriority.length > 0) {

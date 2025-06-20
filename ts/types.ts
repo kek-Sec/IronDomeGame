@@ -191,7 +191,7 @@ export interface WaveDefinition {
     mirv?: number;
     stealth?: number;
     swarmer?: number;
-    flare?: number;
+    flare_rocket?: number;
     armored?: number;
     designator?: number;
     delay?: number;

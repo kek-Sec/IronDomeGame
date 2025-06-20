@@ -83,13 +83,13 @@ export const config = {
 
 // Defines the base composition of enemy rockets for the pre-set waves
 export const waveDefinitions: WaveDefinition[] = [
-    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 120 },
-    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare: 0, armored: 0, delay: 115 },
-    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare: 1, armored: 0, delay: 110 },
+    { standard: 6, mirv: 0, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 120 },
+    { standard: 8, mirv: 1, stealth: 0, swarmer: 0, flare_rocket: 0, armored: 0, delay: 115 },
+    { standard: 7, mirv: 0, stealth: 1, swarmer: 0, flare_rocket: 1, armored: 0, delay: 110 },
     { standard: 8, mirv: 2, stealth: 0, swarmer: 1, armored: 0, delay: 100 },
     { isBossWave: true, bossType: 'hiveCarrier', delay: 95 },
-    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare: 2, armored: 1, delay: 90 },
-    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare: 2, armored: 2, designator: 1, delay: 85 },
+    { standard: 5, mirv: 3, stealth: 1, swarmer: 2, flare_rocket: 2, armored: 1, delay: 90 },
+    { standard: 8, mirv: 2, stealth: 2, swarmer: 2, flare_rocket: 2, armored: 2, designator: 1, delay: 85 },
 ];
 
 export function getWaveDefinition(waveNumber: number): WaveDefinition {
@@ -111,7 +111,7 @@ export function getWaveDefinition(waveNumber: number): WaveDefinition {
     if (waveNumber > 8) availableTypes.push('stealth');
     if (waveNumber > 10) availableTypes.push('swarmer');
     if (waveNumber > 12) availableTypes.push('armored');
-    if (waveNumber > 14) availableTypes.push('flare');
+    if (waveNumber > 14) availableTypes.push('flare_rocket');
     if (waveNumber > 6) availableTypes.push('designator');
 
     for (let i = 0; i < totalRockets; i++) {
@@ -141,7 +141,7 @@ export const rocketInfo: Record<string, { name: string; threat: string; descript
         description: 'A small, fast-moving projectile deployed by Swarmer rockets.',
     },
     stealth: { name: 'Stealth Rocket', threat: 'Medium', description: 'Periodically cloaks, making it untargetable.' },
-    flare: {
+    flare_rocket: {
         name: 'Flare Rocket',
         threat: 'Medium',
         description: 'Continuously deploys decoy flares that distract interceptors.',
