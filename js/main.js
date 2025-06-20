@@ -473,57 +473,18 @@
     }
   };
 
-  // ts/assetLoader.ts
-  var spriteUrls = {
-    bunker: "assets/bunker.png",
-    dome: "assets/dome.png",
-    comms: "assets/tower.png"
-  };
-  var loadedSprites = {};
-  function loadGameAssets() {
-    const promises = [];
-    for (const key in spriteUrls) {
-      const url = spriteUrls[key];
-      const promise = new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          loadedSprites[key] = img;
-          resolve();
-        };
-        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
-        img.src = url;
-      });
-      promises.push(promise);
-    }
-    return Promise.all(promises).then(() => {
-    });
-  }
-
   // ts/entities/structures.ts
   var City = class {
-    constructor(x, y, w, h, isArmored = false) {
+    constructor(x, y, w, h, isArmored = false, sprite) {
       this.x = x;
       this.y = y;
       this.width = w;
       this.height = h;
       this.isDestroyed = false;
       this.isArmored = isArmored;
+      this.sprite = sprite;
       this.rubbleShape = null;
       this.isSmoking = false;
-      const structureType = Math.floor(random(0, 3));
-      switch (structureType) {
-        case 0:
-          this.sprite = loadedSprites.bunker;
-          break;
-        case 1:
-          this.sprite = loadedSprites.dome;
-          break;
-        case 2:
-          this.sprite = loadedSprites.comms;
-          break;
-        default:
-          this.sprite = loadedSprites.bunker;
-      }
     }
     draw(ctx2, height2) {
       ctx2.save();
@@ -586,7 +547,6 @@
           yOffset: random(-this.height * 0.1, this.height * 0.2),
           color: rubbleColors[i % rubbleColors.length],
           points: [
-            // Pre-calculate jagged points for a static shape
             { x: 0, y: 1 },
             { x: random(0.1, 0.3), y: random(0.1, 0.3) },
             { x: random(0.7, 0.9), y: random(0.1, 0.3) },
@@ -2674,6 +2634,32 @@
     );
   }
 
+  // ts/assetLoader.ts
+  var spriteUrls = {
+    bunker: "assets/bunker.png",
+    dome: "assets/dome.png",
+    comms: "assets/tower.png"
+  };
+  var loadedSprites = {};
+  function loadGameAssets() {
+    const promises = [];
+    for (const key in spriteUrls) {
+      const url = spriteUrls[key];
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedSprites[key] = img;
+          resolve();
+        };
+        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
+        img.src = url;
+      });
+      promises.push(promise);
+    }
+    return Promise.all(promises).then(() => {
+    });
+  }
+
   // ts/main.ts
   var canvas = document.getElementById("gameCanvas");
   var ctx = canvas.getContext("2d");
@@ -2718,14 +2704,24 @@
   };
   function createCities() {
     state.cities = [];
-    const cityWidth = width / config.cityCount;
-    const minHeight = 30;
+    const citySlotWidth = width / config.cityCount;
+    const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120);
+    const spriteKeys = Object.keys(loadedSprites);
     for (let i = 0; i < config.cityCount; i++) {
-      const h = random(minHeight, maxHeight);
-      const w = cityWidth * random(0.6, 0.8);
-      const x = i * cityWidth + (cityWidth - w) / 2;
-      state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
+      const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+      const sprite = loadedSprites[randomSpriteKey];
+      let h;
+      if (randomSpriteKey === "comms") {
+        h = random(maxHeight, maxHeight * 1.3);
+      } else {
+        h = random(minHeight, maxHeight * 0.9);
+      }
+      const aspectRatio = sprite.naturalWidth / sprite.naturalHeight;
+      const w = h * aspectRatio;
+      const x = i * citySlotWidth + (citySlotWidth - w) / 2;
+      const y = height - h;
+      state.cities.push(new City(x, y, w, h, state.basesAreArmored, sprite));
     }
   }
   var resizeCanvas = () => {

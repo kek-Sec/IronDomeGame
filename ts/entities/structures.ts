@@ -7,7 +7,6 @@ import type {
     Rocket as RocketType,
     TracerRound as TracerRoundType,
 } from '../types';
-import { loadedSprites } from '../assetLoader';
 
 // Represents a city/base to be defended
 export class City implements CityType {
@@ -30,31 +29,23 @@ export class City implements CityType {
     isSmoking: boolean;
     private sprite: HTMLImageElement;
 
-    constructor(x: number, y: number, w: number, h: number, isArmored: boolean = false) {
+    constructor(
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        isArmored: boolean = false,
+        sprite: HTMLImageElement
+    ) {
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
         this.isDestroyed = false;
         this.isArmored = isArmored;
-        this.rubbleShape = null; // To hold the static shape of the rubble
-        this.isSmoking = false; // To trigger the smoke effect
-
-        // Randomly assign one of the loaded sprites to this city
-        const structureType = Math.floor(random(0, 3));
-        switch (structureType) {
-            case 0:
-                this.sprite = loadedSprites.bunker;
-                break;
-            case 1:
-                this.sprite = loadedSprites.dome;
-                break;
-            case 2:
-                this.sprite = loadedSprites.comms;
-                break;
-            default: // Fallback
-                this.sprite = loadedSprites.bunker;
-        }
+        this.sprite = sprite;
+        this.rubbleShape = null;
+        this.isSmoking = false;
     }
 
     draw(ctx: CanvasRenderingContext2D, height: number): void {
@@ -62,12 +53,11 @@ export class City implements CityType {
         if (this.isDestroyed) {
             this.drawRubble(ctx, height);
         } else {
-            // Draw the sprite if it's loaded and ready
+            // Draw the sprite with the correct dimensions
             if (this.sprite && this.sprite.complete) {
                 ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
             }
 
-            // Draw the energy shield on top if armored
             if (this.isArmored) {
                 this.drawEnergyShield(ctx);
             }
@@ -129,7 +119,6 @@ export class City implements CityType {
                 yOffset: random(-this.height * 0.1, this.height * 0.2),
                 color: rubbleColors[i % rubbleColors.length],
                 points: [
-                    // Pre-calculate jagged points for a static shape
                     { x: 0, y: 1 },
                     { x: random(0.1, 0.3), y: random(0.1, 0.3) },
                     { x: random(0.7, 0.9), y: random(0.1, 0.3) },
@@ -190,7 +179,7 @@ export class AutomatedTurret implements AutomatedTurretType {
 
         return [];
     }
-    
+
     private updateTarget(rockets: RocketType[]): void {
         // Target validation: Check if current target is still valid
         if (this.currentTarget) {
@@ -212,15 +201,15 @@ export class AutomatedTurret implements AutomatedTurretType {
     }
 
     private aimAndFire(target: RocketType): TracerRoundType[] {
-         // Predictive Targeting
+        // Predictive Targeting
         const dist = Math.hypot(this.x - target.x, this.y - target.y);
         const timeToImpact = dist / this.tracerSpeed;
         const predictedX = target.x + target.vx * timeToImpact;
         const predictedY = target.y + target.vy * timeToImpact;
-        
+
         // Aim at the predicted position
         this.angle = Math.atan2(predictedY - this.y, predictedX - this.x);
-        
+
         this.isFiring = true;
         this.shotTimer++;
         if (this.shotTimer % this.delayBetweenShots === 0) {
@@ -284,7 +273,7 @@ export class AutomatedTurret implements AutomatedTurretType {
 
         // Muzzle flash
         if (this.isFiring) {
-           this.drawMuzzleFlash(ctx);
+            this.drawMuzzleFlash(ctx);
         }
 
         // Gun barrel

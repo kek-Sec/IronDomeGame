@@ -14,7 +14,7 @@ import * as events from './eventHandlers';
 import { startNextWave, refreshUpgradeScreen } from './flow';
 import { loadPlayerData } from './saveManager';
 import type { GameState, StartGameCallback } from './types';
-import { loadGameAssets } from './assetLoader';
+import { loadGameAssets, loadedSprites } from './assetLoader';
 import { modalContainer, modalContent } from './ui/domElements';
 
 // --- DOM & Canvas Setup ---
@@ -86,15 +86,37 @@ const resetAndStartGame: StartGameCallback = (difficulty = 'normal') => {
 // --- Helper Functions ---
 function createCities(): void {
     state.cities = [];
-    const cityWidth = width / config.cityCount;
-    const minHeight = 30;
-    const maxHeight = Math.min(height * 0.15, 120);
+    const citySlotWidth = width / config.cityCount;
+    const minHeight = 50;
+    const maxHeight = Math.min(height * 0.15, 120); // Base max height for regular buildings
+    const spriteKeys = Object.keys(loadedSprites);
 
     for (let i = 0; i < config.cityCount; i++) {
-        const h = random(minHeight, maxHeight);
-        const w = cityWidth * random(0.6, 0.8);
-        const x = i * cityWidth + (cityWidth - w) / 2;
-        state.cities.push(new City(x, height - h, w, h, state.basesAreArmored));
+        // 1. Randomly select a sprite for the new city
+        const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+        const sprite = loadedSprites[randomSpriteKey];
+
+        let h: number;
+
+        // 2. If the sprite is the communications tower, make it taller
+        if (randomSpriteKey === 'comms') {
+            // Use a height range that makes it consistently taller
+            h = random(maxHeight, maxHeight * 1.3);
+        } else {
+            // Use a smaller, standard height range for other buildings
+            h = random(minHeight, maxHeight * 0.9);
+        }
+
+        // 3. Calculate the width based on the sprite's aspect ratio to prevent distortion
+        const aspectRatio = sprite.naturalWidth / sprite.naturalHeight;
+        const w = h * aspectRatio;
+
+        // 4. Center the city in its designated horizontal slot
+        const x = i * citySlotWidth + (citySlotWidth - w) / 2;
+        const y = height - h; // Position it at the bottom of the canvas
+
+        // 5. Create the new city with the correct dimensions and sprite
+        state.cities.push(new City(x, y, w, h, state.basesAreArmored, sprite));
     }
 }
 
@@ -106,6 +128,7 @@ const resizeCanvas = (): void => {
         if (state.cities && state.cities.length > 0) {
             const citySlotWidth = width / config.cityCount;
             state.cities.forEach((city, i) => {
+                // Recalculate x-position based on new width, but keep height and width fixed
                 city.x = i * citySlotWidth + (citySlotWidth - city.width) / 2;
                 city.y = height - city.height;
             });
@@ -128,12 +151,10 @@ async function init(): Promise<void> {
         cancelAnimationFrame(animationFrameId);
     }
 
-    // Display a loading message while assets are being fetched
     modalContainer.style.display = 'flex';
     modalContent.innerHTML = '<h1>Loading Assets...</h1>';
 
     try {
-        // Wait for all images to load before proceeding
         await loadGameAssets();
 
         const playerData = loadPlayerData();
