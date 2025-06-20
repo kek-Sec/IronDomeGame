@@ -1070,6 +1070,71 @@
     }
   }
 
+  // ts/ui/armoryScreen.ts
+  var perkIcons = {
+    veteranCommander: "\u{1F3C6}",
+    advancedFortifications: "\u{1F9F1}",
+    rapidDeployment: "\u26A1",
+    efficientInterceptors: "\u{1F4A5}",
+    surplusValue: "\u2622\uFE0F",
+    extraMine: "\u{1F4A3}"
+  };
+  function showArmoryScreen(playerData, startGameCallback) {
+    modalContainer.style.display = "flex";
+    modalContent.classList.add("armory");
+    let perkHTML = '<div class="perk-grid">';
+    for (const key in perks) {
+      const perk = perks[key];
+      const isUnlocked = playerData.unlockedPerks[key];
+      const canAfford = playerData.prestigePoints >= perk.cost;
+      perkHTML += `
+            <div class="perk-card ${isUnlocked ? "unlocked" : ""} ${!canAfford && !isUnlocked ? "unaffordable" : ""}">
+                <div class="perk-header">
+                    <div class="perk-icon">${perkIcons[key] || "\u2699\uFE0F"}</div>
+                    <h3>${perk.name}</h3>
+                </div>
+                <p class="perk-description">${perk.description}</p>
+                <button
+                    class="perk-button"
+                    id="perk-${key}"
+                    ${isUnlocked || !canAfford ? "disabled" : ""}
+                >
+                    ${isUnlocked ? "UNLOCKED" : `COST: ${perk.cost}`}
+                </button>
+            </div>
+        `;
+    }
+    perkHTML += "</div>";
+    modalContent.innerHTML = `
+        <div class="armory-header">
+            <h1>ARMORY</h1>
+            <div class="prestige-points">
+                Prestige Points: <span>${playerData.prestigePoints}</span>
+            </div>
+        </div>
+        ${perkHTML}
+        <button id="back-to-menu-button" class="modal-button">Main Menu</button>
+    `;
+    for (const key in perks) {
+      if (!playerData.unlockedPerks[key]) {
+        const perkButton = document.getElementById(`perk-${key}`);
+        if (perkButton) {
+          perkButton.addEventListener("click", () => {
+            const perk = perks[key];
+            if (playerData.prestigePoints >= perk.cost) {
+              playerData.prestigePoints -= perk.cost;
+              playerData.unlockedPerks[key] = true;
+              savePlayerData(playerData);
+              showArmoryScreen(playerData, startGameCallback);
+            }
+          });
+        }
+      }
+    }
+    const showArmoryAgain = () => showArmoryScreen(playerData, startGameCallback);
+    document.getElementById("back-to-menu-button")?.addEventListener("click", () => showStartScreen(startGameCallback, showArmoryAgain));
+  }
+
   // ts/ui.ts
   function updateTopUI(state2) {
     fpsCounterEl.textContent = state2.fps.toString();
@@ -1139,71 +1204,6 @@
       });
     }
     document.getElementById("armory-button")?.addEventListener("click", showArmoryCallback);
-  }
-  var perkIcons = {
-    veteranCommander: "\u{1F3C6}",
-    advancedFortifications: "\u{1F9F1}",
-    rapidDeployment: "\u26A1",
-    efficientInterceptors: "\u{1F4A5}",
-    surplusValue: "\u2622\uFE0F",
-    extraMine: "\u{1F4A3}"
-  };
-  function showArmoryScreen(playerData, startGameCallback) {
-    modalContainer.style.display = "flex";
-    modalContent.classList.add("armory");
-    let perkHTML = '<div class="perk-grid">';
-    for (const key in perks) {
-      const perk = perks[key];
-      const isUnlocked = playerData.unlockedPerks[key];
-      const canAfford = playerData.prestigePoints >= perk.cost;
-      perkHTML += `
-            <div class="perk-card ${isUnlocked ? "unlocked" : ""} ${!canAfford && !isUnlocked ? "unaffordable" : ""}">
-                <div class="perk-header">
-                    <div class="perk-icon">${perkIcons[key] || "\u2699\uFE0F"}</div>
-                    <h3>${perk.name}</h3>
-                </div>
-                <p class="perk-description">${perk.description}</p>
-                <button
-                    class="perk-button"
-                    id="perk-${key}"
-                    ${isUnlocked || !canAfford ? "disabled" : ""}
-                >
-                    ${isUnlocked ? "UNLOCKED" : `COST: ${perk.cost}`}
-                </button>
-            </div>
-        `;
-    }
-    perkHTML += "</div>";
-    modalContent.innerHTML = `
-        <div class="armory-header">
-            <h1>ARMORY</h1>
-            <div class="prestige-points">
-                Prestige Points: <span>${playerData.prestigePoints}</span>
-            </div>
-        </div>
-        ${perkHTML}
-        <button id="back-to-menu-button" class="modal-button">Main Menu</button>
-    `;
-    for (const key in perks) {
-      if (!playerData.unlockedPerks[key]) {
-        const perkButton = document.getElementById(`perk-${key}`);
-        if (perkButton) {
-          perkButton.addEventListener("click", () => {
-            const perk = perks[key];
-            if (playerData.prestigePoints >= perk.cost) {
-              playerData.prestigePoints -= perk.cost;
-              playerData.unlockedPerks[key] = true;
-              savePlayerData(playerData);
-              showArmoryScreen(playerData, startGameCallback);
-            }
-          });
-        }
-      }
-    }
-    document.getElementById("back-to-menu-button")?.addEventListener(
-      "click",
-      () => showStartScreen(startGameCallback, () => showArmoryScreen(playerData, startGameCallback))
-    );
   }
   function showRocketInfoScreen(closeCallback) {
     modalContainer.style.display = "flex";
