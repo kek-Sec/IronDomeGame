@@ -1302,30 +1302,40 @@
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 3;
+      ctx2.fillStyle = "rgba(255, 200, 150, 0.7)";
+      ctx2.shadowColor = "orange";
+      ctx2.shadowBlur = 10;
+      ctx2.beginPath();
+      ctx2.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.shadowBlur = 0;
       ctx2.fillStyle = "#6c757d";
       ctx2.beginPath();
-      ctx2.moveTo(-w, h * 0.3);
-      ctx2.lineTo(-w * 1.5, h * 0.5);
+      ctx2.moveTo(-w, h * 0.2);
+      ctx2.lineTo(-w * 1.8, h * 0.5);
       ctx2.lineTo(-w, h * 0.5);
-      ctx2.moveTo(w, h * 0.3);
-      ctx2.lineTo(w * 1.5, h * 0.5);
+      ctx2.moveTo(w, h * 0.2);
+      ctx2.lineTo(w * 1.8, h * 0.5);
       ctx2.lineTo(w, h * 0.5);
       ctx2.fill();
-      const gradient = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
-      gradient.addColorStop(0, "#dee2e6");
-      gradient.addColorStop(0.5, "#adb5bd");
-      gradient.addColorStop(1, "#6c757d");
+      const gradient = ctx2.createLinearGradient(-w / 2, 0, w / 2, 0);
+      gradient.addColorStop(0, "#8d99ae");
+      gradient.addColorStop(0.5, "#dee2e6");
+      gradient.addColorStop(1, "#8d99ae");
       ctx2.fillStyle = gradient;
       ctx2.fillRect(-w / 2, -h / 2, w, h);
+      ctx2.strokeStyle = "rgba(0, 0, 0, 0.2)";
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -h / 2);
+      ctx2.lineTo(0, h / 2);
+      ctx2.stroke();
       ctx2.fillStyle = this.color;
       ctx2.beginPath();
       ctx2.moveTo(0, -h * 0.6);
       ctx2.lineTo(-w / 2, -h / 2);
       ctx2.lineTo(w / 2, -h / 2);
       ctx2.closePath();
-      ctx2.fill();
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 10;
       ctx2.fill();
       ctx2.restore();
     }
@@ -1380,7 +1390,7 @@
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 3;
-      this.drawHead(ctx2);
+      super.drawHead(ctx2);
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       ctx2.strokeStyle = "#212529";
@@ -1413,7 +1423,8 @@
     }
     draw(ctx2) {
       if (this.isVisible) {
-        super.draw(ctx2);
+        this.drawTrail(ctx2);
+        this.drawHead(ctx2);
       } else {
         ctx2.save();
         ctx2.translate(this.x, this.y);
@@ -1522,8 +1533,11 @@
       const w = this.radius;
       const h = this.radius * 3;
       ctx2.fillStyle = "#1e6a21";
-      ctx2.fillRect(-w * 0.8, -h * 0.2, w * 0.3, h * 0.4);
-      ctx2.fillRect(w * 0.5, -h * 0.2, w * 0.3, h * 0.4);
+      ctx2.fillRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
+      ctx2.fillRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
+      ctx2.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx2.strokeRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
+      ctx2.strokeRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
       ctx2.restore();
     }
   };
@@ -1564,23 +1578,36 @@
       ctx2.rotate(this.angle);
       const w = this.radius;
       const h = this.radius * 2.5;
-      ctx2.fillStyle = "#adb5bd";
+      ctx2.fillStyle = "rgba(255, 100, 255, 0.5)";
+      ctx2.shadowColor = this.color;
+      ctx2.shadowBlur = 15;
+      ctx2.beginPath();
+      ctx2.arc(0, h * 0.4, w, 0, Math.PI, false);
+      ctx2.fill();
+      ctx2.shadowBlur = 0;
+      const bodyGrad = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
+      bodyGrad.addColorStop(0, "#555");
+      bodyGrad.addColorStop(1, "#333");
+      ctx2.fillStyle = bodyGrad;
       ctx2.beginPath();
       ctx2.moveTo(0, -h / 2);
       ctx2.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
       ctx2.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
       ctx2.fill();
-      ctx2.strokeStyle = "#495057";
+      ctx2.strokeStyle = "rgba(0,0,0,0.5)";
       ctx2.lineWidth = 2;
       ctx2.beginPath();
       ctx2.moveTo(0, -h / 2);
       ctx2.lineTo(0, h / 2);
       ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.ellipse(0, 0, w * 0.8, h * 0.2, 0, 0, Math.PI * 2);
+      ctx2.stroke();
       ctx2.fillStyle = this.color;
       ctx2.shadowColor = this.color;
       ctx2.shadowBlur = 15;
       ctx2.beginPath();
-      ctx2.arc(0, -h / 2, w / 2, Math.PI, 0);
+      ctx2.arc(0, -h / 2, w / 1.5, Math.PI * 0.9, Math.PI * 0.1, true);
       ctx2.closePath();
       ctx2.fill();
       ctx2.restore();
@@ -1602,6 +1629,17 @@
         flares.push(new Flare(this.x, this.y));
         this.flareCooldown = this.flareDeployInterval;
       }
+    }
+    drawHead(ctx2) {
+      super.drawHead(ctx2);
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      const w = this.radius;
+      const h = this.radius * 3;
+      ctx2.fillStyle = "#2c3e50";
+      ctx2.fillRect(-w * 0.4, h * 0.1, w * 0.8, h * 0.3);
+      ctx2.restore();
     }
   };
   var ArtilleryDesignator = class extends Rocket {
@@ -1723,15 +1761,17 @@
     }
     draw(ctx2) {
       const progress = 1 - this.timeLeft / 30;
-      const currentY = this.startY + (this.targetY - this.startY) * progress;
       ctx2.beginPath();
       ctx2.moveTo(this.startX, this.startY);
       ctx2.lineTo(this.targetX, this.targetY);
       const gradient = ctx2.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
+      const stop1 = Math.max(0, progress - 0.05);
+      const stop2 = progress;
+      const stop3 = Math.min(1, progress + 0.05);
       gradient.addColorStop(0, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(progress - 0.1, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(progress, "white");
-      gradient.addColorStop(progress + 0.1, "rgba(255, 100, 0, 0)");
+      gradient.addColorStop(stop1, "rgba(255, 100, 0, 0)");
+      gradient.addColorStop(stop2, "white");
+      gradient.addColorStop(stop3, "rgba(255, 100, 0, 0)");
       gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
       ctx2.strokeStyle = gradient;
       ctx2.lineWidth = 4;
