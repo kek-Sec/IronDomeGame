@@ -473,6 +473,32 @@
     }
   };
 
+  // ts/assetLoader.ts
+  var spriteUrls = {
+    bunker: "assets/bunker.png",
+    dome: "assets/dome.png",
+    comms: "assets/tower.png"
+  };
+  var loadedSprites = {};
+  function loadGameAssets() {
+    const promises = [];
+    for (const key in spriteUrls) {
+      const url = spriteUrls[key];
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedSprites[key] = img;
+          resolve();
+        };
+        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
+        img.src = url;
+      });
+      promises.push(promise);
+    }
+    return Promise.all(promises).then(() => {
+    });
+  }
+
   // ts/entities/structures.ts
   var City = class {
     constructor(x, y, w, h, isArmored = false) {
@@ -481,102 +507,37 @@
       this.width = w;
       this.height = h;
       this.isDestroyed = false;
-      this.structureType = Math.floor(random(0, 3));
       this.isArmored = isArmored;
       this.rubbleShape = null;
       this.isSmoking = false;
+      const structureType = Math.floor(random(0, 3));
+      switch (structureType) {
+        case 0:
+          this.sprite = loadedSprites.bunker;
+          break;
+        case 1:
+          this.sprite = loadedSprites.dome;
+          break;
+        case 2:
+          this.sprite = loadedSprites.comms;
+          break;
+        default:
+          this.sprite = loadedSprites.bunker;
+      }
     }
     draw(ctx2, height2) {
       ctx2.save();
       if (this.isDestroyed) {
         this.drawRubble(ctx2, height2);
       } else {
-        switch (this.structureType) {
-          case 0:
-            this.drawBunker(ctx2);
-            break;
-          case 1:
-            this.drawDome(ctx2, height2);
-            break;
-          case 2:
-            this.drawCommsTower(ctx2);
-            break;
+        if (this.sprite && this.sprite.complete) {
+          ctx2.drawImage(this.sprite, this.x, this.y, this.width, this.height);
         }
         if (this.isArmored) {
           this.drawEnergyShield(ctx2);
         }
       }
       ctx2.restore();
-    }
-    drawBunker(ctx2) {
-      const h = this.height * 0.7;
-      const y = this.y + (this.height - h);
-      const gradient = ctx2.createLinearGradient(this.x, y, this.x, y + h);
-      gradient.addColorStop(0, "#8d99ae");
-      gradient.addColorStop(1, "#6c757d");
-      ctx2.fillStyle = gradient;
-      ctx2.fillRect(this.x, y, this.width, h);
-      ctx2.fillStyle = "#343a40";
-      ctx2.fillRect(this.x + this.width * 0.1, y + h * 0.2, this.width * 0.8, h * 0.1);
-      ctx2.fillRect(this.x + this.width * 0.3, y + h * 0.5, this.width * 0.4, h * 0.15);
-      ctx2.strokeStyle = "#212529";
-      ctx2.lineWidth = 2;
-      ctx2.strokeRect(this.x, y, this.width, h);
-    }
-    drawDome(ctx2, height2) {
-      const centerX = this.x + this.width / 2;
-      const radius = this.width / 1.8;
-      ctx2.beginPath();
-      ctx2.arc(centerX, height2, radius, Math.PI, 0);
-      const gradient = ctx2.createRadialGradient(
-        centerX,
-        height2 - radius * 0.5,
-        radius * 0.2,
-        centerX,
-        height2,
-        radius
-      );
-      gradient.addColorStop(0, "rgba(173, 216, 230, 0.8)");
-      gradient.addColorStop(0.7, "rgba(0, 191, 255, 0.6)");
-      gradient.addColorStop(1, "rgba(70, 130, 180, 0.3)");
-      ctx2.fillStyle = gradient;
-      ctx2.fill();
-      ctx2.save();
-      ctx2.strokeStyle = "rgba(173, 216, 230, 0.4)";
-      ctx2.lineWidth = 1;
-      ctx2.beginPath();
-      ctx2.clip();
-      ctx2.stroke();
-      ctx2.restore();
-    }
-    drawCommsTower(ctx2) {
-      const towerWidth = this.width * 0.2;
-      const towerX = this.x + (this.width - towerWidth) / 2;
-      const gradient = ctx2.createLinearGradient(towerX, this.y, towerX + towerWidth, this.y);
-      gradient.addColorStop(0, "#adb5bd");
-      gradient.addColorStop(0.5, "#f8f9fa");
-      gradient.addColorStop(1, "#adb5bd");
-      ctx2.fillStyle = gradient;
-      ctx2.fillRect(towerX, this.y, towerWidth, this.height);
-      ctx2.strokeStyle = "#495057";
-      ctx2.lineWidth = 2;
-      for (let i = 0; i < 5; i++) {
-        const segY = this.y + this.height * (0.2 * i);
-        ctx2.strokeRect(towerX - towerWidth * 0.5, segY, towerWidth * 2, 2);
-      }
-      const dishY = this.y + 10;
-      ctx2.beginPath();
-      ctx2.arc(towerX + towerWidth / 2, dishY, towerWidth * 1.5, Math.PI * 1.2, Math.PI * 1.8);
-      ctx2.strokeStyle = "#e9ecef";
-      ctx2.stroke();
-      if (Math.random() > 0.5) {
-        ctx2.fillStyle = "#ff4d4d";
-        ctx2.shadowColor = "#ff4d4d";
-        ctx2.shadowBlur = 15;
-        ctx2.beginPath();
-        ctx2.arc(towerX + towerWidth / 2, this.y, 5, 0, Math.PI * 2);
-        ctx2.fill();
-      }
     }
     drawEnergyShield(ctx2) {
       ctx2.save();
@@ -2787,34 +2748,42 @@
       draw(ctx, state, width, height);
     }
   };
-  function init() {
+  async function init() {
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
     }
-    const playerData = loadPlayerData();
-    state = createInitialState(playerData);
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-    canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
-    canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
-    document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
-    document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
-      const gameWasRunning = state.gameState === "IN_WAVE";
-      if (gameWasRunning) {
-        state.gameState = "PAUSED";
-        updateTopUI(state);
-      }
-      showRocketInfoScreen(() => {
-        hideModal();
+    modalContainer.style.display = "flex";
+    modalContent.innerHTML = "<h1>Loading Assets...</h1>";
+    try {
+      await loadGameAssets();
+      const playerData = loadPlayerData();
+      state = createInitialState(playerData);
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+      canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
+      canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
+      document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
+      document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
+        const gameWasRunning = state.gameState === "IN_WAVE";
         if (gameWasRunning) {
-          state.gameState = "IN_WAVE";
+          state.gameState = "PAUSED";
           updateTopUI(state);
         }
+        showRocketInfoScreen(() => {
+          hideModal();
+          if (gameWasRunning) {
+            state.gameState = "IN_WAVE";
+            updateTopUI(state);
+          }
+        });
       });
-    });
-    canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
-    showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
-    animationFrameId = requestAnimationFrame(gameLoop);
+      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
+      showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
+      animationFrameId = requestAnimationFrame(gameLoop);
+    } catch (error) {
+      console.error("Failed to load game assets:", error);
+      modalContent.innerHTML = "<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>";
+    }
   }
   init();
 })();

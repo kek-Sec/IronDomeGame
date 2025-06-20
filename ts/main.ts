@@ -14,6 +14,8 @@ import * as events from './eventHandlers';
 import { startNextWave, refreshUpgradeScreen } from './flow';
 import { loadPlayerData } from './saveManager';
 import type { GameState, StartGameCallback } from './types';
+import { loadGameAssets } from './assetLoader';
+import { modalContainer, modalContent } from './ui/domElements';
 
 // --- DOM & Canvas Setup ---
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -121,39 +123,52 @@ const resizeCanvas = (): void => {
 };
 
 // --- Initialization ---
-function init(): void {
+async function init(): Promise<void> {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
     }
-    const playerData = loadPlayerData();
-    state = createInitialState(playerData);
-    resizeCanvas();
 
-    window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('mousemove', (e: MouseEvent) => events.handleMouseMove(state, canvas, e));
-    canvas.addEventListener('click', (e: MouseEvent) => events.handleClick(state, canvas, e));
-    document.getElementById('pause-button')?.addEventListener('click', () => events.togglePause(state, init));
+    // Display a loading message while assets are being fetched
+    modalContainer.style.display = 'flex';
+    modalContent.innerHTML = '<h1>Loading Assets...</h1>';
 
-    document.getElementById('rocket-info-btn')?.addEventListener('click', () => {
-        const gameWasRunning = state.gameState === 'IN_WAVE';
-        if (gameWasRunning) {
-            state.gameState = 'PAUSED';
-            UI.updateTopUI(state);
-        }
+    try {
+        // Wait for all images to load before proceeding
+        await loadGameAssets();
 
-        UI.showRocketInfoScreen(() => {
-            UI.hideModal();
+        const playerData = loadPlayerData();
+        state = createInitialState(playerData);
+        resizeCanvas();
+
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('mousemove', (e: MouseEvent) => events.handleMouseMove(state, canvas, e));
+        canvas.addEventListener('click', (e: MouseEvent) => events.handleClick(state, canvas, e));
+        document.getElementById('pause-button')?.addEventListener('click', () => events.togglePause(state, init));
+
+        document.getElementById('rocket-info-btn')?.addEventListener('click', () => {
+            const gameWasRunning = state.gameState === 'IN_WAVE';
             if (gameWasRunning) {
-                state.gameState = 'IN_WAVE';
+                state.gameState = 'PAUSED';
                 UI.updateTopUI(state);
             }
+
+            UI.showRocketInfoScreen(() => {
+                UI.hideModal();
+                if (gameWasRunning) {
+                    state.gameState = 'IN_WAVE';
+                    UI.updateTopUI(state);
+                }
+            });
         });
-    });
 
-    canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e));
+        canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e));
 
-    UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData, resetAndStartGame));
-    animationFrameId = requestAnimationFrame(gameLoop);
+        UI.showStartScreen(resetAndStartGame, () => UI.showArmoryScreen(playerData, resetAndStartGame));
+        animationFrameId = requestAnimationFrame(gameLoop);
+    } catch (error) {
+        console.error('Failed to load game assets:', error);
+        modalContent.innerHTML = '<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>';
+    }
 }
 
 // --- Start the game ---
