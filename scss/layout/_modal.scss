@@ -287,11 +287,13 @@ p.start-screen-subtitle {
     justify-content: center;
 }
 
-.modal-content.pause-screen {
+.modal-content.pause-screen,
+.modal-content.settings-screen {
     max-width: 500px;
 }
 
-.pause-options {
+.pause-options,
+.settings-options {
     display: flex;
     flex-direction: column;
     gap: 15px;

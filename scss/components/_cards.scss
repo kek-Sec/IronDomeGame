@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../abstracts/variables' as *;
 
 /* --- Card Styling --- */
@@ -162,7 +163,7 @@
         }
         p {
             font-size: 0.85em;
-            color: darken($text-color, 25%);
+            color: color.adjust($text-color, $lightness: -25%);
             line-height: 1.4;
             margin-bottom: 0;
         }
@@ -215,10 +216,10 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 
         &.maxed {
-            background: linear-gradient(45deg, gold, lighten(gold, 15%));
+            background: linear-gradient(45deg, gold, color.adjust(gold, $lightness: 15%));
         }
         &.active {
-            background: linear-gradient(45deg, $threat-low, lighten($threat-low, 15%));
+            background: linear-gradient(45deg, $threat-low, color.adjust($threat-low, $lightness: 15%));
         }
     }
 }
