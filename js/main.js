@@ -1203,7 +1203,7 @@
 
   // ts/entities/rockets/base.ts
   var Rocket = class {
-    constructor(startX, startY, targetVx, targetVy, width2, sizeMultiplier = 1, speedMultiplier = 1) {
+    constructor(startX, startY, targetVx, targetVy, width2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
       this.type = "standard";
       this.trail = [];
       this.life = 0;
@@ -1216,6 +1216,7 @@
       this.vx = (targetVx ?? random(-1, 1)) * speedMultiplier;
       this.vy = (targetVy ?? random(1.5, 2.5)) * speedMultiplier;
       this.radius = 5 * sizeMultiplier;
+      this.sprite = sprite;
     }
     update(...args) {
       this.trail.push({ x: this.x, y: this.y });
@@ -1248,50 +1249,56 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const w = this.radius;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "rgba(255, 200, 150, 0.7)";
-      ctx2.shadowColor = "orange";
-      ctx2.shadowBlur = 10;
-      ctx2.beginPath();
-      ctx2.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
-      ctx2.fill();
-      ctx2.shadowBlur = 0;
-      ctx2.fillStyle = "#6c757d";
-      ctx2.beginPath();
-      ctx2.moveTo(-w, h * 0.2);
-      ctx2.lineTo(-w * 1.8, h * 0.5);
-      ctx2.lineTo(-w, h * 0.5);
-      ctx2.moveTo(w, h * 0.2);
-      ctx2.lineTo(w * 1.8, h * 0.5);
-      ctx2.lineTo(w, h * 0.5);
-      ctx2.fill();
-      const gradient = ctx2.createLinearGradient(-w / 2, 0, w / 2, 0);
-      gradient.addColorStop(0, "#8d99ae");
-      gradient.addColorStop(0.5, "#dee2e6");
-      gradient.addColorStop(1, "#8d99ae");
-      ctx2.fillStyle = gradient;
-      ctx2.fillRect(-w / 2, -h / 2, w, h);
-      ctx2.strokeStyle = "rgba(0, 0, 0, 0.2)";
-      ctx2.lineWidth = 1;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.lineTo(0, h / 2);
-      ctx2.stroke();
-      ctx2.fillStyle = this.color;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h * 0.6);
-      ctx2.lineTo(-w / 2, -h / 2);
-      ctx2.lineTo(w / 2, -h / 2);
-      ctx2.closePath();
-      ctx2.fill();
+      if (this.sprite) {
+        const w = this.radius * 2.5;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius;
+        const h = this.radius * 3;
+        ctx2.fillStyle = "rgba(255, 200, 150, 0.7)";
+        ctx2.shadowColor = "orange";
+        ctx2.shadowBlur = 10;
+        ctx2.beginPath();
+        ctx2.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.shadowBlur = 0;
+        ctx2.fillStyle = "#6c757d";
+        ctx2.beginPath();
+        ctx2.moveTo(-w, h * 0.2);
+        ctx2.lineTo(-w * 1.8, h * 0.5);
+        ctx2.lineTo(-w, h * 0.5);
+        ctx2.moveTo(w, h * 0.2);
+        ctx2.lineTo(w * 1.8, h * 0.5);
+        ctx2.lineTo(w, h * 0.5);
+        ctx2.fill();
+        const gradient = ctx2.createLinearGradient(-w / 2, 0, w / 2, 0);
+        gradient.addColorStop(0, "#8d99ae");
+        gradient.addColorStop(0.5, "#dee2e6");
+        gradient.addColorStop(1, "#8d99ae");
+        ctx2.fillStyle = gradient;
+        ctx2.fillRect(-w / 2, -h / 2, w, h);
+        ctx2.strokeStyle = "rgba(0, 0, 0, 0.2)";
+        ctx2.lineWidth = 1;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h / 2);
+        ctx2.lineTo(0, h / 2);
+        ctx2.stroke();
+        ctx2.fillStyle = this.color;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h * 0.6);
+        ctx2.lineTo(-w / 2, -h / 2);
+        ctx2.lineTo(w / 2, -h / 2);
+        ctx2.closePath();
+        ctx2.fill();
+      }
       ctx2.restore();
     }
   };
 
   // ts/entities/rockets/armored.ts
   var ArmoredRocket = class extends Rocket {
-    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
+    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
       super(
         void 0,
         void 0,
@@ -1299,7 +1306,8 @@
         random(1, 1.5),
         width2,
         sizeMultiplier * 1.5,
-        speedMultiplier * 0.7
+        speedMultiplier * 0.7,
+        sprite
       );
       this.health = 3;
       this.maxHealth = 3;
@@ -1335,33 +1343,30 @@
     }
     draw(ctx2) {
       this.drawTrail(ctx2);
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
+      this.drawHead(ctx2);
+      this.drawHealthBar(ctx2);
+    }
+    drawHead(ctx2) {
       super.drawHead(ctx2);
-      const w = this.radius;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "#495057";
-      ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
-      ctx2.strokeStyle = "#212529";
-      ctx2.lineWidth = 2;
-      ctx2.strokeRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       if (this.hitFlashTimer > 0) {
+        ctx2.save();
+        ctx2.translate(this.x, this.y);
+        ctx2.rotate(this.angle);
         const alpha = this.hitFlashTimer / 10 * 0.8;
         ctx2.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx2.globalCompositeOperation = "lighter";
+        const w = this.radius * 3;
+        const h = this.sprite ? w * (this.sprite.height / this.sprite.width) : w * 3;
         ctx2.fillRect(-w / 2, -h / 2, w, h);
-        ctx2.globalCompositeOperation = "source-over";
+        ctx2.restore();
       }
-      ctx2.restore();
-      this.drawHealthBar(ctx2);
     }
   };
 
   // ts/entities/rockets/stealth.ts
   var StealthRocket = class extends Rocket {
-    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 0.8, speedMultiplier * 1.2);
+    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 0.8, speedMultiplier * 1.2, sprite);
       this.isVisible = true;
       this.type = "stealth";
       this.color = "#ae00ff";
@@ -1389,71 +1394,59 @@
         ctx2.restore();
       }
     }
-    drawHead(ctx2) {
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
-      const w = this.radius * 1.2;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "#212529";
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.lineTo(w, h / 4);
-      ctx2.lineTo(w / 2, h / 2);
-      ctx2.lineTo(-w / 2, h / 2);
-      ctx2.lineTo(-w, h / 4);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.moveTo(0, h * 0.1);
-      ctx2.lineTo(w * 0.4, h * 0.2);
-      ctx2.lineTo(-w * 0.4, h * 0.2);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.restore();
-    }
   };
 
   // ts/entities/rockets/drone.ts
   var Drone = class extends Rocket {
-    constructor(startX, startY, targetVx, targetVy, width2, speedMultiplier = 1) {
-      super(startX, startY, targetVx, targetVy, width2, 0.6, speedMultiplier * 1.5);
+    constructor(startX, startY, targetVx, targetVy, width2, speedMultiplier = 1, sprite = void 0) {
+      super(startX, startY, targetVx, targetVy, width2, 0.6, speedMultiplier * 1.5, sprite);
       this.type = "drone";
       this.radius = 3;
       this.trailColor = "rgba(255, 255, 0, 0.5)";
       this.color = "yellow";
     }
-    drawHead(ctx2) {
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
-      const r = this.radius;
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -r * 2);
-      ctx2.lineTo(r, r);
-      ctx2.lineTo(-r, r);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = "white";
-      ctx2.shadowColor = "white";
-      ctx2.shadowBlur = 10;
-      ctx2.beginPath();
-      ctx2.arc(0, r * 0.5, r / 2, 0, Math.PI * 2);
-      ctx2.fill();
-      ctx2.restore();
-    }
   };
+
+  // ts/assetLoader.ts
+  var spriteUrls = {
+    // Structures
+    bunker: "assets/bunker.png",
+    dome: "assets/dome.png",
+    comms: "assets/tower.png",
+    // Rockets
+    standardRocket: "assets/standard_rocket.png",
+    armoredRocket: "assets/armored_rocket.png",
+    mirvRocket: "assets/mirv_rocket.png",
+    swarmerRocket: "assets/swarmer_rocket.png",
+    droneRocket: "assets/drone_rocket.png",
+    stealthRocket: "assets/stealth_rocket.png",
+    designatorRocket: "assets/artillery_designator.png",
+    shell: "assets/artillery_shell.png"
+  };
+  var loadedSprites = {};
+  function loadGameAssets() {
+    const promises = [];
+    for (const key in spriteUrls) {
+      const url = spriteUrls[key];
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedSprites[key] = img;
+          resolve();
+        };
+        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
+        img.src = url;
+      });
+      promises.push(promise);
+    }
+    return Promise.all(promises).then(() => {
+    });
+  }
 
   // ts/entities/rockets/swarmer.ts
   var SwarmerRocket = class extends Rocket {
-    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 1.5, speedMultiplier * 0.8);
+    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 1.5, speedMultiplier * 0.8, sprite);
       this.hasSplit = false;
       this.width = width2;
       this.type = "swarmer";
@@ -1477,31 +1470,16 @@
         const speed = random(1, 3);
         const newVx = Math.cos(angle) * speed;
         const newVy = Math.sin(angle) * speed;
-        childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier));
+        childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier, loadedSprites.droneRocket));
       }
       return childDrones;
-    }
-    drawHead(ctx2) {
-      super.drawHead(ctx2);
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
-      const w = this.radius;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "#1e6a21";
-      ctx2.fillRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.fillRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.strokeStyle = "rgba(0,0,0,0.3)";
-      ctx2.strokeRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.strokeRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.restore();
     }
   };
 
   // ts/entities/rockets/mirv.ts
   var MirvRocket = class extends Rocket {
-    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
+    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier, sprite);
       this.hasSplit = false;
       this.width = width2;
       this.type = "mirv";
@@ -1529,46 +1507,6 @@
         );
       }
       return childRockets;
-    }
-    drawHead(ctx2) {
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
-      const w = this.radius;
-      const h = this.radius * 2.5;
-      ctx2.fillStyle = "rgba(255, 100, 255, 0.5)";
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.arc(0, h * 0.4, w, 0, Math.PI, false);
-      ctx2.fill();
-      ctx2.shadowBlur = 0;
-      const bodyGrad = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
-      bodyGrad.addColorStop(0, "#555");
-      bodyGrad.addColorStop(1, "#333");
-      ctx2.fillStyle = bodyGrad;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
-      ctx2.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
-      ctx2.fill();
-      ctx2.strokeStyle = "rgba(0,0,0,0.5)";
-      ctx2.lineWidth = 2;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.lineTo(0, h / 2);
-      ctx2.stroke();
-      ctx2.beginPath();
-      ctx2.ellipse(0, 0, w * 0.8, h * 0.2, 0, 0, Math.PI * 2);
-      ctx2.stroke();
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.arc(0, -h / 2, w / 1.5, Math.PI * 0.9, Math.PI * 0.1, true);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.restore();
     }
   };
 
@@ -1606,8 +1544,8 @@
   // ts/entities/rockets/designator.ts
   var ArtilleryDesignator = class extends Rocket {
     // 3 seconds at 60fps
-    constructor(width2, height2, cities, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, 0, 0, 0, width2, sizeMultiplier, speedMultiplier);
+    constructor(width2, height2, cities, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, 0, 0, 0, width2, sizeMultiplier, speedMultiplier, sprite);
       this.targetX = 0;
       this.targetY = 0;
       this.isDesignating = false;
@@ -1673,39 +1611,18 @@
         this.drawTargetingLaser(ctx2);
       }
     }
-    drawHead(ctx2) {
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
-      const w = this.radius * 2;
-      const h = this.radius * 2;
-      ctx2.fillStyle = "#424242";
-      ctx2.beginPath();
-      ctx2.moveTo(-w / 2, -h / 2);
-      ctx2.lineTo(w / 2, -h / 2);
-      ctx2.lineTo(w, h / 2);
-      ctx2.lineTo(-w, h / 2);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.arc(0, 0, w / 4, 0, Math.PI * 2);
-      ctx2.fill();
-      ctx2.restore();
-    }
   };
 
   // ts/entities/rockets/shell.ts
   var ArtilleryShell = class {
-    constructor(targetX, targetY) {
+    constructor(targetX, targetY, sprite = void 0) {
       this.timeLeft = 30;
       // 0.5 seconds travel time
       this.startY = 0;
       this.targetX = targetX;
       this.targetY = targetY;
       this.startX = targetX + random(-50, 50);
+      this.sprite = sprite;
     }
     update() {
       this.timeLeft--;
@@ -1713,21 +1630,34 @@
     }
     draw(ctx2) {
       const progress = 1 - this.timeLeft / 30;
-      ctx2.beginPath();
-      ctx2.moveTo(this.startX, this.startY);
-      ctx2.lineTo(this.targetX, this.targetY);
-      const gradient = ctx2.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
-      const stop1 = Math.max(0, progress - 0.05);
-      const stop2 = progress;
-      const stop3 = Math.min(1, progress + 0.05);
-      gradient.addColorStop(0, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(stop1, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(stop2, "white");
-      gradient.addColorStop(stop3, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
-      ctx2.strokeStyle = gradient;
-      ctx2.lineWidth = 4;
-      ctx2.stroke();
+      const currentX = this.startX + (this.targetX - this.startX) * progress;
+      const currentY = this.startY + (this.targetY - this.startY) * progress;
+      if (this.sprite) {
+        ctx2.save();
+        ctx2.translate(currentX, currentY);
+        const angle = Math.atan2(this.targetY - this.startY, this.targetX - this.startX) - Math.PI / 2;
+        ctx2.rotate(angle);
+        const w = 20;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+        ctx2.restore();
+      } else {
+        ctx2.beginPath();
+        ctx2.moveTo(this.startX, this.startY);
+        ctx2.lineTo(this.targetX, this.targetY);
+        const gradient = ctx2.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
+        const stop1 = Math.max(0, progress - 0.05);
+        const stop2 = progress;
+        const stop3 = Math.min(1, progress + 0.05);
+        gradient.addColorStop(0, "rgba(255, 100, 0, 0)");
+        gradient.addColorStop(stop1, "rgba(255, 100, 0, 0)");
+        gradient.addColorStop(stop2, "white");
+        gradient.addColorStop(stop3, "rgba(255, 100, 0, 0)");
+        gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
+        ctx2.strokeStyle = gradient;
+        ctx2.lineWidth = 4;
+        ctx2.stroke();
+      }
     }
   };
 
@@ -1760,13 +1690,14 @@
     const sizeMultiplier = difficulty.missileSizeMultiplier;
     let newRocket;
     const rocketConstructors = {
-      standard: () => new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier),
-      mirv: () => new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier),
-      stealth: () => new StealthRocket(width2, sizeMultiplier, speedMultiplier),
-      swarmer: () => new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier),
+      standard: () => new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier, loadedSprites.standardRocket),
+      mirv: () => new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier, loadedSprites.mirvRocket),
+      stealth: () => new StealthRocket(width2, sizeMultiplier, speedMultiplier, loadedSprites.stealthRocket),
+      swarmer: () => new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier, loadedSprites.swarmerRocket),
       flare_rocket: () => new FlareRocket(width2, sizeMultiplier, speedMultiplier),
-      armored: () => new ArmoredRocket(width2, sizeMultiplier, speedMultiplier),
-      designator: () => new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier)
+      // No sprite for this one yet
+      armored: () => new ArmoredRocket(width2, sizeMultiplier, speedMultiplier, loadedSprites.armoredRocket),
+      designator: () => new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier, loadedSprites.designatorRocket)
     };
     if (rocketConstructors[type]) {
       newRocket = rocketConstructors[type]();
@@ -2477,32 +2408,6 @@
       },
       config
     );
-  }
-
-  // ts/assetLoader.ts
-  var spriteUrls = {
-    bunker: "assets/bunker.png",
-    dome: "assets/dome.png",
-    comms: "assets/tower.png"
-  };
-  var loadedSprites = {};
-  function loadGameAssets() {
-    const promises = [];
-    for (const key in spriteUrls) {
-      const url = spriteUrls[key];
-      const promise = new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          loadedSprites[key] = img;
-          resolve();
-        };
-        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
-        img.src = url;
-      });
-      promises.push(promise);
-    }
-    return Promise.all(promises).then(() => {
-    });
   }
 
   // ts/main.ts

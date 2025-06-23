@@ -9,8 +9,8 @@ export class MirvRocket extends Rocket implements T.Rocket {
     splitHeight: number;
     speedMultiplier: number;
 
-    constructor(width: number, height: number, sizeMultiplier: number = 1, speedMultiplier: number = 1) {
-        super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier);
+    constructor(width: number, height: number, sizeMultiplier: number = 1, speedMultiplier: number = 1, sprite: HTMLImageElement | undefined = undefined) {
+        super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier, sprite);
         this.width = width;
         this.type = 'mirv';
         this.radius = 8 * sizeMultiplier;
@@ -39,55 +39,5 @@ export class MirvRocket extends Rocket implements T.Rocket {
             );
         }
         return childRockets;
-    }
-
-    protected drawHead(ctx: CanvasRenderingContext2D) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-
-        const w = this.radius;
-        const h = this.radius * 2.5;
-
-        // Engine Glow & Body
-        ctx.fillStyle = 'rgba(255, 100, 255, 0.5)';
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.arc(0, h * 0.4, w, 0, Math.PI, false);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        const bodyGrad = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
-        bodyGrad.addColorStop(0, '#555');
-        bodyGrad.addColorStop(1, '#333');
-        ctx.fillStyle = bodyGrad;
-        ctx.beginPath();
-        ctx.moveTo(0, -h / 2);
-        ctx.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
-        ctx.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
-        ctx.fill();
-
-        // Seam lines to suggest it splits
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, -h / 2);
-        ctx.lineTo(0, h / 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.ellipse(0, 0, w * 0.8, h * 0.2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Nose cone
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.arc(0, -h / 2, w / 1.5, Math.PI * 0.9, Math.PI * 0.1, true);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.restore();
     }
 }
