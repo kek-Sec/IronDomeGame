@@ -9,7 +9,13 @@ export class MirvRocket extends Rocket implements T.Rocket {
     splitHeight: number;
     speedMultiplier: number;
 
-    constructor(width: number, height: number, sizeMultiplier: number = 1, speedMultiplier: number = 1, sprite: HTMLImageElement | undefined = undefined) {
+    constructor(
+        width: number,
+        height: number,
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1,
+        sprite: HTMLImageElement | undefined = undefined
+    ) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier, sprite);
         this.width = width;
         this.type = 'mirv';

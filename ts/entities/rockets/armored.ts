@@ -8,7 +8,12 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
     maxHealth: number = 3;
     private hitFlashTimer: number = 0;
 
-    constructor(width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1, sprite: HTMLImageElement | undefined = undefined) {
+    constructor(
+        width: number,
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1,
+        sprite: HTMLImageElement | undefined = undefined
+    ) {
         super(
             undefined,
             undefined,

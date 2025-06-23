@@ -37,7 +37,6 @@ export function createGroundImpact(state: GameState, x: number, y: number): void
     triggerScreenShake(state, 2, 8);
 }
 
-
 export function triggerScreenShake(state: GameState, intensity: number, duration: number): void {
     if (state.screenShake.duration > 0 && intensity < state.screenShake.intensity) return;
     state.screenShake.intensity = intensity;

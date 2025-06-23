@@ -18,7 +18,7 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
         cities: T.City[],
         sizeMultiplier: number = 1,
         speedMultiplier: number = 1,
-        sprite: HTMLImageElement | undefined = undefined,
+        sprite: HTMLImageElement | undefined = undefined
     ) {
         super(undefined, 0, 0, 0, width, sizeMultiplier, speedMultiplier, sprite);
         this.type = 'designator';
@@ -104,7 +104,7 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
             const h = w * (this.sprite.height / this.sprite.width);
             ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
         } else {
-             // Fallback drawing
+            // Fallback drawing
             const w = this.radius * 2;
             const h = this.radius * 2;
 

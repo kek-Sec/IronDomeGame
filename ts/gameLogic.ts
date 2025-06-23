@@ -70,11 +70,7 @@ function handleRocketLogic(
         return true;
     }
 
-    if (
-        rocket.x < -rocket.radius ||
-        rocket.x > width + rocket.radius ||
-        rocket.life > config.rocketMaxLifetime
-    ) {
+    if (rocket.x < -rocket.radius || rocket.x > width + rocket.radius || rocket.life > config.rocketMaxLifetime) {
         state.rockets.splice(index, 1);
         return true;
     }

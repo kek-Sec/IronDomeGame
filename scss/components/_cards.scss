@@ -148,13 +148,13 @@
         flex-shrink: 0;
         width: 50px;
         text-align: center;
-        filter: drop-shadow(0 0 3px rgba(255,255,255,0.3));
+        filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.3));
     }
 
     .shop-item-content {
         flex-grow: 1;
         flex-shrink: 1; // Allow content area to shrink to make room for the price
-        min-width: 0;    // This is crucial for flex-shrink to work correctly with text content
+        min-width: 0; // This is crucial for flex-shrink to work correctly with text content
         h3 {
             font-size: 1.1em;
             color: $text-color;
@@ -167,7 +167,7 @@
             margin-bottom: 0;
         }
     }
-    
+
     .shop-item-footer {
         flex-shrink: 0; // Keep the price footer from shrinking
         .cost {
@@ -212,7 +212,7 @@
         font-size: 0.8em;
         font-weight: bold;
         color: $background-start;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 
         &.maxed {
             background: linear-gradient(45deg, gold, lighten(gold, 15%));

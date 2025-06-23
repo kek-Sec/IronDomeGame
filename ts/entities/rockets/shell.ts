@@ -35,7 +35,7 @@ export class ArtilleryShell implements T.ArtilleryShell {
             ctx.rotate(angle);
             const w = 28; // Increased size from 20
             const h = w * (this.sprite.height / this.sprite.width);
-            ctx.drawImage(this.sprite, -w / 2, -h/2, w, h);
+            ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
             ctx.restore();
         } else {
             // Fallback drawing

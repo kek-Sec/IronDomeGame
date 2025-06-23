@@ -79,7 +79,7 @@ function createCities(): void {
     const citySlotWidth = width / config.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120); // Base max height for regular buildings
-    
+
     // FIX: Only use structure sprites for cities, not all loaded sprites.
     const structureSpriteKeys = ['bunker', 'dome', 'comms'];
 

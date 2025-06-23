@@ -171,7 +171,12 @@ export function showGameOverScreen(
     document.getElementById('restart-button')?.addEventListener('click', restartCallback);
 }
 
-export function showPauseScreen(state: GameState, resumeCallback: () => void, restartCallback: () => void, toggleFpsCallback: () => void): void {
+export function showPauseScreen(
+    state: GameState,
+    resumeCallback: () => void,
+    restartCallback: () => void,
+    toggleFpsCallback: () => void
+): void {
     const fpsButtonText = state.showFps ? 'Hide FPS' : 'Show FPS';
     const fullHTML = `
         <h1>PAUSED</h1>

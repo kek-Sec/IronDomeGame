@@ -48,28 +48,124 @@ export function showBetweenWaveScreen(
         core: {
             title: 'Core Systems',
             items: [
-                { id: 'speed', title: 'Interceptor Speed', desc: 'Permanently increase interceptor velocity.', cost: upgradeCosts.interceptorSpeed, available: true, maxed: false, callback: callbacks.upgradeSpeedCallback },
-                { id: 'multishot', title: `Multishot (Lvl ${multishotLevel})`, desc: 'Fire an additional interceptor per shot.', cost: upgradeCosts.multishot * (multishotLevel + 1), available: multishotLevel < 3, maxed: multishotLevel >= 3, callback: callbacks.upgradeMultishotCallback },
-                { id: 'blastRadius', title: `Flak Warheads (Lvl ${blastRadiusLevel})`, desc: 'Increase interceptor blast radius.', cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1), available: blastRadiusLevel < 5, maxed: blastRadiusLevel >= 5, callback: callbacks.upgradeBlastRadiusCallback },
-                { id: 'turret', title: 'Build C-RAM Turret', desc: 'Construct an automated defense turret.', cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets, callback: callbacks.upgradeTurretCallback },
-                { id: 'turretSpeed', title: `Turret Fire Rate (Lvl ${turretFireRateLevel})`, desc: 'Increase fire rate of all turrets.', cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3, callback: callbacks.upgradeTurretSpeedCallback },
-                { id: 'turretRange', title: `Turret Range (Lvl ${turretRangeLevel})`, desc: 'Increase engagement range of turrets.', cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3, callback: callbacks.upgradeTurretRangeCallback },
+                {
+                    id: 'speed',
+                    title: 'Interceptor Speed',
+                    desc: 'Permanently increase interceptor velocity.',
+                    cost: upgradeCosts.interceptorSpeed,
+                    available: true,
+                    maxed: false,
+                    callback: callbacks.upgradeSpeedCallback,
+                },
+                {
+                    id: 'multishot',
+                    title: `Multishot (Lvl ${multishotLevel})`,
+                    desc: 'Fire an additional interceptor per shot.',
+                    cost: upgradeCosts.multishot * (multishotLevel + 1),
+                    available: multishotLevel < 3,
+                    maxed: multishotLevel >= 3,
+                    callback: callbacks.upgradeMultishotCallback,
+                },
+                {
+                    id: 'blastRadius',
+                    title: `Flak Warheads (Lvl ${blastRadiusLevel})`,
+                    desc: 'Increase interceptor blast radius.',
+                    cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1),
+                    available: blastRadiusLevel < 5,
+                    maxed: blastRadiusLevel >= 5,
+                    callback: callbacks.upgradeBlastRadiusCallback,
+                },
+                {
+                    id: 'turret',
+                    title: 'Build C-RAM Turret',
+                    desc: 'Construct an automated defense turret.',
+                    cost: upgradeCosts.automatedTurret,
+                    available: turrets.length < maxTurrets,
+                    maxed: turrets.length >= maxTurrets,
+                    callback: callbacks.upgradeTurretCallback,
+                },
+                {
+                    id: 'turretSpeed',
+                    title: `Turret Fire Rate (Lvl ${turretFireRateLevel})`,
+                    desc: 'Increase fire rate of all turrets.',
+                    cost: upgradeCosts.turretSpeed,
+                    available: turrets.length > 0 && turretFireRateLevel < 3,
+                    maxed: turretFireRateLevel >= 3,
+                    callback: callbacks.upgradeTurretSpeedCallback,
+                },
+                {
+                    id: 'turretRange',
+                    title: `Turret Range (Lvl ${turretRangeLevel})`,
+                    desc: 'Increase engagement range of turrets.',
+                    cost: upgradeCosts.turretRange,
+                    available: turrets.length > 0 && turretRangeLevel < 3,
+                    maxed: turretRangeLevel >= 3,
+                    callback: callbacks.upgradeTurretRangeCallback,
+                },
             ],
         },
         tactical: {
             title: 'Tactical Gear',
             items: [
-                { id: 'nuke', title: 'Nuke Interceptor', desc: 'Single-use weapon with a massive blast.', cost: upgradeCosts.nuke, available: nukeIsPurchasable, maxed: !nukeIsPurchasable && !activePerks.surplusValue, callback: callbacks.upgradeNukeCallback },
-                { id: 'homingMine', title: 'Proximity Mine', desc: 'Deploys a mine that detonates on proximity.', cost: upgradeCosts.homingMine, available: true, maxed: false, callback: callbacks.upgradeHomingMineCallback },
-                { id: 'fieldReinforcement', title: 'Field Reinforcement', desc: 'Apply armor to all standing bases.', cost: upgradeCosts.fieldReinforcement, available: reinforcementNeeded, maxed: !reinforcementNeeded, callback: callbacks.upgradeFieldReinforcementCallback },
-                { id: 'targetingScrambler', title: 'Targeting Scrambler', desc: '25% chance to scramble new rockets.', cost: upgradeCosts.targetingScrambler, available: !state.scramblerActive, maxed: state.scramblerActive, callback: callbacks.upgradeTargetingScramblerCallback },
+                {
+                    id: 'nuke',
+                    title: 'Nuke Interceptor',
+                    desc: 'Single-use weapon with a massive blast.',
+                    cost: upgradeCosts.nuke,
+                    available: nukeIsPurchasable,
+                    maxed: !nukeIsPurchasable && !activePerks.surplusValue,
+                    callback: callbacks.upgradeNukeCallback,
+                },
+                {
+                    id: 'homingMine',
+                    title: 'Proximity Mine',
+                    desc: 'Deploys a mine that detonates on proximity.',
+                    cost: upgradeCosts.homingMine,
+                    available: true,
+                    maxed: false,
+                    callback: callbacks.upgradeHomingMineCallback,
+                },
+                {
+                    id: 'fieldReinforcement',
+                    title: 'Field Reinforcement',
+                    desc: 'Apply armor to all standing bases.',
+                    cost: upgradeCosts.fieldReinforcement,
+                    available: reinforcementNeeded,
+                    maxed: !reinforcementNeeded,
+                    callback: callbacks.upgradeFieldReinforcementCallback,
+                },
+                {
+                    id: 'targetingScrambler',
+                    title: 'Targeting Scrambler',
+                    desc: '25% chance to scramble new rockets.',
+                    cost: upgradeCosts.targetingScrambler,
+                    available: !state.scramblerActive,
+                    maxed: state.scramblerActive,
+                    callback: callbacks.upgradeTargetingScramblerCallback,
+                },
             ],
         },
         maintenance: {
             title: 'Base Maintenance',
             items: [
-                { id: 'baseArmor', title: 'Permanent Armor', desc: 'Permanently armor all bases for the game.', cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored, callback: callbacks.upgradeBaseArmorCallback },
-                { id: 'repair', title: 'Repair Base', desc: 'Rebuild one of your destroyed cities.', cost: upgradeCosts.repairCity, available: cities.some((c) => c.isDestroyed), maxed: false, callback: callbacks.upgradeRepairCallback },
+                {
+                    id: 'baseArmor',
+                    title: 'Permanent Armor',
+                    desc: 'Permanently armor all bases for the game.',
+                    cost: upgradeCosts.baseArmor,
+                    available: !basesAreArmored,
+                    maxed: basesAreArmored,
+                    callback: callbacks.upgradeBaseArmorCallback,
+                },
+                {
+                    id: 'repair',
+                    title: 'Repair Base',
+                    desc: 'Rebuild one of your destroyed cities.',
+                    cost: upgradeCosts.repairCity,
+                    available: cities.some((c) => c.isDestroyed),
+                    maxed: false,
+                    callback: callbacks.upgradeRepairCallback,
+                },
             ],
         },
     };
@@ -84,7 +180,7 @@ export function showBetweenWaveScreen(
 
             const canAfford = coins >= currentCost;
             const isDisabled = !canAfford || !item.available;
-            
+
             let statusBanner = '';
             if (item.maxed) {
                 statusBanner = '<div class="status-banner maxed">MAXED</div>';
@@ -144,8 +240,8 @@ export function showBetweenWaveScreen(
     `;
 
     // Add event listeners to the new shop items
-    Object.values(categories).forEach(cat => {
-        cat.items.forEach(item => {
+    Object.values(categories).forEach((cat) => {
+        cat.items.forEach((item) => {
             const element = document.getElementById(`shop-${item.id}`);
             if (element && item.callback) {
                 element.addEventListener('click', item.callback);

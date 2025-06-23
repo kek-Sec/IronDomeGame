@@ -4,7 +4,6 @@ import { random } from '../../utils';
 import * as T from '../../types';
 
 export class Drone extends Rocket implements T.Rocket {
-
     constructor(
         startX: number,
         startY: number,

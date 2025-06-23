@@ -6,7 +6,12 @@ import * as T from '../../types';
 export class StealthRocket extends Rocket implements T.Rocket {
     isVisible: boolean = true;
 
-    constructor(width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1, sprite: HTMLImageElement | undefined = undefined) {
+    constructor(
+        width: number,
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1,
+        sprite: HTMLImageElement | undefined = undefined
+    ) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier * 0.8, speedMultiplier * 1.2, sprite);
         this.type = 'stealth';
         this.color = '#ae00ff';
@@ -61,7 +66,7 @@ export class StealthRocket extends Rocket implements T.Rocket {
             ctx.closePath();
             ctx.fill();
         }
-        
+
         ctx.restore();
     }
 }

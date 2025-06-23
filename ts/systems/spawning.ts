@@ -61,13 +61,31 @@ function createRocket(
     let newRocket: T.Rocket | undefined;
 
     const rocketConstructors: Record<string, () => T.Rocket> = {
-        standard: () => new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier, loadedSprites.standardRocket),
+        standard: () =>
+            new Rocket(
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                width,
+                sizeMultiplier,
+                speedMultiplier,
+                loadedSprites.standardRocket
+            ),
         mirv: () => new MirvRocket(width, height, sizeMultiplier, speedMultiplier, loadedSprites.mirvRocket),
         stealth: () => new StealthRocket(width, sizeMultiplier, speedMultiplier, loadedSprites.stealthRocket),
         swarmer: () => new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier, loadedSprites.swarmerRocket),
         flare_rocket: () => new FlareRocket(width, sizeMultiplier, speedMultiplier), // No sprite for this one yet
         armored: () => new ArmoredRocket(width, sizeMultiplier, speedMultiplier, loadedSprites.armoredRocket),
-        designator: () => new ArtilleryDesignator(width, height, state.cities, sizeMultiplier, speedMultiplier, loadedSprites.designatorRocket),
+        designator: () =>
+            new ArtilleryDesignator(
+                width,
+                height,
+                state.cities,
+                sizeMultiplier,
+                speedMultiplier,
+                loadedSprites.designatorRocket
+            ),
     };
 
     if (rocketConstructors[type]) {

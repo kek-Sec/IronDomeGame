@@ -11,7 +11,13 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
     splitHeight: number;
     speedMultiplier: number;
 
-    constructor(width: number, height: number, sizeMultiplier: number = 1, speedMultiplier: number = 1, sprite: HTMLImageElement | undefined = undefined) {
+    constructor(
+        width: number,
+        height: number,
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1,
+        sprite: HTMLImageElement | undefined = undefined
+    ) {
         super(undefined, undefined, undefined, undefined, width, sizeMultiplier * 1.5, speedMultiplier * 0.8, sprite);
         this.width = width;
         this.type = 'swarmer';
@@ -37,7 +43,9 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
             const speed = random(1, 3);
             const newVx = Math.cos(angle) * speed;
             const newVy = Math.sin(angle) * speed;
-            childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier, loadedSprites.droneRocket));
+            childDrones.push(
+                new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier, loadedSprites.droneRocket)
+            );
         }
         return childDrones;
     }
@@ -55,7 +63,7 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
             // Fallback drawing
             super.drawHead(ctx);
         }
-        
+
         ctx.restore();
     }
 }
