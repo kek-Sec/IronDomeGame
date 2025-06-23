@@ -191,11 +191,7 @@ export function showPauseScreen(
     document.getElementById('restart-button-pause')?.addEventListener('click', restartCallback);
 }
 
-export function showSettingsScreen(
-    state: GameState,
-    backCallback: () => void,
-    toggleFpsCallback: () => void
-): void {
+export function showSettingsScreen(state: GameState, backCallback: () => void, toggleFpsCallback: () => void): void {
     const fpsButtonText = state.showFps ? 'Hide FPS' : 'Show FPS';
     const fullHTML = `
         <h1>SETTINGS</h1>
