@@ -242,6 +242,17 @@
     }
     triggerScreenShake(state2, 5, 15);
   }
+  function createGroundImpact(state2, x, y) {
+    if (state2.particles.length > config.maxParticles) return;
+    state2.flashes.push(new Flash(x, y, 25, "200, 200, 200"));
+    state2.shockwaves.push(new Shockwave(x, y, 30));
+    for (let i = 0; i < 10; i++) {
+      const p = new Particle(x, y, random(20, 40), "debris");
+      p.vy = -Math.abs(p.vy) * 0.7;
+      state2.particles.push(p);
+    }
+    triggerScreenShake(state2, 2, 8);
+  }
   function triggerScreenShake(state2, intensity, duration) {
     if (state2.screenShake.duration > 0 && intensity < state2.screenShake.intensity) return;
     state2.screenShake.intensity = intensity;
@@ -1375,7 +1386,15 @@
   // ts/entities/rockets/armored.ts
   var ArmoredRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, random(-0.5, 0.5), random(1, 1.5), width2, sizeMultiplier * 1.5, speedMultiplier * 0.7);
+      super(
+        void 0,
+        void 0,
+        random(-0.5, 0.5),
+        random(1, 1.5),
+        width2,
+        sizeMultiplier * 1.5,
+        speedMultiplier * 0.7
+      );
       this.health = 3;
       this.maxHealth = 3;
       this.hitFlashTimer = 0;
@@ -2074,7 +2093,14 @@
     state2.shockwaves.forEach((s) => s.update());
   }
   function handleRocketLogic(state2, rocket, index, width2, height2) {
-    if (rocket.y >= height2 || rocket.x < -rocket.radius || rocket.x > width2 + rocket.radius || rocket.life > config.rocketMaxLifetime) {
+    if (rocket.y >= height2) {
+      if (rocket.type !== "designator") {
+        createGroundImpact(state2, rocket.x, height2 - 1);
+      }
+      state2.rockets.splice(index, 1);
+      return true;
+    }
+    if (rocket.x < -rocket.radius || rocket.x > width2 + rocket.radius || rocket.life > config.rocketMaxLifetime) {
       state2.rockets.splice(index, 1);
       return true;
     }
@@ -2094,7 +2120,9 @@
     }
     if (rocket instanceof ArtilleryDesignator && rocket.isDesignating && rocket.designationTimer > rocket.designationDuration) {
       if (rocket.targetCity) {
-        state2.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y));
+        state2.artilleryShells.push(
+          new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y)
+        );
       }
       state2.rockets.splice(index, 1);
       return true;
@@ -2253,7 +2281,14 @@
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
         state2.interceptors.push(
-          new Interceptor(width2 / 2, height2, state2.targetedRocket, state2.interceptorSpeed, config.nukeBlastRadius, "nuke")
+          new Interceptor(
+            width2 / 2,
+            height2,
+            state2.targetedRocket,
+            state2.interceptorSpeed,
+            config.nukeBlastRadius,
+            "nuke"
+          )
         );
         state2.nukeAvailable = false;
       } else {
@@ -2264,7 +2299,14 @@
         for (let i = 0; i < numShots; i++) {
           const launchX = startX + i * 10;
           state2.interceptors.push(
-            new Interceptor(launchX, height2, state2.targetedRocket, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
+            new Interceptor(
+              launchX,
+              height2,
+              state2.targetedRocket,
+              state2.interceptorSpeed,
+              state2.interceptorBlastRadius,
+              "standard"
+            )
           );
         }
       }
@@ -2310,7 +2352,14 @@
     }
     if (touchTarget) {
       state2.interceptors.push(
-        new Interceptor(canvas2.width / 2, canvas2.height, touchTarget, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
+        new Interceptor(
+          canvas2.width / 2,
+          canvas2.height,
+          touchTarget,
+          state2.interceptorSpeed,
+          state2.interceptorBlastRadius,
+          "standard"
+        )
       );
     }
   }
@@ -2626,7 +2675,9 @@
       window.addEventListener("resize", resizeCanvas);
       canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
       canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
-      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e), { passive: false });
+      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e), {
+        passive: false
+      });
       document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
       document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
         const gameWasRunning = state.gameState === "IN_WAVE";
