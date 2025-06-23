@@ -2383,7 +2383,7 @@
     }
   }
 
-  // ts/logic/upgradeHandlers.ts
+  // ts/upgrades/helpers.ts
   function applyCost(state2, baseCost) {
     if (state2.activePerks.rapidDeployment && !state2.firstUpgradePurchased) {
       state2.firstUpgradePurchased = true;
@@ -2391,17 +2391,8 @@
     }
     return baseCost;
   }
-  function handleUpgradeRepair(state2, refreshUpgradeScreen2) {
-    const cost = applyCost(state2, config.upgradeCosts.repairCity);
-    if (state2.coins >= cost) {
-      const cityToRepair = state2.cities.find((c) => c.isDestroyed);
-      if (cityToRepair) {
-        state2.coins -= cost;
-        cityToRepair.repair();
-        refreshUpgradeScreen2();
-      }
-    }
-  }
+
+  // ts/upgrades/core.ts
   function handleUpgradeTurret(state2, canvas2, refreshUpgradeScreen2) {
     const cost = applyCost(state2, config.upgradeCosts.automatedTurret);
     if (state2.coins >= cost && state2.turrets.length < config.maxTurrets) {
@@ -2438,15 +2429,6 @@
       refreshUpgradeScreen2();
     }
   }
-  function handleUpgradeNuke(state2, refreshUpgradeScreen2) {
-    const cost = applyCost(state2, config.upgradeCosts.nuke);
-    const nukeIsAvailable = !state2.nukeAvailable || state2.activePerks.surplusValue;
-    if (state2.coins >= cost && nukeIsAvailable) {
-      state2.coins -= cost;
-      state2.nukeAvailable = true;
-      refreshUpgradeScreen2();
-    }
-  }
   function handleUpgradeBaseArmor(state2, refreshUpgradeScreen2) {
     const cost = applyCost(state2, config.upgradeCosts.baseArmor);
     if (state2.coins >= cost && !state2.basesAreArmored) {
@@ -2471,6 +2453,17 @@
       state2.coins -= cost;
       state2.turretRangeLevel++;
       state2.turrets.forEach((t) => t.range *= 1.15);
+      refreshUpgradeScreen2();
+    }
+  }
+
+  // ts/upgrades/tactical.ts
+  function handleUpgradeNuke(state2, refreshUpgradeScreen2) {
+    const cost = applyCost(state2, config.upgradeCosts.nuke);
+    const nukeIsPurchasable = !state2.nukeAvailable || state2.activePerks.surplusValue;
+    if (state2.coins >= cost && nukeIsPurchasable) {
+      state2.coins -= cost;
+      state2.nukeAvailable = true;
       refreshUpgradeScreen2();
     }
   }
@@ -2500,6 +2493,19 @@
       state2.coins -= cost;
       state2.scramblerActive = true;
       refreshUpgradeScreen2();
+    }
+  }
+
+  // ts/upgrades/maintenance.ts
+  function handleUpgradeRepair(state2, refreshUpgradeScreen2) {
+    const cost = applyCost(state2, config.upgradeCosts.repairCity);
+    if (state2.coins >= cost) {
+      const cityToRepair = state2.cities.find((c) => c.isDestroyed);
+      if (cityToRepair) {
+        state2.coins -= cost;
+        cityToRepair.repair();
+        refreshUpgradeScreen2();
+      }
     }
   }
 

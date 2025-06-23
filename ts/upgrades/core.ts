@@ -1,29 +1,8 @@
-// ts/logic/upgradeHandlers.ts
+// ts/upgrades/core.ts
 import { config, difficultySettings } from '../config';
 import { AutomatedTurret } from '../entities/structures';
-import { HomingMine } from '../entities/playerAbilities';
-import type { GameState } from '../types';
-
-// Helper to apply discount and manage the one-time flag
-function applyCost(state: GameState, baseCost: number): number {
-    if (state.activePerks.rapidDeployment && !state.firstUpgradePurchased) {
-        state.firstUpgradePurchased = true;
-        return Math.ceil(baseCost * 0.75);
-    }
-    return baseCost;
-}
-
-export function handleUpgradeRepair(state: GameState, refreshUpgradeScreen: () => void): void {
-    const cost = applyCost(state, config.upgradeCosts.repairCity);
-    if (state.coins >= cost) {
-        const cityToRepair = state.cities.find((c) => c.isDestroyed);
-        if (cityToRepair) {
-            state.coins -= cost;
-            cityToRepair.repair();
-            refreshUpgradeScreen();
-        }
-    }
-}
+import { GameState } from '../types';
+import { applyCost } from './helpers';
 
 export function handleUpgradeTurret(
     state: GameState,
@@ -69,16 +48,6 @@ export function handleUpgradeMultishot(state: GameState, refreshUpgradeScreen: (
     }
 }
 
-export function handleUpgradeNuke(state: GameState, refreshUpgradeScreen: () => void): void {
-    const cost = applyCost(state, config.upgradeCosts.nuke);
-    const nukeIsAvailable = !state.nukeAvailable || state.activePerks.surplusValue;
-    if (state.coins >= cost && nukeIsAvailable) {
-        state.coins -= cost;
-        state.nukeAvailable = true;
-        refreshUpgradeScreen();
-    }
-}
-
 export function handleUpgradeBaseArmor(state: GameState, refreshUpgradeScreen: () => void): void {
     const cost = applyCost(state, config.upgradeCosts.baseArmor);
     if (state.coins >= cost && !state.basesAreArmored) {
@@ -105,37 +74,6 @@ export function handleUpgradeTurretRange(state: GameState, refreshUpgradeScreen:
         state.coins -= cost;
         state.turretRangeLevel++;
         state.turrets.forEach((t) => (t.range *= 1.15));
-        refreshUpgradeScreen();
-    }
-}
-
-export function handleUpgradeHomingMine(state: GameState, refreshUpgradeScreen: () => void): void {
-    const cost = applyCost(state, config.upgradeCosts.homingMine);
-    if (state.coins >= cost) {
-        state.coins -= cost;
-        state.homingMinesAvailable++;
-        refreshUpgradeScreen();
-    }
-}
-
-export function handleUpgradeFieldReinforcement(state: GameState, refreshUpgradeScreen: () => void): void {
-    const cost = applyCost(state, config.upgradeCosts.fieldReinforcement);
-    if (state.coins >= cost) {
-        state.coins -= cost;
-        state.cities.forEach((c) => {
-            if (!c.isDestroyed && !c.isArmored) {
-                c.isArmored = true;
-            }
-        });
-        refreshUpgradeScreen();
-    }
-}
-
-export function handleUpgradeTargetingScrambler(state: GameState, refreshUpgradeScreen: () => void): void {
-    const cost = applyCost(state, config.upgradeCosts.targetingScrambler);
-    if (state.coins >= cost && !state.scramblerActive) {
-        state.coins -= cost;
-        state.scramblerActive = true;
         refreshUpgradeScreen();
     }
 }
