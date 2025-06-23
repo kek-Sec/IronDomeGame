@@ -771,6 +771,7 @@
 
   // ts/ui/domElements.ts
   var fpsCounterEl = document.getElementById("fps-counter");
+  var fpsBoxEl = document.getElementById("fps-box");
   var scoreEl = document.getElementById("score");
   var coinsEl = document.getElementById("coins");
   var waveEl = document.getElementById("wave");
@@ -1089,6 +1090,7 @@
     scoreEl.textContent = state2.score.toLocaleString();
     coinsEl.textContent = state2.coins.toLocaleString();
     waveEl.textContent = (state2.currentWave + 1).toString();
+    fpsBoxEl.style.display = state2.showFps ? "flex" : "none";
     const isPausable = state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED";
     pauseButton.style.display = isPausable ? "flex" : "none";
     if (isPausable) {
@@ -1204,16 +1206,19 @@
     showModalWithContent(fullHTML, "game-over");
     document.getElementById("restart-button")?.addEventListener("click", restartCallback);
   }
-  function showPauseScreen(resumeCallback, restartCallback) {
+  function showPauseScreen(state2, resumeCallback, restartCallback, toggleFpsCallback) {
+    const fpsButtonText = state2.showFps ? "Hide FPS" : "Show FPS";
     const fullHTML = `
         <h1>PAUSED</h1>
-        <div class="upgrade-options">
+        <div class="pause-options">
             <button id="resume-button" class="modal-button">RESUME</button>
-            <button id="restart-button-pause" class="modal-button">RESTART</button>
+            <button id="toggle-fps-button" class="modal-button secondary">${fpsButtonText}</button>
+            <button id="restart-button-pause" class="modal-button tertiary">RESTART</button>
         </div>
     `;
-    showModalWithContent(fullHTML);
+    showModalWithContent(fullHTML, "pause-screen");
     document.getElementById("resume-button")?.addEventListener("click", resumeCallback);
+    document.getElementById("toggle-fps-button")?.addEventListener("click", toggleFpsCallback);
     document.getElementById("restart-button-pause")?.addEventListener("click", restartCallback);
   }
 
@@ -1251,6 +1256,7 @@
       fps: 0,
       frameCount: 0,
       lastFpsUpdate: 0,
+      showFps: false,
       mouse: { x: 0, y: 0 },
       targetedRocket: null,
       interceptorSpeed: config.initialInterceptorSpeed,
@@ -2380,7 +2386,11 @@
   function togglePause(state2, restartCallback) {
     if (state2.gameState === "IN_WAVE") {
       pauseGame(state2);
-      showPauseScreen(() => resumeGame(state2), restartCallback);
+      const toggleFpsCallback = () => {
+        state2.showFps = !state2.showFps;
+        showPauseScreen(state2, () => resumeGame(state2), restartCallback, toggleFpsCallback);
+      };
+      showPauseScreen(state2, () => resumeGame(state2), restartCallback, toggleFpsCallback);
     } else if (state2.gameState === "PAUSED") {
       resumeGame(state2);
     }

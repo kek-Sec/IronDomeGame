@@ -44,6 +44,7 @@ export interface GameState {
     fps: number;
     frameCount: number;
     lastFpsUpdate: number;
+    showFps: boolean;
     mouse: { x: number; y: number };
     targetedRocket: Rocket | Flare | HiveCarrier | null;
 

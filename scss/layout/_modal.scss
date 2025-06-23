@@ -310,6 +310,25 @@ p.start-screen-subtitle {
     display: block;
 }
 
+.modal-content.pause-screen {
+    max-width: 500px;
+}
+
+.pause-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto 0;
+
+    .modal-button {
+        margin: 0;
+        width: 100%;
+    }
+}
+
+
 @media (max-width: 768px) {
     .ui-box h2 {
         font-size: 1.2em;
