@@ -49,7 +49,7 @@ export class Rocket implements T.Rocket {
         this.drawTrail(ctx);
         this.drawHead(ctx);
     }
-    
+
     protected drawTrail(ctx: CanvasRenderingContext2D): void {
         if (!this.trail[0]) return;
         ctx.beginPath();
@@ -106,8 +106,8 @@ export class Rocket implements T.Rocket {
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, -h/2);
-        ctx.lineTo(0, h/2);
+        ctx.moveTo(0, -h / 2);
+        ctx.lineTo(0, h / 2);
         ctx.stroke();
 
         // Nose cone
@@ -118,7 +118,7 @@ export class Rocket implements T.Rocket {
         ctx.lineTo(w / 2, -h / 2);
         ctx.closePath();
         ctx.fill();
-        
+
         ctx.restore();
     }
 }
@@ -351,14 +351,14 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
     protected drawHead(ctx: CanvasRenderingContext2D) {
         // Use the standard rocket draw as a base
         super.drawHead(ctx);
-        
+
         // Add swarmer-specific details over the top
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
         const w = this.radius;
         const h = this.radius * 3;
-        
+
         // Draw "pods" on the side that look like they hold drones
         ctx.fillStyle = '#1e6a21';
         ctx.fillRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
@@ -423,7 +423,7 @@ export class MirvRocket extends Rocket implements T.Rocket {
         ctx.shadowBlur = 0;
 
         // Body
-        const bodyGrad = ctx.createLinearGradient(0, -h / 2, 0, h/2);
+        const bodyGrad = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
         bodyGrad.addColorStop(0, '#555');
         bodyGrad.addColorStop(1, '#333');
         ctx.fillStyle = bodyGrad;
@@ -554,7 +554,7 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
 
     private drawTargetingLaser(ctx: CanvasRenderingContext2D) {
         if (!this.targetCity) return;
-        
+
         const progress = this.designationTimer / this.designationDuration;
         const beamColor = `rgba(255, 0, 0, ${0.2 + progress * 0.6})`;
         const beamWidth = 1 + progress * 4;
@@ -588,7 +588,7 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
         this.drawHead(ctx);
 
         if (this.isDesignating) {
-           this.drawTargetingLaser(ctx);
+            this.drawTargetingLaser(ctx);
         }
     }
 

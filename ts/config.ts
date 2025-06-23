@@ -71,7 +71,7 @@ export const config = {
         designator: 400,
         boss: 5000,
     },
-    
+
     // Upgrade Costs
     upgradeCosts: {
         repairCity: 1000,
@@ -87,7 +87,7 @@ export const config = {
         fieldReinforcement: 1250,
         targetingScrambler: 1750,
     },
-    
+
     // Boss Configuration
     bosses: {
         hiveCarrier: {

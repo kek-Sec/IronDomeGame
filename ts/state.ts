@@ -34,6 +34,7 @@ export function createInitialState(playerData: PlayerData): GameState {
         empShockwave: { radius: 0, alpha: 0 },
         screenShake: { intensity: 0, duration: 0 },
         waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
+        newHighScore: false,
 
         gameTime: 0,
         fps: 0,

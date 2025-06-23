@@ -20,12 +20,7 @@ import {
 import type { GameState } from './types';
 import { getWaveDefinition } from './waveManager';
 
-export function update(
-    state: GameState,
-    width: number,
-    height: number,
-    refreshUpgradeScreen: () => void
-): void {
+export function update(state: GameState, width: number, height: number, refreshUpgradeScreen: () => void): void {
     if (state.gameState !== 'IN_WAVE') return;
 
     state.gameTime++;
@@ -121,10 +116,11 @@ export function update(
     if (destroyedCities === config.cityCount) {
         state.gameState = 'GAME_OVER';
 
-        // Finalize player data, but don't show UI
-        const newHighScore = state.score > state.playerData.highScores[state.difficulty];
-        if (newHighScore) {
+        // Finalize player data and check for a new high score
+        const isNewHighScore = state.score > state.playerData.highScores[state.difficulty];
+        if (isNewHighScore) {
             state.playerData.highScores[state.difficulty] = state.score;
+            state.newHighScore = true; // Set the flag in the state
         }
         const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
         state.playerData.prestigePoints += pointsEarned;

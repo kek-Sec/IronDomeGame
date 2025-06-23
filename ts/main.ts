@@ -39,9 +39,10 @@ function gameLoop(timestamp: number): void {
     if (state.gameState === 'GAME_OVER') {
         // Stop the loop and show the game over screen
         cancelAnimationFrame(animationFrameId);
-        const newHighScore = state.score > state.playerData.highScores[state.difficulty];
+        // Calculate points earned for this run
         const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
-        UI.showGameOverScreen(state, init, pointsEarned, newHighScore);
+        // Show the game over screen, passing the high score status from the state
+        UI.showGameOverScreen(state, init, pointsEarned, state.newHighScore);
         return; // Exit the loop
     }
 
@@ -199,7 +200,8 @@ async function init(): Promise<void> {
         animationFrameId = requestAnimationFrame(gameLoop);
     } catch (error) {
         console.error('Failed to load game assets:', error);
-        modalContent.innerHTML = '<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>';
+        modalContent.innerHTML =
+            '<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>';
     }
 }
 
