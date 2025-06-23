@@ -11,6 +11,7 @@ export function createInitialState(playerData: PlayerData): GameState {
         score: perks.veteranCommander ? 500 : 0,
         coins: 0,
         currentWave: 0,
+        cityCount: 5,
 
         rockets: [],
         interceptors: [],

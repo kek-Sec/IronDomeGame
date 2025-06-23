@@ -128,14 +128,21 @@ export function resumeGame(state: GameState): void {
 }
 
 export function togglePause(state: GameState, restartCallback: () => void): void {
+    const showPause = () => {
+        UI.showPauseScreen(state, () => resumeGame(state), restartCallback, showSettings);
+    };
+
+    const showSettings = () => {
+        const toggleFpsAndRerender = () => {
+            state.showFps = !state.showFps;
+            showSettings();
+        };
+        UI.showSettingsScreen(state, showPause, toggleFpsAndRerender);
+    };
+
     if (state.gameState === 'IN_WAVE') {
         pauseGame(state);
-        const toggleFpsCallback = () => {
-            state.showFps = !state.showFps;
-            // Re-render the pause screen to update the button text
-            UI.showPauseScreen(state, () => resumeGame(state), restartCallback, toggleFpsCallback);
-        };
-        UI.showPauseScreen(state, () => resumeGame(state), restartCallback, toggleFpsCallback);
+        showPause();
     } else if (state.gameState === 'PAUSED') {
         resumeGame(state);
     }

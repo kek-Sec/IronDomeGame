@@ -175,19 +175,34 @@ export function showPauseScreen(
     state: GameState,
     resumeCallback: () => void,
     restartCallback: () => void,
-    toggleFpsCallback: () => void
+    showSettingsCallback: () => void
 ): void {
-    const fpsButtonText = state.showFps ? 'Hide FPS' : 'Show FPS';
     const fullHTML = `
         <h1>PAUSED</h1>
         <div class="pause-options">
             <button id="resume-button" class="modal-button">RESUME</button>
-            <button id="toggle-fps-button" class="modal-button secondary">${fpsButtonText}</button>
+            <button id="settings-button" class="modal-button secondary">SETTINGS</button>
             <button id="restart-button-pause" class="modal-button tertiary">RESTART</button>
         </div>
     `;
     showModalWithContent(fullHTML, 'pause-screen');
     document.getElementById('resume-button')?.addEventListener('click', resumeCallback);
-    document.getElementById('toggle-fps-button')?.addEventListener('click', toggleFpsCallback);
+    document.getElementById('settings-button')?.addEventListener('click', showSettingsCallback);
     document.getElementById('restart-button-pause')?.addEventListener('click', restartCallback);
+}
+
+export function showSettingsScreen(state: GameState, backCallback: () => void, toggleFpsCallback: () => void): void {
+    const fpsButtonText = state.showFps ? 'Hide FPS' : 'Show FPS';
+    const fullHTML = `
+        <h1>SETTINGS</h1>
+        <div class="settings-options">
+            <button id="toggle-fps-button" class="modal-button">${fpsButtonText}</button>
+        </div>
+        <div class="modal-footer" style="padding-top: 20px;">
+             <button id="back-button" class="modal-button secondary">BACK</button>
+        </div>
+    `;
+    showModalWithContent(fullHTML, 'settings-screen');
+    document.getElementById('toggle-fps-button')?.addEventListener('click', toggleFpsCallback);
+    document.getElementById('back-button')?.addEventListener('click', backCallback);
 }

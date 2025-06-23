@@ -819,28 +819,124 @@
       core: {
         title: "Core Systems",
         items: [
-          { id: "speed", title: "Interceptor Speed", desc: "Permanently increase interceptor velocity.", cost: upgradeCosts.interceptorSpeed, available: true, maxed: false, callback: callbacks.upgradeSpeedCallback },
-          { id: "multishot", title: `Multishot (Lvl ${multishotLevel})`, desc: "Fire an additional interceptor per shot.", cost: upgradeCosts.multishot * (multishotLevel + 1), available: multishotLevel < 3, maxed: multishotLevel >= 3, callback: callbacks.upgradeMultishotCallback },
-          { id: "blastRadius", title: `Flak Warheads (Lvl ${blastRadiusLevel})`, desc: "Increase interceptor blast radius.", cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1), available: blastRadiusLevel < 5, maxed: blastRadiusLevel >= 5, callback: callbacks.upgradeBlastRadiusCallback },
-          { id: "turret", title: "Build C-RAM Turret", desc: "Construct an automated defense turret.", cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets, callback: callbacks.upgradeTurretCallback },
-          { id: "turretSpeed", title: `Turret Fire Rate (Lvl ${turretFireRateLevel})`, desc: "Increase fire rate of all turrets.", cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3, callback: callbacks.upgradeTurretSpeedCallback },
-          { id: "turretRange", title: `Turret Range (Lvl ${turretRangeLevel})`, desc: "Increase engagement range of turrets.", cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3, callback: callbacks.upgradeTurretRangeCallback }
+          {
+            id: "speed",
+            title: "Interceptor Speed",
+            desc: "Permanently increase interceptor velocity.",
+            cost: upgradeCosts.interceptorSpeed,
+            available: true,
+            maxed: false,
+            callback: callbacks.upgradeSpeedCallback
+          },
+          {
+            id: "multishot",
+            title: `Multishot (Lvl ${multishotLevel})`,
+            desc: "Fire an additional interceptor per shot.",
+            cost: upgradeCosts.multishot * (multishotLevel + 1),
+            available: multishotLevel < 3,
+            maxed: multishotLevel >= 3,
+            callback: callbacks.upgradeMultishotCallback
+          },
+          {
+            id: "blastRadius",
+            title: `Flak Warheads (Lvl ${blastRadiusLevel})`,
+            desc: "Increase interceptor blast radius.",
+            cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1),
+            available: blastRadiusLevel < 5,
+            maxed: blastRadiusLevel >= 5,
+            callback: callbacks.upgradeBlastRadiusCallback
+          },
+          {
+            id: "turret",
+            title: "Build C-RAM Turret",
+            desc: "Construct an automated defense turret.",
+            cost: upgradeCosts.automatedTurret,
+            available: turrets.length < maxTurrets,
+            maxed: turrets.length >= maxTurrets,
+            callback: callbacks.upgradeTurretCallback
+          },
+          {
+            id: "turretSpeed",
+            title: `Turret Fire Rate (Lvl ${turretFireRateLevel})`,
+            desc: "Increase fire rate of all turrets.",
+            cost: upgradeCosts.turretSpeed,
+            available: turrets.length > 0 && turretFireRateLevel < 3,
+            maxed: turretFireRateLevel >= 3,
+            callback: callbacks.upgradeTurretSpeedCallback
+          },
+          {
+            id: "turretRange",
+            title: `Turret Range (Lvl ${turretRangeLevel})`,
+            desc: "Increase engagement range of turrets.",
+            cost: upgradeCosts.turretRange,
+            available: turrets.length > 0 && turretRangeLevel < 3,
+            maxed: turretRangeLevel >= 3,
+            callback: callbacks.upgradeTurretRangeCallback
+          }
         ]
       },
       tactical: {
         title: "Tactical Gear",
         items: [
-          { id: "nuke", title: "Nuke Interceptor", desc: "Single-use weapon with a massive blast.", cost: upgradeCosts.nuke, available: nukeIsPurchasable, maxed: !nukeIsPurchasable && !activePerks.surplusValue, callback: callbacks.upgradeNukeCallback },
-          { id: "homingMine", title: "Proximity Mine", desc: "Deploys a mine that detonates on proximity.", cost: upgradeCosts.homingMine, available: true, maxed: false, callback: callbacks.upgradeHomingMineCallback },
-          { id: "fieldReinforcement", title: "Field Reinforcement", desc: "Apply armor to all standing bases.", cost: upgradeCosts.fieldReinforcement, available: reinforcementNeeded, maxed: !reinforcementNeeded, callback: callbacks.upgradeFieldReinforcementCallback },
-          { id: "targetingScrambler", title: "Targeting Scrambler", desc: "25% chance to scramble new rockets.", cost: upgradeCosts.targetingScrambler, available: !state2.scramblerActive, maxed: state2.scramblerActive, callback: callbacks.upgradeTargetingScramblerCallback }
+          {
+            id: "nuke",
+            title: "Nuke Interceptor",
+            desc: "Single-use weapon with a massive blast.",
+            cost: upgradeCosts.nuke,
+            available: nukeIsPurchasable,
+            maxed: !nukeIsPurchasable && !activePerks.surplusValue,
+            callback: callbacks.upgradeNukeCallback
+          },
+          {
+            id: "homingMine",
+            title: "Proximity Mine",
+            desc: "Deploys a mine that detonates on proximity.",
+            cost: upgradeCosts.homingMine,
+            available: true,
+            maxed: false,
+            callback: callbacks.upgradeHomingMineCallback
+          },
+          {
+            id: "fieldReinforcement",
+            title: "Field Reinforcement",
+            desc: "Apply armor to all standing bases.",
+            cost: upgradeCosts.fieldReinforcement,
+            available: reinforcementNeeded,
+            maxed: !reinforcementNeeded,
+            callback: callbacks.upgradeFieldReinforcementCallback
+          },
+          {
+            id: "targetingScrambler",
+            title: "Targeting Scrambler",
+            desc: "25% chance to scramble new rockets.",
+            cost: upgradeCosts.targetingScrambler,
+            available: !state2.scramblerActive,
+            maxed: state2.scramblerActive,
+            callback: callbacks.upgradeTargetingScramblerCallback
+          }
         ]
       },
       maintenance: {
         title: "Base Maintenance",
         items: [
-          { id: "baseArmor", title: "Permanent Armor", desc: "Permanently armor all bases for the game.", cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored, callback: callbacks.upgradeBaseArmorCallback },
-          { id: "repair", title: "Repair Base", desc: "Rebuild one of your destroyed cities.", cost: upgradeCosts.repairCity, available: cities.some((c) => c.isDestroyed), maxed: false, callback: callbacks.upgradeRepairCallback }
+          {
+            id: "baseArmor",
+            title: "Permanent Armor",
+            desc: "Permanently armor all bases for the game.",
+            cost: upgradeCosts.baseArmor,
+            available: !basesAreArmored,
+            maxed: basesAreArmored,
+            callback: callbacks.upgradeBaseArmorCallback
+          },
+          {
+            id: "repair",
+            title: "Repair Base",
+            desc: "Rebuild one of your destroyed cities.",
+            cost: upgradeCosts.repairCity,
+            available: cities.some((c) => c.isDestroyed),
+            maxed: false,
+            callback: callbacks.upgradeRepairCallback
+          }
         ]
       }
     };
@@ -880,6 +976,8 @@
       });
       return html;
     };
+    pauseButton.style.display = "none";
+    modalContent.className = "modal-content";
     modalContainer.style.display = "flex";
     modalContent.innerHTML = `
         <div class="modal-header">
@@ -1106,20 +1204,34 @@
     showModalWithContent(fullHTML, "game-over");
     document.getElementById("restart-button")?.addEventListener("click", restartCallback);
   }
-  function showPauseScreen(state2, resumeCallback, restartCallback, toggleFpsCallback) {
-    const fpsButtonText = state2.showFps ? "Hide FPS" : "Show FPS";
+  function showPauseScreen(state2, resumeCallback, restartCallback, showSettingsCallback) {
     const fullHTML = `
         <h1>PAUSED</h1>
         <div class="pause-options">
             <button id="resume-button" class="modal-button">RESUME</button>
-            <button id="toggle-fps-button" class="modal-button secondary">${fpsButtonText}</button>
+            <button id="settings-button" class="modal-button secondary">SETTINGS</button>
             <button id="restart-button-pause" class="modal-button tertiary">RESTART</button>
         </div>
     `;
     showModalWithContent(fullHTML, "pause-screen");
     document.getElementById("resume-button")?.addEventListener("click", resumeCallback);
-    document.getElementById("toggle-fps-button")?.addEventListener("click", toggleFpsCallback);
+    document.getElementById("settings-button")?.addEventListener("click", showSettingsCallback);
     document.getElementById("restart-button-pause")?.addEventListener("click", restartCallback);
+  }
+  function showSettingsScreen(state2, backCallback, toggleFpsCallback) {
+    const fpsButtonText = state2.showFps ? "Hide FPS" : "Show FPS";
+    const fullHTML = `
+        <h1>SETTINGS</h1>
+        <div class="settings-options">
+            <button id="toggle-fps-button" class="modal-button">${fpsButtonText}</button>
+        </div>
+        <div class="modal-footer" style="padding-top: 20px;">
+             <button id="back-button" class="modal-button secondary">BACK</button>
+        </div>
+    `;
+    showModalWithContent(fullHTML, "settings-screen");
+    document.getElementById("toggle-fps-button")?.addEventListener("click", toggleFpsCallback);
+    document.getElementById("back-button")?.addEventListener("click", backCallback);
   }
 
   // ts/state.ts
@@ -1131,6 +1243,7 @@
       score: perks2.veteranCommander ? 500 : 0,
       coins: 0,
       currentWave: 0,
+      cityCount: 5,
       rockets: [],
       interceptors: [],
       particles: [],
@@ -1515,7 +1628,9 @@
         const speed = random(1, 3);
         const newVx = Math.cos(angle) * speed;
         const newVy = Math.sin(angle) * speed;
-        childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier, loadedSprites.droneRocket));
+        childDrones.push(
+          new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier, loadedSprites.droneRocket)
+        );
       }
       return childDrones;
     }
@@ -1800,14 +1915,30 @@
     const sizeMultiplier = difficulty.missileSizeMultiplier;
     let newRocket;
     const rocketConstructors = {
-      standard: () => new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier, loadedSprites.standardRocket),
+      standard: () => new Rocket(
+        void 0,
+        void 0,
+        void 0,
+        void 0,
+        width2,
+        sizeMultiplier,
+        speedMultiplier,
+        loadedSprites.standardRocket
+      ),
       mirv: () => new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier, loadedSprites.mirvRocket),
       stealth: () => new StealthRocket(width2, sizeMultiplier, speedMultiplier, loadedSprites.stealthRocket),
       swarmer: () => new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier, loadedSprites.swarmerRocket),
       flare_rocket: () => new FlareRocket(width2, sizeMultiplier, speedMultiplier),
       // No sprite for this one yet
       armored: () => new ArmoredRocket(width2, sizeMultiplier, speedMultiplier, loadedSprites.armoredRocket),
-      designator: () => new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier, loadedSprites.designatorRocket)
+      designator: () => new ArtilleryDesignator(
+        width2,
+        height2,
+        state2.cities,
+        sizeMultiplier,
+        speedMultiplier,
+        loadedSprites.designatorRocket
+      )
     };
     if (rocketConstructors[type]) {
       newRocket = rocketConstructors[type]();
@@ -2103,7 +2234,7 @@
       return;
     }
     const destroyedCities = state2.cities.filter((c) => c.isDestroyed).length;
-    if (destroyedCities === config.cityCount) {
+    if (destroyedCities === state2.cityCount) {
       state2.gameState = "GAME_OVER";
       const isNewHighScore = state2.score > state2.playerData.highScores[state2.difficulty];
       if (isNewHighScore) {
@@ -2325,13 +2456,19 @@
     }
   }
   function togglePause(state2, restartCallback) {
+    const showPause = () => {
+      showPauseScreen(state2, () => resumeGame(state2), restartCallback, showSettings);
+    };
+    const showSettings = () => {
+      const toggleFpsAndRerender = () => {
+        state2.showFps = !state2.showFps;
+        showSettings();
+      };
+      showSettingsScreen(state2, showPause, toggleFpsAndRerender);
+    };
     if (state2.gameState === "IN_WAVE") {
       pauseGame(state2);
-      const toggleFpsCallback = () => {
-        state2.showFps = !state2.showFps;
-        showPauseScreen(state2, () => resumeGame(state2), restartCallback, toggleFpsCallback);
-      };
-      showPauseScreen(state2, () => resumeGame(state2), restartCallback, toggleFpsCallback);
+      showPause();
     } else if (state2.gameState === "PAUSED") {
       resumeGame(state2);
     }
@@ -2566,11 +2703,12 @@
   };
   function createCities() {
     state.cities = [];
-    const citySlotWidth = width / config.cityCount;
+    state.cityCount = window.innerWidth < 768 ? 3 : config.cityCount;
+    const citySlotWidth = width / state.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120);
     const structureSpriteKeys = ["bunker", "dome", "comms"];
-    for (let i = 0; i < config.cityCount; i++) {
+    for (let i = 0; i < state.cityCount; i++) {
       const randomSpriteKey = structureSpriteKeys[Math.floor(random(0, structureSpriteKeys.length))];
       const sprite = loadedSprites[randomSpriteKey];
       let h;
