@@ -18,15 +18,14 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          # Specifies the command to build your project
+          # Specifies the command to build your project.
+          # This creates the 'dist' folder.
           build: npm run build:publish
           
-          # Specifies the command to start your local server
+          # Specifies the command to start your local server.
+          # Now it just serves the already-built 'dist' folder.
           start: npm start
           
           # Tells Cypress to wait until the server is responding
-          # before running the tests. Uses the baseUrl from cypress.config.ts
+          # before running the tests.
           wait-on: 'http://127.0.0.1:8080'
-          
-          # Runs tests in the browser in headless mode
-          headless: true
