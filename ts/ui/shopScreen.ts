@@ -1,7 +1,7 @@
 // ts/ui/shopScreen.ts
 
 import { GameState } from '../types';
-import { modalContainer, modalContent } from './domElements';
+import { modalContainer, modalContent, pauseButton } from './domElements';
 import type { config } from '../config';
 
 // Icons for each upgrade to make them more identifiable
@@ -209,6 +209,12 @@ export function showBetweenWaveScreen(
         });
         return html;
     };
+
+    // FIX: Explicitly hide the pause button and reset modal classes
+    // This prevents the pause menu from being opened over the shop and cleans up any
+    // lingering classes from other modals (like the Armory).
+    pauseButton.style.display = 'none';
+    modalContent.className = 'modal-content';
 
     modalContainer.style.display = 'flex';
     modalContent.innerHTML = `

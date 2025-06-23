@@ -976,6 +976,8 @@
       });
       return html;
     };
+    pauseButton.style.display = "none";
+    modalContent.className = "modal-content";
     modalContainer.style.display = "flex";
     modalContent.innerHTML = `
         <div class="modal-header">
