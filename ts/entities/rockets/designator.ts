@@ -12,14 +12,23 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
     designationTimer: number = 0;
     designationDuration: number = 180; // 3 seconds at 60fps
 
-    constructor(width: number, height: number, cities: T.City[], sizeMultiplier: number = 1, speedMultiplier: number = 1) {
+    constructor(
+        width: number,
+        height: number,
+        cities: T.City[],
+        sizeMultiplier: number = 1,
+        speedMultiplier: number = 1
+    ) {
         super(undefined, 0, 0, 0, width, sizeMultiplier, speedMultiplier);
         this.type = 'designator';
         this.color = '#ff9800';
         this.trailColor = 'rgba(255, 152, 0, 0.5)';
 
         const availableCities = cities.filter((c) => !c.isDestroyed);
-        this.targetCity = availableCities.length > 0 ? (availableCities[Math.floor(random(0, availableCities.length))] as City) : null;
+        this.targetCity =
+            availableCities.length > 0
+                ? (availableCities[Math.floor(random(0, availableCities.length))] as City)
+                : null;
 
         if (this.targetCity) {
             this.targetX = this.targetCity.x + this.targetCity.width / 2;

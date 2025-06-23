@@ -31,11 +31,15 @@ export function handleInterceptorCollisions(state: T.GameState): void {
         // Check collision with rockets
         for (let j = state.rockets.length - 1; j >= 0 && !detonated; j--) {
             const rocket = state.rockets[j];
-            if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
+            if (
+                Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) <
+                interceptor.blastRadius + rocket.radius
+            ) {
                 detonated = true;
-                const damage = config.interceptorDamage * (state.activePerks.efficientInterceptors && Math.random() < 0.1 ? 3 : 1);
+                const damage =
+                    config.interceptorDamage * (state.activePerks.efficientInterceptors && Math.random() < 0.1 ? 3 : 1);
                 const isDestroyed = rocket.takeDamage ? rocket.takeDamage(damage) : true;
-                
+
                 if (isDestroyed) {
                     awardPoints(state, rocket.type);
                     state.rockets.splice(j, 1);
@@ -68,7 +72,7 @@ export function handleTracerCollisions(state: T.GameState): void {
     for (let i = state.tracerRounds.length - 1; i >= 0; i--) {
         const tracer = state.tracerRounds[i];
         let hit = false;
-        
+
         // Check collision with rockets
         for (let j = state.rockets.length - 1; j >= 0; j--) {
             const rocket = state.rockets[j];
@@ -84,10 +88,10 @@ export function handleTracerCollisions(state: T.GameState): void {
                 } else {
                     state.flashes.push(new Flash(tracer.x, tracer.y, 20, '255, 255, 255'));
                 }
-                break; 
+                break;
             }
         }
-        
+
         if (hit) {
             state.tracerRounds.splice(i, 1);
         }

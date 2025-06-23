@@ -23,7 +23,7 @@ function updateEntities(state: T.GameState, width: number, height: number) {
     if (state.boss) state.boss.update(state.rockets);
 
     if (state.empActiveTimer <= 0) {
-        state.turrets.forEach(t => {
+        state.turrets.forEach((t) => {
             const newTracers = t.update(state.rockets);
             if (newTracers.length > 0) state.tracerRounds.push(...newTracers);
         });
@@ -38,46 +38,69 @@ function updateEntities(state: T.GameState, width: number, height: number) {
     }
 
     // Update player abilities and other entities
-    state.interceptors.forEach(interceptor => interceptor.update(state.rockets, state.flares, state.boss));
-    state.tracerRounds.forEach(tracer => tracer.update());
-    state.flares.forEach(flare => flare.update());
-    state.empPowerUps.forEach(emp => emp.update());
-    
+    state.interceptors.forEach((interceptor) => interceptor.update(state.rockets, state.flares, state.boss));
+    state.tracerRounds.forEach((tracer) => tracer.update());
+    state.flares.forEach((flare) => flare.update());
+    state.empPowerUps.forEach((emp) => emp.update());
+
     // Update visual effects
-    state.particles.forEach(p => p.update());
-    state.flashes.forEach(f => f.update());
-    state.shockwaves.forEach(s => s.update());
+    state.particles.forEach((p) => p.update());
+    state.flashes.forEach((f) => f.update());
+    state.shockwaves.forEach((s) => s.update());
 }
 
 /**
  * Handles non-collision logic for a single rocket, like leaving the screen or hitting a city.
  * @returns {boolean} - True if the rocket was removed, false otherwise.
  */
-function handleRocketLogic(state: T.GameState, rocket: T.Rocket, index: number, width: number, height: number): boolean {
-    if (rocket.y >= height || rocket.x < -rocket.radius || rocket.x > width + rocket.radius || rocket.life > config.rocketMaxLifetime) {
+function handleRocketLogic(
+    state: T.GameState,
+    rocket: T.Rocket,
+    index: number,
+    width: number,
+    height: number
+): boolean {
+    if (
+        rocket.y >= height ||
+        rocket.x < -rocket.radius ||
+        rocket.x > width + rocket.radius ||
+        rocket.life > config.rocketMaxLifetime
+    ) {
         state.rockets.splice(index, 1);
         return true;
     }
 
     for (const city of state.cities) {
-        if (!city.isDestroyed && rocket.type !== 'designator' && rocket.y > city.y && rocket.x > city.x && rocket.x < city.x + city.width) {
-            city.isArmored ? city.isArmored = false : city.destroy();
+        if (
+            !city.isDestroyed &&
+            rocket.type !== 'designator' &&
+            rocket.y > city.y &&
+            rocket.x > city.x &&
+            rocket.x < city.x + city.width
+        ) {
+            city.isArmored ? (city.isArmored = false) : city.destroy();
             createAdvancedExplosion(state, rocket.x, rocket.y);
             triggerScreenShake(state, 15, 30);
             state.rockets.splice(index, 1);
             return true;
         }
     }
-    
+
     if ((rocket.type === 'mirv' || rocket.type === 'swarmer') && rocket.hasSplit && rocket.split) {
         state.rockets.push(...rocket.split());
         state.rockets.splice(index, 1);
         return true;
     }
-    
-    if (rocket instanceof ArtilleryDesignator && rocket.isDesignating && rocket.designationTimer > rocket.designationDuration) {
+
+    if (
+        rocket instanceof ArtilleryDesignator &&
+        rocket.isDesignating &&
+        rocket.designationTimer > rocket.designationDuration
+    ) {
         if (rocket.targetCity) {
-            state.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y));
+            state.artilleryShells.push(
+                new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y)
+            );
         }
         state.rockets.splice(index, 1);
         return true;
@@ -90,13 +113,13 @@ function handleRocketLogic(state: T.GameState, rocket: T.Rocket, index: number, 
  * Removes entities that have expired or gone off-screen from the game state.
  */
 function cleanupEntities(state: T.GameState, width: number) {
-    state.interceptors = state.interceptors.filter(i => i.y > 0 && i.x > 0 && i.x < width);
-    state.tracerRounds = state.tracerRounds.filter(t => t.life > 0 && t.y > 0);
-    state.flares = state.flares.filter(f => f.life > 0);
-    state.particles = state.particles.filter(p => p.life > 0);
-    state.flashes = state.flashes.filter(f => f.alpha > 0);
-    state.shockwaves = state.shockwaves.filter(s => s.alpha > 0);
-    state.empPowerUps = state.empPowerUps.filter(e => e.life > 0);
+    state.interceptors = state.interceptors.filter((i) => i.y > 0 && i.x > 0 && i.x < width);
+    state.tracerRounds = state.tracerRounds.filter((t) => t.life > 0 && t.y > 0);
+    state.flares = state.flares.filter((f) => f.life > 0);
+    state.particles = state.particles.filter((p) => p.life > 0);
+    state.flashes = state.flashes.filter((f) => f.alpha > 0);
+    state.shockwaves = state.shockwaves.filter((s) => s.alpha > 0);
+    state.empPowerUps = state.empPowerUps.filter((e) => e.life > 0);
 }
 
 /**
@@ -106,7 +129,7 @@ function checkGameState(state: T.GameState, refreshUpgradeScreen: () => void) {
     const waveDef = getWaveDefinition(state.currentWave);
     const allEnemiesDefeated = state.rockets.length === 0 && (!waveDef.isBossWave || state.bossDefeated);
     const waveComplete = allEnemiesDefeated && state.waveRocketSpawn.toSpawn.length === 0;
-    
+
     if (waveComplete) {
         state.gameState = 'BETWEEN_WAVES';
         state.targetedRocket = null;
@@ -146,7 +169,7 @@ export function update(state: T.GameState, width: number, height: number, refres
     handleSpawning(state, width, height);
     updateEntities(state, width, height);
     updateCityEffects(state, height); // Update ongoing city smoke
-    updateEmpEffects(state);        // Update EMP visual effect
+    updateEmpEffects(state); // Update EMP visual effect
     handleInterceptorCollisions(state);
     handleTracerCollisions(state);
     cleanupEntities(state, width);

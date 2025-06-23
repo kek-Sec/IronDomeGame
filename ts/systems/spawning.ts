@@ -3,7 +3,15 @@ import { config, difficultySettings } from '../config';
 import * as T from '../types';
 import { getWaveDefinition } from '../waveManager';
 import { EMP } from '../entities/playerAbilities';
-import { Rocket, MirvRocket, StealthRocket, SwarmerRocket, FlareRocket, ArmoredRocket, ArtilleryDesignator } from '../entities/rockets';
+import {
+    Rocket,
+    MirvRocket,
+    StealthRocket,
+    SwarmerRocket,
+    FlareRocket,
+    ArmoredRocket,
+    ArtilleryDesignator,
+} from '../entities/rockets';
 import { random } from '../utils';
 
 export function handleSpawning(state: T.GameState, width: number, height: number): void {
@@ -31,7 +39,13 @@ export function handleSpawning(state: T.GameState, width: number, height: number
     }
 }
 
-function createRocket(state: T.GameState, type: string, width: number, height: number, difficulty: T.DifficultySetting) {
+function createRocket(
+    state: T.GameState,
+    type: string,
+    width: number,
+    height: number,
+    difficulty: T.DifficultySetting
+) {
     const speedBonus = difficulty.enemySpeedBonus || 1;
     const difficultyScale = state.currentWave > 5 ? 1 + (state.currentWave - 5) * 0.15 : 1;
     const speedMultiplier = (1 + state.currentWave * 0.05) * difficultyScale * speedBonus;

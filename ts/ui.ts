@@ -21,7 +21,6 @@ import {
 export { showBetweenWaveScreen } from './ui/shopScreen';
 export { showArmoryScreen } from './ui/armoryScreen';
 
-
 // --- Core UI Functions ---
 
 export function updateTopUI(state: GameState): void {
@@ -32,7 +31,7 @@ export function updateTopUI(state: GameState): void {
 
     const isPausable = state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED';
     pauseButton.style.display = isPausable ? 'flex' : 'none';
-    if(isPausable) {
+    if (isPausable) {
         pauseIcon.innerHTML = state.gameState === 'PAUSED' ? '▶' : '||';
     }
 }
@@ -100,7 +99,7 @@ export function showStartScreen(startGameCallback: StartGameCallback, showArmory
 
     showModalWithContent(fullHTML);
 
-    document.querySelectorAll('.difficulty-card').forEach(card => {
+    document.querySelectorAll('.difficulty-card').forEach((card) => {
         card.addEventListener('click', (e) => {
             const difficulty = (e.currentTarget as HTMLElement).dataset.difficulty as 'easy' | 'normal' | 'hard';
             startGameCallback(difficulty);
@@ -141,12 +140,17 @@ export function showRocketInfoScreen(closeCallback: () => void): void {
             closeCallback();
         }
     };
-    
+
     closeButton?.addEventListener('click', closeCallback);
     modalContainer.addEventListener('click', backgroundClickHandler);
 }
 
-export function showGameOverScreen(state: GameState, restartCallback: () => void, pointsEarned: number, newHighScore: boolean): void {
+export function showGameOverScreen(
+    state: GameState,
+    restartCallback: () => void,
+    pointsEarned: number,
+    newHighScore: boolean
+): void {
     const { score, currentWave } = state;
     const newHighScoreHTML = newHighScore ? `<p class="new-high-score-banner">🏆 NEW HIGH SCORE! 🏆</p>` : '';
 

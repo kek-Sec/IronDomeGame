@@ -22,6 +22,6 @@ export function showGameOverScreen(
         <p class="prestige-points">PRESTIGE EARNED: ${pointsEarned.toLocaleString()}</p>
         <button id="restart-button" class="modal-button">TRY AGAIN</button>
     `;
-    
+
     document.getElementById('restart-button')?.addEventListener('click', restartCallback);
 }

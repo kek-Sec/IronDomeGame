@@ -121,21 +121,23 @@ async function init(): Promise<void> {
         await loadGameAssets();
         const playerData = loadPlayerData();
         state = createInitialState(playerData);
-        
+
         if ((window as any).Cypress) {
             (window as any).gameState = state;
         }
-        
+
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
         // --- Event Handlers (re-integrated for stability) ---
         canvas.addEventListener('mousemove', (e: MouseEvent) => events.handleMouseMove(state, canvas, e));
         canvas.addEventListener('click', (e: MouseEvent) => events.handleClick(state, canvas, e));
-        canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e), { passive: false });
-        
+        canvas.addEventListener('touchstart', (e: TouchEvent) => events.handleTouchStart(state, canvas, e), {
+            passive: false,
+        });
+
         document.getElementById('pause-button')?.addEventListener('click', () => events.togglePause(state, init));
-        
+
         document.getElementById('rocket-info-btn')?.addEventListener('click', () => {
             const gameWasRunning = state.gameState === 'IN_WAVE';
             if (gameWasRunning) {

@@ -17,7 +17,14 @@ function handleInterceptorLaunch(state: GameState, width: number, height: number
         const nukeIsAvailable = state.nukeAvailable && !state.activePerks.surplusValue;
         if (nukeIsAvailable) {
             state.interceptors.push(
-                new Interceptor(width / 2, height, state.targetedRocket, state.interceptorSpeed, config.nukeBlastRadius, 'nuke')
+                new Interceptor(
+                    width / 2,
+                    height,
+                    state.targetedRocket,
+                    state.interceptorSpeed,
+                    config.nukeBlastRadius,
+                    'nuke'
+                )
             );
             state.nukeAvailable = false;
         } else {
@@ -29,7 +36,14 @@ function handleInterceptorLaunch(state: GameState, width: number, height: number
             for (let i = 0; i < numShots; i++) {
                 const launchX = startX + i * 10;
                 state.interceptors.push(
-                    new Interceptor(launchX, height, state.targetedRocket, state.interceptorSpeed, state.interceptorBlastRadius, 'standard')
+                    new Interceptor(
+                        launchX,
+                        height,
+                        state.targetedRocket,
+                        state.interceptorSpeed,
+                        state.interceptorBlastRadius,
+                        'standard'
+                    )
                 );
             }
         }
@@ -53,7 +67,7 @@ export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: Mous
             return;
         }
     }
-    
+
     // Check for Mine deployment
     if (state.homingMinesAvailable > 0 && y > canvas.height * config.homingMineDeploymentZone) {
         state.homingMines.push(new HomingMine(x, canvas.height - 10));
@@ -64,7 +78,6 @@ export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: Mous
     // Otherwise, launch interceptor
     handleInterceptorLaunch(state, canvas.width, canvas.height);
 }
-
 
 export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e: TouchEvent): void {
     e.preventDefault();
@@ -89,7 +102,14 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
 
     if (touchTarget) {
         state.interceptors.push(
-            new Interceptor(canvas.width / 2, canvas.height, touchTarget, state.interceptorSpeed, state.interceptorBlastRadius, 'standard')
+            new Interceptor(
+                canvas.width / 2,
+                canvas.height,
+                touchTarget,
+                state.interceptorSpeed,
+                state.interceptorBlastRadius,
+                'standard'
+            )
         );
     }
 }

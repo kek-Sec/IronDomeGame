@@ -9,7 +9,15 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
     private hitFlashTimer: number = 0;
 
     constructor(width: number, sizeMultiplier: number = 1, speedMultiplier: number = 1) {
-        super(undefined, undefined, random(-0.5, 0.5), random(1, 1.5), width, sizeMultiplier * 1.5, speedMultiplier * 0.7);
+        super(
+            undefined,
+            undefined,
+            random(-0.5, 0.5),
+            random(1, 1.5),
+            width,
+            sizeMultiplier * 1.5,
+            speedMultiplier * 0.7
+        );
         this.type = 'armored';
         this.color = '#c0c0c0';
         this.trailColor = 'rgba(192, 192, 192, 0.5)';
@@ -49,7 +57,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
         super.drawHead(ctx); // Draw base rocket
-        
+
         // Armor Plating
         const w = this.radius;
         const h = this.radius * 3;
@@ -66,7 +74,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
             ctx.fillRect(-w / 2, -h / 2, w, h);
             ctx.globalCompositeOperation = 'source-over';
         }
-        
+
         ctx.restore();
         this.drawHealthBar(ctx);
     }

@@ -42,7 +42,7 @@ export function showStartScreen(startGameCallback: StartGameCallback, showArmory
         ${difficultyCardsHTML}
     `;
 
-    document.querySelectorAll('.difficulty-card').forEach(card => {
+    document.querySelectorAll('.difficulty-card').forEach((card) => {
         card.addEventListener('click', (e) => {
             let target = e.currentTarget as HTMLElement;
             if (target && target.dataset.difficulty) {
