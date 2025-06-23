@@ -74,7 +74,7 @@ export class Rocket implements T.Rocket {
 
         // If a sprite is provided, draw it. Otherwise, draw the procedural shape.
         if (this.sprite) {
-            const w = this.radius * 2.5; // Adjust size as needed for the sprite
+            const w = this.radius * 3.5; // Increased size from 2.5
             const h = w * (this.sprite.height / this.sprite.width);
             ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
         } else {

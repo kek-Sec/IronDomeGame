@@ -79,13 +79,17 @@ function createCities(): void {
     const citySlotWidth = width / config.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120); // Base max height for regular buildings
-    const spriteKeys = Object.keys(loadedSprites);
+    
+    // FIX: Only use structure sprites for cities, not all loaded sprites.
+    const structureSpriteKeys = ['bunker', 'dome', 'comms'];
 
     for (let i = 0; i < config.cityCount; i++) {
-        const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+        // Pick a random sprite key from our dedicated list of structures.
+        const randomSpriteKey = structureSpriteKeys[Math.floor(random(0, structureSpriteKeys.length))];
         const sprite = loadedSprites[randomSpriteKey];
 
         let h: number;
+        // The 'comms' sprite is taller, give it a different height range.
         if (randomSpriteKey === 'comms') {
             h = random(maxHeight, maxHeight * 1.3);
         } else {

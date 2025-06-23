@@ -37,4 +37,31 @@ export class StealthRocket extends Rocket implements T.Rocket {
             ctx.restore();
         }
     }
+
+    protected drawHead(ctx: CanvasRenderingContext2D) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        if (this.sprite) {
+            const w = this.radius * 4; // Increased size from 3
+            const h = w * (this.sprite.height / this.sprite.width);
+            ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+        } else {
+            // Fallback drawing
+            const w = this.radius * 1.2;
+            const h = this.radius * 3;
+            ctx.fillStyle = '#212529';
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2); // Tip
+            ctx.lineTo(w, h / 4);
+            ctx.lineTo(w / 2, h / 2);
+            ctx.lineTo(-w / 2, h / 2);
+            ctx.lineTo(-w, h / 4);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
 }

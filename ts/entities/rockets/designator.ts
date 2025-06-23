@@ -93,4 +93,31 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
             this.drawTargetingLaser(ctx);
         }
     }
+
+    protected drawHead(ctx: CanvasRenderingContext2D) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        if (this.sprite) {
+            const w = this.radius * 4.5; // Increased size from 3.5
+            const h = w * (this.sprite.height / this.sprite.width);
+            ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+        } else {
+             // Fallback drawing
+            const w = this.radius * 2;
+            const h = this.radius * 2;
+
+            ctx.fillStyle = '#424242';
+            ctx.beginPath();
+            ctx.moveTo(-w / 2, -h / 2);
+            ctx.lineTo(w / 2, -h / 2);
+            ctx.lineTo(w, h / 2);
+            ctx.lineTo(-w, h / 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
 }

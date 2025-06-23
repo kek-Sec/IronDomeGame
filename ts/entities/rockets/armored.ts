@@ -41,7 +41,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         const barWidth = this.radius * 3;
         const barHeight = 5;
         const barX = this.x - barWidth / 2;
-        const barY = this.y - this.radius * 3;
+        const barY = this.y - this.radius * 3.5; // Adjusted position relative to new sprite size
         ctx.fillStyle = '#333';
         ctx.fillRect(barX, barY, barWidth, barHeight);
         const healthPercentage = this.health / this.maxHealth;
@@ -57,7 +57,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
         this.drawHead(ctx);
         this.drawHealthBar(ctx);
     }
-    
+
     protected drawHead(ctx: CanvasRenderingContext2D): void {
         super.drawHead(ctx); // This will draw the sprite from the base class
 
@@ -69,7 +69,7 @@ export class ArmoredRocket extends Rocket implements T.Rocket {
             const alpha = (this.hitFlashTimer / 10) * 0.8;
             ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
             ctx.globalCompositeOperation = 'lighter';
-            const w = this.radius * 3;
+            const w = this.radius * 3.5; // Match new base size
             const h = this.sprite ? w * (this.sprite.height / this.sprite.width) : w * 3;
             ctx.fillRect(-w / 2, -h / 2, w, h);
             ctx.restore();

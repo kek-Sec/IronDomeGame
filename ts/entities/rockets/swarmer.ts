@@ -41,4 +41,21 @@ export class SwarmerRocket extends Rocket implements T.Rocket {
         }
         return childDrones;
     }
+
+    protected drawHead(ctx: CanvasRenderingContext2D) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        if (this.sprite) {
+            const w = this.radius * 4; // Increased size from 3
+            const h = w * (this.sprite.height / this.sprite.width);
+            ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+        } else {
+            // Fallback drawing
+            super.drawHead(ctx);
+        }
+        
+        ctx.restore();
+    }
 }

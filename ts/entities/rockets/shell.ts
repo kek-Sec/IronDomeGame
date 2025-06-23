@@ -33,7 +33,7 @@ export class ArtilleryShell implements T.ArtilleryShell {
             // Angle the shell to point towards its destination
             const angle = Math.atan2(this.targetY - this.startY, this.targetX - this.startX) - Math.PI / 2;
             ctx.rotate(angle);
-            const w = 20; // Fixed size for shell sprite
+            const w = 28; // Increased size from 20
             const h = w * (this.sprite.height / this.sprite.width);
             ctx.drawImage(this.sprite, -w / 2, -h/2, w, h);
             ctx.restore();

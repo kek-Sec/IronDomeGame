@@ -1250,7 +1250,7 @@
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
       if (this.sprite) {
-        const w = this.radius * 2.5;
+        const w = this.radius * 3.5;
         const h = w * (this.sprite.height / this.sprite.width);
         ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
       } else {
@@ -1331,7 +1331,7 @@
       const barWidth = this.radius * 3;
       const barHeight = 5;
       const barX = this.x - barWidth / 2;
-      const barY = this.y - this.radius * 3;
+      const barY = this.y - this.radius * 3.5;
       ctx2.fillStyle = "#333";
       ctx2.fillRect(barX, barY, barWidth, barHeight);
       const healthPercentage = this.health / this.maxHealth;
@@ -1355,7 +1355,7 @@
         const alpha = this.hitFlashTimer / 10 * 0.8;
         ctx2.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx2.globalCompositeOperation = "lighter";
-        const w = this.radius * 3;
+        const w = this.radius * 3.5;
         const h = this.sprite ? w * (this.sprite.height / this.sprite.width) : w * 3;
         ctx2.fillRect(-w / 2, -h / 2, w, h);
         ctx2.restore();
@@ -1394,6 +1394,29 @@
         ctx2.restore();
       }
     }
+    drawHead(ctx2) {
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius * 1.2;
+        const h = this.radius * 3;
+        ctx2.fillStyle = "#212529";
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h / 2);
+        ctx2.lineTo(w, h / 4);
+        ctx2.lineTo(w / 2, h / 2);
+        ctx2.lineTo(-w / 2, h / 2);
+        ctx2.lineTo(-w, h / 4);
+        ctx2.closePath();
+        ctx2.fill();
+      }
+      ctx2.restore();
+    }
   };
 
   // ts/entities/rockets/drone.ts
@@ -1404,6 +1427,28 @@
       this.radius = 3;
       this.trailColor = "rgba(255, 255, 0, 0.5)";
       this.color = "yellow";
+    }
+    drawHead(ctx2) {
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const r = this.radius;
+        ctx2.fillStyle = this.color;
+        ctx2.shadowColor = this.color;
+        ctx2.shadowBlur = 15;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -r * 2);
+        ctx2.lineTo(r, r);
+        ctx2.lineTo(-r, r);
+        ctx2.closePath();
+        ctx2.fill();
+      }
+      ctx2.restore();
     }
   };
 
@@ -1474,6 +1519,19 @@
       }
       return childDrones;
     }
+    drawHead(ctx2) {
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        super.drawHead(ctx2);
+      }
+      ctx2.restore();
+    }
   };
 
   // ts/entities/rockets/mirv.ts
@@ -1507,6 +1565,36 @@
         );
       }
       return childRockets;
+    }
+    drawHead(ctx2) {
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius;
+        const h = this.radius * 2.5;
+        ctx2.fillStyle = "rgba(255, 100, 255, 0.5)";
+        ctx2.shadowColor = this.color;
+        ctx2.shadowBlur = 15;
+        ctx2.beginPath();
+        ctx2.arc(0, h * 0.4, w, 0, Math.PI, false);
+        ctx2.fill();
+        ctx2.shadowBlur = 0;
+        const bodyGrad = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
+        bodyGrad.addColorStop(0, "#555");
+        bodyGrad.addColorStop(1, "#333");
+        ctx2.fillStyle = bodyGrad;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h / 2);
+        ctx2.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
+        ctx2.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
+        ctx2.fill();
+      }
+      ctx2.restore();
     }
   };
 
@@ -1611,6 +1699,28 @@
         this.drawTargetingLaser(ctx2);
       }
     }
+    drawHead(ctx2) {
+      ctx2.save();
+      ctx2.translate(this.x, this.y);
+      ctx2.rotate(this.angle);
+      if (this.sprite) {
+        const w = this.radius * 4.5;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius * 2;
+        const h = this.radius * 2;
+        ctx2.fillStyle = "#424242";
+        ctx2.beginPath();
+        ctx2.moveTo(-w / 2, -h / 2);
+        ctx2.lineTo(w / 2, -h / 2);
+        ctx2.lineTo(w, h / 2);
+        ctx2.lineTo(-w, h / 2);
+        ctx2.closePath();
+        ctx2.fill();
+      }
+      ctx2.restore();
+    }
   };
 
   // ts/entities/rockets/shell.ts
@@ -1637,7 +1747,7 @@
         ctx2.translate(currentX, currentY);
         const angle = Math.atan2(this.targetY - this.startY, this.targetX - this.startX) - Math.PI / 2;
         ctx2.rotate(angle);
-        const w = 20;
+        const w = 28;
         const h = w * (this.sprite.height / this.sprite.width);
         ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
         ctx2.restore();
@@ -2459,9 +2569,9 @@
     const citySlotWidth = width / config.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120);
-    const spriteKeys = Object.keys(loadedSprites);
+    const structureSpriteKeys = ["bunker", "dome", "comms"];
     for (let i = 0; i < config.cityCount; i++) {
-      const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+      const randomSpriteKey = structureSpriteKeys[Math.floor(random(0, structureSpriteKeys.length))];
       const sprite = loadedSprites[randomSpriteKey];
       let h;
       if (randomSpriteKey === "comms") {
