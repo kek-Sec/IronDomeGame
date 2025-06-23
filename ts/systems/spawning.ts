@@ -15,6 +15,11 @@ import {
 import { random } from '../utils';
 
 export function handleSpawning(state: T.GameState, width: number, height: number): void {
+    // FIX: Prevent any new spawns while an EMP is active.
+    if (state.empActiveTimer > 0) {
+        return;
+    }
+
     const waveDef = getWaveDefinition(state.currentWave);
     if (waveDef.isBossWave) return;
 

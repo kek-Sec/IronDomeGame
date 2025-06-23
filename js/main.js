@@ -1827,6 +1827,9 @@
 
   // ts/systems/spawning.ts
   function handleSpawning(state2, width2, height2) {
+    if (state2.empActiveTimer > 0) {
+      return;
+    }
     const waveDef = getWaveDefinition(state2.currentWave);
     if (waveDef.isBossWave) return;
     const difficulty = difficultySettings[state2.difficulty];
