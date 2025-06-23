@@ -22,23 +22,31 @@ function getInitialPlayerData(): PlayerData {
 }
 
 export function loadPlayerData(): PlayerData {
+    const initialData = getInitialPlayerData();
     try {
         const savedData = localStorage.getItem(SAVE_KEY);
         if (savedData) {
-            const parsedData: PlayerData = JSON.parse(savedData);
-
-            if (!parsedData.highScores) {
-                parsedData.highScores = { easy: 0, normal: 0, hard: 0 };
-            }
-
-            if (parsedData.unlockedPerks && parsedData.hasOwnProperty('prestigePoints')) {
-                return parsedData;
-            }
+            const parsedData = JSON.parse(savedData);
+            // Merge saved data with initial data to ensure all properties exist
+            return {
+                ...initialData,
+                ...parsedData,
+                highScores: {
+                    ...initialData.highScores,
+                    ...(parsedData.highScores || {}),
+                },
+                unlockedPerks: {
+                    ...initialData.unlockedPerks,
+                    ...(parsedData.unlockedPerks || {}),
+                },
+            };
         }
     } catch (error) {
         console.error('Failed to load player data:', error);
+        // If loading fails, clear corrupted data and return initial data
+        localStorage.removeItem(SAVE_KEY);
     }
-    return getInitialPlayerData();
+    return initialData;
 }
 
 export function savePlayerData(playerData: PlayerData): void {

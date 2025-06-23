@@ -975,21 +975,29 @@
     };
   }
   function loadPlayerData() {
+    const initialData = getInitialPlayerData();
     try {
       const savedData = localStorage.getItem(SAVE_KEY);
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        if (!parsedData.highScores) {
-          parsedData.highScores = { easy: 0, normal: 0, hard: 0 };
-        }
-        if (parsedData.unlockedPerks && parsedData.hasOwnProperty("prestigePoints")) {
-          return parsedData;
-        }
+        return {
+          ...initialData,
+          ...parsedData,
+          highScores: {
+            ...initialData.highScores,
+            ...parsedData.highScores || {}
+          },
+          unlockedPerks: {
+            ...initialData.unlockedPerks,
+            ...parsedData.unlockedPerks || {}
+          }
+        };
       }
     } catch (error) {
       console.error("Failed to load player data:", error);
+      localStorage.removeItem(SAVE_KEY);
     }
-    return getInitialPlayerData();
+    return initialData;
   }
   function savePlayerData(playerData) {
     try {
@@ -1103,8 +1111,9 @@
                     <div class="difficulty-summary">
                         <span>Starts with ${diff.startingCoins} Coins</span>
                     </div>
-                    <div class="high-score">
-                        \u{1F3C6} High Score: <span>${highScore.toLocaleString()}</span>
+                    <div class="high-score-display">
+                        <span class="high-score-label">HIGH SCORE</span>
+                        <span class="high-score-value">${highScore.toLocaleString()}</span>
                     </div>
                 </div>
             </div>
@@ -1231,6 +1240,7 @@
       empShockwave: { radius: 0, alpha: 0 },
       screenShake: { intensity: 0, duration: 0 },
       waveRocketSpawn: { count: 0, timer: 0, toSpawn: [] },
+      newHighScore: false,
       gameTime: 0,
       fps: 0,
       frameCount: 0,
@@ -2283,9 +2293,10 @@
     const destroyedCities = state2.cities.filter((c) => c.isDestroyed).length;
     if (destroyedCities === config.cityCount) {
       state2.gameState = "GAME_OVER";
-      const newHighScore = state2.score > state2.playerData.highScores[state2.difficulty];
-      if (newHighScore) {
+      const isNewHighScore = state2.score > state2.playerData.highScores[state2.difficulty];
+      if (isNewHighScore) {
         state2.playerData.highScores[state2.difficulty] = state2.score;
+        state2.newHighScore = true;
       }
       const pointsEarned = Math.floor(state2.score / 100) + state2.currentWave * 10;
       state2.playerData.prestigePoints += pointsEarned;
@@ -2713,9 +2724,8 @@
     }
     if (state.gameState === "GAME_OVER") {
       cancelAnimationFrame(animationFrameId);
-      const newHighScore = state.score > state.playerData.highScores[state.difficulty];
       const pointsEarned = Math.floor(state.score / 100) + state.currentWave * 10;
-      showGameOverScreen(state, init, pointsEarned, newHighScore);
+      showGameOverScreen(state, init, pointsEarned, state.newHighScore);
       return;
     }
     updateTopUI(state);

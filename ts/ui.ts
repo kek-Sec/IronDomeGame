@@ -65,8 +65,9 @@ export function showStartScreen(startGameCallback: StartGameCallback, showArmory
                     <div class="difficulty-summary">
                         <span>Starts with ${diff.startingCoins} Coins</span>
                     </div>
-                    <div class="high-score">
-                        🏆 High Score: <span>${highScore.toLocaleString()}</span>
+                    <div class="high-score-display">
+                        <span class="high-score-label">HIGH SCORE</span>
+                        <span class="high-score-value">${highScore.toLocaleString()}</span>
                     </div>
                 </div>
             </div>

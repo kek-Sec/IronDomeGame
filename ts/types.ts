@@ -37,6 +37,7 @@ export interface GameState {
     empShockwave: { radius: number; alpha: number };
     screenShake: { intensity: number; duration: number };
     waveRocketSpawn: { count: number; timer: number; toSpawn: string[] };
+    newHighScore: boolean;
 
     // System & Player Info
     gameTime: number;

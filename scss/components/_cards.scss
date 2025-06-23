@@ -47,13 +47,26 @@
         color: $text-color;
         opacity: 0.7;
     }
-    .high-score {
-        text-align: right;
-        font-weight: bold;
-        color: $prestige-color;
-        text-shadow: 0 0 5px $prestige-color;
-        span {
-            font-size: 1.1em;
+    .high-score-display {
+        background-color: rgba($prestige-color, 0.1);
+        border: 1px solid rgba($prestige-color, 0.3);
+        border-radius: 6px;
+        padding: 6px 12px;
+        text-align: center;
+        .high-score-label {
+            display: block;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: $prestige-color;
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+        .high-score-value {
+            display: block;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 5px $prestige-color;
         }
     }
 }
