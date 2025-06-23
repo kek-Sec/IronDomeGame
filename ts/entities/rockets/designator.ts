@@ -17,9 +17,10 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
         height: number,
         cities: T.City[],
         sizeMultiplier: number = 1,
-        speedMultiplier: number = 1
+        speedMultiplier: number = 1,
+        sprite: HTMLImageElement | undefined = undefined
     ) {
-        super(undefined, 0, 0, 0, width, sizeMultiplier, speedMultiplier);
+        super(undefined, 0, 0, 0, width, sizeMultiplier, speedMultiplier, sprite);
         this.type = 'designator';
         this.color = '#ff9800';
         this.trailColor = 'rgba(255, 152, 0, 0.5)';
@@ -98,24 +99,24 @@ export class ArtilleryDesignator extends Rocket implements T.Rocket {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
 
-        const w = this.radius * 2;
-        const h = this.radius * 2;
+        if (this.sprite) {
+            const w = this.radius * 4.5; // Increased size from 3.5
+            const h = w * (this.sprite.height / this.sprite.width);
+            ctx.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+        } else {
+            // Fallback drawing
+            const w = this.radius * 2;
+            const h = this.radius * 2;
 
-        ctx.fillStyle = '#424242';
-        ctx.beginPath();
-        ctx.moveTo(-w / 2, -h / 2);
-        ctx.lineTo(w / 2, -h / 2);
-        ctx.lineTo(w, h / 2);
-        ctx.lineTo(-w, h / 2);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.arc(0, 0, w / 4, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#424242';
+            ctx.beginPath();
+            ctx.moveTo(-w / 2, -h / 2);
+            ctx.lineTo(w / 2, -h / 2);
+            ctx.lineTo(w, h / 2);
+            ctx.lineTo(-w, h / 2);
+            ctx.closePath();
+            ctx.fill();
+        }
 
         ctx.restore();
     }

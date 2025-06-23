@@ -242,6 +242,17 @@
     }
     triggerScreenShake(state2, 5, 15);
   }
+  function createGroundImpact(state2, x, y) {
+    if (state2.particles.length > config.maxParticles) return;
+    state2.flashes.push(new Flash(x, y, 25, "200, 200, 200"));
+    state2.shockwaves.push(new Shockwave(x, y, 30));
+    for (let i = 0; i < 10; i++) {
+      const p = new Particle(x, y, random(20, 40), "debris");
+      p.vy = -Math.abs(p.vy) * 0.7;
+      state2.particles.push(p);
+    }
+    triggerScreenShake(state2, 2, 8);
+  }
   function triggerScreenShake(state2, intensity, duration) {
     if (state2.screenShake.duration > 0 && intensity < state2.screenShake.intensity) return;
     state2.screenShake.intensity = intensity;
@@ -760,6 +771,7 @@
 
   // ts/ui/domElements.ts
   var fpsCounterEl = document.getElementById("fps-counter");
+  var fpsBoxEl = document.getElementById("fps-box");
   var scoreEl = document.getElementById("score");
   var coinsEl = document.getElementById("coins");
   var waveEl = document.getElementById("wave");
@@ -772,6 +784,20 @@
   var bossHealthBarEl = document.getElementById("boss-health-bar");
 
   // ts/ui/shopScreen.ts
+  var shopItemIcons = {
+    speed: "\u{1F680}",
+    multishot: "\u{1F4A5}",
+    blastRadius: "\u{1F4A3}",
+    turret: "\u{1F916}",
+    turretSpeed: "\u26A1\uFE0F",
+    turretRange: "\u{1F4E1}",
+    baseArmor: "\u{1F6E1}\uFE0F",
+    nuke: "\u2622\uFE0F",
+    homingMine: "\u{1F4CD}",
+    fieldReinforcement: "\u{1F9F1}",
+    targetingScrambler: "\u{1F300}",
+    repair: "\u{1F527}"
+  };
   function showBetweenWaveScreen(state2, callbacks, gameConfig) {
     const {
       score,
@@ -786,225 +812,111 @@
       multishotLevel,
       blastRadiusLevel
     } = state2;
-    const {
-      upgradeRepairCallback,
-      nextWaveCallback,
-      upgradeTurretCallback,
-      upgradeSpeedCallback,
-      upgradeMultishotCallback,
-      upgradeBaseArmorCallback,
-      upgradeNukeCallback,
-      upgradeTurretSpeedCallback,
-      upgradeTurretRangeCallback,
-      upgradeHomingMineCallback,
-      upgradeFieldReinforcementCallback,
-      upgradeTargetingScramblerCallback,
-      upgradeBlastRadiusCallback
-    } = callbacks;
     const { upgradeCosts, maxTurrets } = gameConfig;
     const nukeIsPurchasable = !state2.nukeAvailable || activePerks.surplusValue;
     const reinforcementNeeded = state2.cities.some((c) => !c.isDestroyed && !c.isArmored);
     const categories = {
       core: {
-        title: "Core System Upgrades",
-        ids: ["speed", "multishot", "blastRadius", "turret", "turretSpeed", "turretRange", "baseArmor"]
+        title: "Core Systems",
+        items: [
+          { id: "speed", title: "Interceptor Speed", desc: "Permanently increase interceptor velocity.", cost: upgradeCosts.interceptorSpeed, available: true, maxed: false, callback: callbacks.upgradeSpeedCallback },
+          { id: "multishot", title: `Multishot (Lvl ${multishotLevel})`, desc: "Fire an additional interceptor per shot.", cost: upgradeCosts.multishot * (multishotLevel + 1), available: multishotLevel < 3, maxed: multishotLevel >= 3, callback: callbacks.upgradeMultishotCallback },
+          { id: "blastRadius", title: `Flak Warheads (Lvl ${blastRadiusLevel})`, desc: "Increase interceptor blast radius.", cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1), available: blastRadiusLevel < 5, maxed: blastRadiusLevel >= 5, callback: callbacks.upgradeBlastRadiusCallback },
+          { id: "turret", title: "Build C-RAM Turret", desc: "Construct an automated defense turret.", cost: upgradeCosts.automatedTurret, available: turrets.length < maxTurrets, maxed: turrets.length >= maxTurrets, callback: callbacks.upgradeTurretCallback },
+          { id: "turretSpeed", title: `Turret Fire Rate (Lvl ${turretFireRateLevel})`, desc: "Increase fire rate of all turrets.", cost: upgradeCosts.turretSpeed, available: turrets.length > 0 && turretFireRateLevel < 3, maxed: turretFireRateLevel >= 3, callback: callbacks.upgradeTurretSpeedCallback },
+          { id: "turretRange", title: `Turret Range (Lvl ${turretRangeLevel})`, desc: "Increase engagement range of turrets.", cost: upgradeCosts.turretRange, available: turrets.length > 0 && turretRangeLevel < 3, maxed: turretRangeLevel >= 3, callback: callbacks.upgradeTurretRangeCallback }
+        ]
       },
       tactical: {
-        title: "Single-Wave Tactical Gear",
-        ids: ["nuke", "homingMine", "fieldReinforcement", "targetingScrambler"]
+        title: "Tactical Gear",
+        items: [
+          { id: "nuke", title: "Nuke Interceptor", desc: "Single-use weapon with a massive blast.", cost: upgradeCosts.nuke, available: nukeIsPurchasable, maxed: !nukeIsPurchasable && !activePerks.surplusValue, callback: callbacks.upgradeNukeCallback },
+          { id: "homingMine", title: "Proximity Mine", desc: "Deploys a mine that detonates on proximity.", cost: upgradeCosts.homingMine, available: true, maxed: false, callback: callbacks.upgradeHomingMineCallback },
+          { id: "fieldReinforcement", title: "Field Reinforcement", desc: "Apply armor to all standing bases.", cost: upgradeCosts.fieldReinforcement, available: reinforcementNeeded, maxed: !reinforcementNeeded, callback: callbacks.upgradeFieldReinforcementCallback },
+          { id: "targetingScrambler", title: "Targeting Scrambler", desc: "25% chance to scramble new rockets.", cost: upgradeCosts.targetingScrambler, available: !state2.scramblerActive, maxed: state2.scramblerActive, callback: callbacks.upgradeTargetingScramblerCallback }
+        ]
       },
       maintenance: {
         title: "Base Maintenance",
-        ids: ["repair"]
+        items: [
+          { id: "baseArmor", title: "Permanent Armor", desc: "Permanently armor all bases for the game.", cost: upgradeCosts.baseArmor, available: !basesAreArmored, maxed: basesAreArmored, callback: callbacks.upgradeBaseArmorCallback },
+          { id: "repair", title: "Repair Base", desc: "Rebuild one of your destroyed cities.", cost: upgradeCosts.repairCity, available: cities.some((c) => c.isDestroyed), maxed: false, callback: callbacks.upgradeRepairCallback }
+        ]
       }
     };
-    const shopItems = [
-      {
-        id: "speed",
-        title: "Interceptor Speed",
-        desc: "Permanently increase the speed of your interceptors.",
-        detailedDesc: "A permanent, stacking buff to the velocity of all interceptors you launch.",
-        cost: upgradeCosts.interceptorSpeed,
-        available: true,
-        maxed: false
-      },
-      {
-        id: "multishot",
-        title: `Multishot (Lvl ${multishotLevel})`,
-        desc: "Fire an additional interceptor per shot. Max Lvl 3.",
-        detailedDesc: "Increases the number of interceptors launched with each click. Each interceptor will target the same rocket.",
-        cost: upgradeCosts.multishot * (multishotLevel + 1),
-        available: multishotLevel < 3,
-        maxed: multishotLevel >= 3
-      },
-      {
-        id: "blastRadius",
-        title: `Flak Warheads (Lvl ${blastRadiusLevel})`,
-        desc: "Increase the blast radius of standard interceptors. Max Lvl 5.",
-        detailedDesc: "Increases the explosion radius of your interceptors, making them more effective against dense groups of rockets.",
-        cost: upgradeCosts.flakWarheads * (blastRadiusLevel + 1),
-        available: blastRadiusLevel < 5,
-        maxed: blastRadiusLevel >= 5
-      },
-      {
-        id: "turret",
-        title: "Build Turret",
-        desc: "Construct an automated defense turret. Max 2.",
-        detailedDesc: "Builds a C-RAM turret that automatically fires at nearby rockets. Limited to two turrets.",
-        cost: upgradeCosts.automatedTurret,
-        available: turrets.length < maxTurrets,
-        maxed: turrets.length >= maxTurrets
-      },
-      {
-        id: "turretSpeed",
-        title: `Turret Speed (Lvl ${turretFireRateLevel})`,
-        desc: "Permanently increase the fire rate of all turrets. Max Lvl 3.",
-        detailedDesc: "Reduces the cooldown between bursts for all owned turrets. Stacks up to 3 times.",
-        cost: upgradeCosts.turretSpeed,
-        available: turrets.length > 0 && turretFireRateLevel < 3,
-        maxed: turretFireRateLevel >= 3
-      },
-      {
-        id: "turretRange",
-        title: `Turret Range (Lvl ${turretRangeLevel})`,
-        desc: "Permanently increase the engagement range of all turrets. Max Lvl 3.",
-        detailedDesc: "Increases the detection and firing radius for all owned turrets. Stacks up to 3 times.",
-        cost: upgradeCosts.turretRange,
-        available: turrets.length > 0 && turretRangeLevel < 3,
-        maxed: turretRangeLevel >= 3
-      },
-      {
-        id: "baseArmor",
-        title: "Permanent Armor",
-        desc: "Permanently armor all bases, allowing them to survive one extra hit.",
-        detailedDesc: "All cities will start with one layer of armor for the rest of the game. Armor is consumed upon being hit.",
-        cost: upgradeCosts.baseArmor,
-        available: !basesAreArmored,
-        maxed: basesAreArmored
-      },
-      {
-        id: "nuke",
-        title: "Nuke (w/ EMP)",
-        desc: "A single-use interceptor with a massive blast and EMP effect.",
-        detailedDesc: "Your next interceptor is a Nuke. Its massive blast destroys most rockets instantly and also triggers a 2-second global EMP, disabling all rockets on screen.",
-        cost: upgradeCosts.nuke,
-        available: nukeIsPurchasable,
-        maxed: !nukeIsPurchasable && !activePerks.surplusValue
-      },
-      {
-        id: "homingMine",
-        title: "Buy Proximity Mine",
-        desc: "An AOE mine that explodes when rockets get near.",
-        detailedDesc: "Deploys a mine on the ground at your cursor. When an enemy gets close, it detonates, destroying all rockets within a large radius.",
-        cost: upgradeCosts.homingMine,
-        available: true,
-        maxed: false
-      },
-      {
-        id: "fieldReinforcement",
-        title: "Field Reinforcement",
-        desc: "Apply one layer of armor to all standing, unarmored bases.",
-        detailedDesc: "A temporary, one-time boost. Instantly adds one layer of armor to any of your cities that are not already armored or destroyed. The armor is consumed on the next hit.",
-        cost: upgradeCosts.fieldReinforcement,
-        available: reinforcementNeeded,
-        maxed: !reinforcementNeeded
-      },
-      {
-        id: "targetingScrambler",
-        title: "Targeting Scrambler",
-        desc: "25% chance for new rockets to be scrambled next wave.",
-        detailedDesc: "Activates a passive system for the next wave only. Each new rocket has a 25% chance to have its trajectory scrambled, causing it to fly off-target.",
-        cost: upgradeCosts.targetingScrambler,
-        available: !state2.scramblerActive,
-        maxed: state2.scramblerActive
-      },
-      {
-        id: "repair",
-        title: "Repair Base",
-        desc: "Repair one of your destroyed bases.",
-        detailedDesc: "Rebuilds a single destroyed city, restoring it to full functionality.",
-        cost: upgradeCosts.repairCity,
-        available: cities.some((c) => c.isDestroyed),
-        maxed: false
-      }
-    ];
-    let shopHTML = '<div class="shop-container">';
-    for (const categoryKey in categories) {
-      const category = categories[categoryKey];
-      const itemsInCategory = shopItems.filter((item) => category.ids.includes(item.id));
-      const isCategoryRelevant = itemsInCategory.some(
-        (item) => item.available || item.maxed === false && item.id !== "repair"
-      );
-      if (isCategoryRelevant || categoryKey === "maintenance" && itemsInCategory.some((item) => item.available)) {
-        shopHTML += `
-                <div class="shop-category">
-                    <h2>${category.title}</h2>
-                    <div class="shop-grid">
-            `;
-        itemsInCategory.forEach((item) => {
-          let currentCost = item.cost;
-          if (activePerks.rapidDeployment && !state2.firstUpgradePurchased) {
-            currentCost = Math.ceil(currentCost * 0.75);
-          }
-          const affordable = coins >= currentCost;
-          const disabled = !affordable || !item.available;
-          let statusText = `<div class="cost">Cost: ${currentCost} <span class="coin-icon"></span></div>`;
-          if (item.maxed) {
-            statusText = `<div class="cost maxed-out">MAXED</div>`;
-          } else if (item.id === "targetingScrambler" && state2.scramblerActive) {
-            statusText = `<div class="cost active-status">ACTIVE</div>`;
-          } else if (item.id === "nuke" && state2.nukeAvailable && !activePerks.surplusValue) {
-            statusText = `<div class="cost active-status">LOADED</div>`;
-          }
-          shopHTML += `
-                    <div class="shop-card ${disabled ? "disabled" : ""} ${item.maxed ? "maxed" : ""}" id="shop-${item.id}">
-                        <div class="info-icon">?</div>
-                        <div class="info-tooltip">${item.detailedDesc || item.desc}</div>
+    const generateShopItems = (items) => {
+      let html = "";
+      items.forEach((item) => {
+        let currentCost = item.cost;
+        if (activePerks.rapidDeployment && !state2.firstUpgradePurchased) {
+          currentCost = Math.ceil(currentCost * 0.75);
+        }
+        const canAfford = coins >= currentCost;
+        const isDisabled = !canAfford || !item.available;
+        let statusBanner = "";
+        if (item.maxed) {
+          statusBanner = '<div class="status-banner maxed">MAXED</div>';
+        } else if (item.id === "targetingScrambler" && state2.scramblerActive) {
+          statusBanner = '<div class="status-banner active">ACTIVE</div>';
+        } else if (item.id === "nuke" && state2.nukeAvailable && !activePerks.surplusValue) {
+          statusBanner = '<div class="status-banner active">LOADED</div>';
+        }
+        html += `
+                <div class="shop-item ${isDisabled ? "disabled" : ""} ${item.maxed ? "maxed" : ""}" id="shop-${item.id}">
+                    ${statusBanner}
+                    <div class="shop-item-icon">${shopItemIcons[item.id] || "\u2753"}</div>
+                    <div class="shop-item-content">
                         <h3>${item.title}</h3>
                         <p>${item.desc}</p>
-                        ${statusText}
                     </div>
-                `;
-        });
-        shopHTML += `</div></div>`;
-      }
-    }
-    shopHTML += "</div>";
+                    <div class="shop-item-footer">
+                        <div class="cost">
+                            <span class="coin-icon"></span>
+                            <span>${currentCost.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+      });
+      return html;
+    };
     modalContainer.style.display = "flex";
     modalContent.innerHTML = `
         <div class="modal-header">
             <h1>WAVE ${currentWave + 1} COMPLETE</h1>
-            <div class="end-wave-stats">
+            <div class="shop-info-bar">
                 <div>SCORE: <span>${score.toLocaleString()}</span></div>
-                <div>COINS: <span>${coins.toLocaleString()}</span></div>
+                <div>WAVE PRESTIGE: <span>+${(Math.floor(score / 100) + currentWave * 10).toLocaleString()}</span></div>
+                <div class="shop-coins">COINS: <span class="coin-icon"></span><span>${coins.toLocaleString()}</span></div>
             </div>
         </div>
         <div class="modal-body">
-            ${shopHTML}
+            <div class="shop-layout">
+                <div class="shop-column">
+                    <h2>${categories.core.title}</h2>
+                    <div class="shop-grid">${generateShopItems(categories.core.items)}</div>
+                    <h2>${categories.maintenance.title}</h2>
+                    <div class="shop-grid">${generateShopItems(categories.maintenance.items)}</div>
+                </div>
+                <div class="shop-column">
+                    <h2>${categories.tactical.title}</h2>
+                    <div class="shop-grid">${generateShopItems(categories.tactical.items)}</div>
+                </div>
+            </div>
         </div>
         <div class="modal-footer">
             <button id="next-wave-button" class="modal-button next-wave-btn">START WAVE ${currentWave + 2}</button>
         </div>
     `;
-    function addListenerIfPresent(id, callback) {
-      const element = document.getElementById(id);
-      if (element) {
-        element.addEventListener("click", callback);
-      }
-    }
-    addListenerIfPresent("shop-speed", upgradeSpeedCallback);
-    addListenerIfPresent("shop-multishot", upgradeMultishotCallback);
-    addListenerIfPresent("shop-blastRadius", upgradeBlastRadiusCallback);
-    addListenerIfPresent("shop-turret", upgradeTurretCallback);
-    addListenerIfPresent("shop-turretSpeed", upgradeTurretSpeedCallback);
-    addListenerIfPresent("shop-turretRange", upgradeTurretRangeCallback);
-    addListenerIfPresent("shop-baseArmor", upgradeBaseArmorCallback);
-    addListenerIfPresent("shop-nuke", upgradeNukeCallback);
-    addListenerIfPresent("shop-homingMine", upgradeHomingMineCallback);
-    addListenerIfPresent("shop-fieldReinforcement", upgradeFieldReinforcementCallback);
-    addListenerIfPresent("shop-targetingScrambler", upgradeTargetingScramblerCallback);
-    addListenerIfPresent("shop-repair", upgradeRepairCallback);
-    addListenerIfPresent("next-wave-button", nextWaveCallback);
+    Object.values(categories).forEach((cat) => {
+      cat.items.forEach((item) => {
+        const element = document.getElementById(`shop-${item.id}`);
+        if (element && item.callback) {
+          element.addEventListener("click", item.callback);
+        }
+      });
+    });
+    document.getElementById("next-wave-button")?.addEventListener("click", callbacks.nextWaveCallback);
   }
 
   // ts/ui/armoryScreen.ts
@@ -1078,6 +990,7 @@
     scoreEl.textContent = state2.score.toLocaleString();
     coinsEl.textContent = state2.coins.toLocaleString();
     waveEl.textContent = (state2.currentWave + 1).toString();
+    fpsBoxEl.style.display = state2.showFps ? "flex" : "none";
     const isPausable = state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED";
     pauseButton.style.display = isPausable ? "flex" : "none";
     if (isPausable) {
@@ -1193,16 +1106,19 @@
     showModalWithContent(fullHTML, "game-over");
     document.getElementById("restart-button")?.addEventListener("click", restartCallback);
   }
-  function showPauseScreen(resumeCallback, restartCallback) {
+  function showPauseScreen(state2, resumeCallback, restartCallback, toggleFpsCallback) {
+    const fpsButtonText = state2.showFps ? "Hide FPS" : "Show FPS";
     const fullHTML = `
         <h1>PAUSED</h1>
-        <div class="upgrade-options">
+        <div class="pause-options">
             <button id="resume-button" class="modal-button">RESUME</button>
-            <button id="restart-button-pause" class="modal-button">RESTART</button>
+            <button id="toggle-fps-button" class="modal-button secondary">${fpsButtonText}</button>
+            <button id="restart-button-pause" class="modal-button tertiary">RESTART</button>
         </div>
     `;
-    showModalWithContent(fullHTML);
+    showModalWithContent(fullHTML, "pause-screen");
     document.getElementById("resume-button")?.addEventListener("click", resumeCallback);
+    document.getElementById("toggle-fps-button")?.addEventListener("click", toggleFpsCallback);
     document.getElementById("restart-button-pause")?.addEventListener("click", restartCallback);
   }
 
@@ -1240,6 +1156,7 @@
       fps: 0,
       frameCount: 0,
       lastFpsUpdate: 0,
+      showFps: false,
       mouse: { x: 0, y: 0 },
       targetedRocket: null,
       interceptorSpeed: config.initialInterceptorSpeed,
@@ -1286,7 +1203,7 @@
 
   // ts/entities/rockets/base.ts
   var Rocket = class {
-    constructor(startX, startY, targetVx, targetVy, width2, sizeMultiplier = 1, speedMultiplier = 1) {
+    constructor(startX, startY, targetVx, targetVy, width2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
       this.type = "standard";
       this.trail = [];
       this.life = 0;
@@ -1299,6 +1216,7 @@
       this.vx = (targetVx ?? random(-1, 1)) * speedMultiplier;
       this.vy = (targetVy ?? random(1.5, 2.5)) * speedMultiplier;
       this.radius = 5 * sizeMultiplier;
+      this.sprite = sprite;
     }
     update(...args) {
       this.trail.push({ x: this.x, y: this.y });
@@ -1331,51 +1249,66 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const w = this.radius;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "rgba(255, 200, 150, 0.7)";
-      ctx2.shadowColor = "orange";
-      ctx2.shadowBlur = 10;
-      ctx2.beginPath();
-      ctx2.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
-      ctx2.fill();
-      ctx2.shadowBlur = 0;
-      ctx2.fillStyle = "#6c757d";
-      ctx2.beginPath();
-      ctx2.moveTo(-w, h * 0.2);
-      ctx2.lineTo(-w * 1.8, h * 0.5);
-      ctx2.lineTo(-w, h * 0.5);
-      ctx2.moveTo(w, h * 0.2);
-      ctx2.lineTo(w * 1.8, h * 0.5);
-      ctx2.lineTo(w, h * 0.5);
-      ctx2.fill();
-      const gradient = ctx2.createLinearGradient(-w / 2, 0, w / 2, 0);
-      gradient.addColorStop(0, "#8d99ae");
-      gradient.addColorStop(0.5, "#dee2e6");
-      gradient.addColorStop(1, "#8d99ae");
-      ctx2.fillStyle = gradient;
-      ctx2.fillRect(-w / 2, -h / 2, w, h);
-      ctx2.strokeStyle = "rgba(0, 0, 0, 0.2)";
-      ctx2.lineWidth = 1;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.lineTo(0, h / 2);
-      ctx2.stroke();
-      ctx2.fillStyle = this.color;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h * 0.6);
-      ctx2.lineTo(-w / 2, -h / 2);
-      ctx2.lineTo(w / 2, -h / 2);
-      ctx2.closePath();
-      ctx2.fill();
+      if (this.sprite) {
+        const w = this.radius * 3.5;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius;
+        const h = this.radius * 3;
+        ctx2.fillStyle = "rgba(255, 200, 150, 0.7)";
+        ctx2.shadowColor = "orange";
+        ctx2.shadowBlur = 10;
+        ctx2.beginPath();
+        ctx2.arc(0, h * 0.5, w * 0.8, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.shadowBlur = 0;
+        ctx2.fillStyle = "#6c757d";
+        ctx2.beginPath();
+        ctx2.moveTo(-w, h * 0.2);
+        ctx2.lineTo(-w * 1.8, h * 0.5);
+        ctx2.lineTo(-w, h * 0.5);
+        ctx2.moveTo(w, h * 0.2);
+        ctx2.lineTo(w * 1.8, h * 0.5);
+        ctx2.lineTo(w, h * 0.5);
+        ctx2.fill();
+        const gradient = ctx2.createLinearGradient(-w / 2, 0, w / 2, 0);
+        gradient.addColorStop(0, "#8d99ae");
+        gradient.addColorStop(0.5, "#dee2e6");
+        gradient.addColorStop(1, "#8d99ae");
+        ctx2.fillStyle = gradient;
+        ctx2.fillRect(-w / 2, -h / 2, w, h);
+        ctx2.strokeStyle = "rgba(0, 0, 0, 0.2)";
+        ctx2.lineWidth = 1;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h / 2);
+        ctx2.lineTo(0, h / 2);
+        ctx2.stroke();
+        ctx2.fillStyle = this.color;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h * 0.6);
+        ctx2.lineTo(-w / 2, -h / 2);
+        ctx2.lineTo(w / 2, -h / 2);
+        ctx2.closePath();
+        ctx2.fill();
+      }
       ctx2.restore();
     }
   };
 
   // ts/entities/rockets/armored.ts
   var ArmoredRocket = class extends Rocket {
-    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, random(-0.5, 0.5), random(1, 1.5), width2, sizeMultiplier * 1.5, speedMultiplier * 0.7);
+    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(
+        void 0,
+        void 0,
+        random(-0.5, 0.5),
+        random(1, 1.5),
+        width2,
+        sizeMultiplier * 1.5,
+        speedMultiplier * 0.7,
+        sprite
+      );
       this.health = 3;
       this.maxHealth = 3;
       this.hitFlashTimer = 0;
@@ -1398,7 +1331,7 @@
       const barWidth = this.radius * 3;
       const barHeight = 5;
       const barX = this.x - barWidth / 2;
-      const barY = this.y - this.radius * 3;
+      const barY = this.y - this.radius * 3.5;
       ctx2.fillStyle = "#333";
       ctx2.fillRect(barX, barY, barWidth, barHeight);
       const healthPercentage = this.health / this.maxHealth;
@@ -1410,33 +1343,30 @@
     }
     draw(ctx2) {
       this.drawTrail(ctx2);
-      ctx2.save();
-      ctx2.translate(this.x, this.y);
-      ctx2.rotate(this.angle);
+      this.drawHead(ctx2);
+      this.drawHealthBar(ctx2);
+    }
+    drawHead(ctx2) {
       super.drawHead(ctx2);
-      const w = this.radius;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "#495057";
-      ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
-      ctx2.strokeStyle = "#212529";
-      ctx2.lineWidth = 2;
-      ctx2.strokeRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       if (this.hitFlashTimer > 0) {
+        ctx2.save();
+        ctx2.translate(this.x, this.y);
+        ctx2.rotate(this.angle);
         const alpha = this.hitFlashTimer / 10 * 0.8;
         ctx2.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx2.globalCompositeOperation = "lighter";
+        const w = this.radius * 3.5;
+        const h = this.sprite ? w * (this.sprite.height / this.sprite.width) : w * 3;
         ctx2.fillRect(-w / 2, -h / 2, w, h);
-        ctx2.globalCompositeOperation = "source-over";
+        ctx2.restore();
       }
-      ctx2.restore();
-      this.drawHealthBar(ctx2);
     }
   };
 
   // ts/entities/rockets/stealth.ts
   var StealthRocket = class extends Rocket {
-    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 0.8, speedMultiplier * 1.2);
+    constructor(width2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 0.8, speedMultiplier * 1.2, sprite);
       this.isVisible = true;
       this.type = "stealth";
       this.color = "#ae00ff";
@@ -1468,34 +1398,31 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const w = this.radius * 1.2;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "#212529";
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.lineTo(w, h / 4);
-      ctx2.lineTo(w / 2, h / 2);
-      ctx2.lineTo(-w / 2, h / 2);
-      ctx2.lineTo(-w, h / 4);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.moveTo(0, h * 0.1);
-      ctx2.lineTo(w * 0.4, h * 0.2);
-      ctx2.lineTo(-w * 0.4, h * 0.2);
-      ctx2.closePath();
-      ctx2.fill();
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius * 1.2;
+        const h = this.radius * 3;
+        ctx2.fillStyle = "#212529";
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h / 2);
+        ctx2.lineTo(w, h / 4);
+        ctx2.lineTo(w / 2, h / 2);
+        ctx2.lineTo(-w / 2, h / 2);
+        ctx2.lineTo(-w, h / 4);
+        ctx2.closePath();
+        ctx2.fill();
+      }
       ctx2.restore();
     }
   };
 
   // ts/entities/rockets/drone.ts
   var Drone = class extends Rocket {
-    constructor(startX, startY, targetVx, targetVy, width2, speedMultiplier = 1) {
-      super(startX, startY, targetVx, targetVy, width2, 0.6, speedMultiplier * 1.5);
+    constructor(startX, startY, targetVx, targetVy, width2, speedMultiplier = 1, sprite = void 0) {
+      super(startX, startY, targetVx, targetVy, width2, 0.6, speedMultiplier * 1.5, sprite);
       this.type = "drone";
       this.radius = 3;
       this.trailColor = "rgba(255, 255, 0, 0.5)";
@@ -1505,30 +1432,66 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const r = this.radius;
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -r * 2);
-      ctx2.lineTo(r, r);
-      ctx2.lineTo(-r, r);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = "white";
-      ctx2.shadowColor = "white";
-      ctx2.shadowBlur = 10;
-      ctx2.beginPath();
-      ctx2.arc(0, r * 0.5, r / 2, 0, Math.PI * 2);
-      ctx2.fill();
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const r = this.radius;
+        ctx2.fillStyle = this.color;
+        ctx2.shadowColor = this.color;
+        ctx2.shadowBlur = 15;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -r * 2);
+        ctx2.lineTo(r, r);
+        ctx2.lineTo(-r, r);
+        ctx2.closePath();
+        ctx2.fill();
+      }
       ctx2.restore();
     }
   };
 
+  // ts/assetLoader.ts
+  var spriteUrls = {
+    // Structures
+    bunker: "assets/bunker.png",
+    dome: "assets/dome.png",
+    comms: "assets/tower.png",
+    // Rockets
+    standardRocket: "assets/standard_rocket.png",
+    armoredRocket: "assets/armored_rocket.png",
+    mirvRocket: "assets/mirv_rocket.png",
+    swarmerRocket: "assets/swarmer_rocket.png",
+    droneRocket: "assets/drone_rocket.png",
+    stealthRocket: "assets/stealth_rocket.png",
+    designatorRocket: "assets/artillery_designator.png",
+    shell: "assets/artillery_shell.png"
+  };
+  var loadedSprites = {};
+  function loadGameAssets() {
+    const promises = [];
+    for (const key in spriteUrls) {
+      const url = spriteUrls[key];
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedSprites[key] = img;
+          resolve();
+        };
+        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
+        img.src = url;
+      });
+      promises.push(promise);
+    }
+    return Promise.all(promises).then(() => {
+    });
+  }
+
   // ts/entities/rockets/swarmer.ts
   var SwarmerRocket = class extends Rocket {
-    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 1.5, speedMultiplier * 0.8);
+    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 1.5, speedMultiplier * 0.8, sprite);
       this.hasSplit = false;
       this.width = width2;
       this.type = "swarmer";
@@ -1552,31 +1515,29 @@
         const speed = random(1, 3);
         const newVx = Math.cos(angle) * speed;
         const newVy = Math.sin(angle) * speed;
-        childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier));
+        childDrones.push(new Drone(this.x, this.y, newVx, newVy, this.width, this.speedMultiplier, loadedSprites.droneRocket));
       }
       return childDrones;
     }
     drawHead(ctx2) {
-      super.drawHead(ctx2);
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const w = this.radius;
-      const h = this.radius * 3;
-      ctx2.fillStyle = "#1e6a21";
-      ctx2.fillRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.fillRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.strokeStyle = "rgba(0,0,0,0.3)";
-      ctx2.strokeRect(-w * 0.9, -h * 0.2, w * 0.4, h * 0.4);
-      ctx2.strokeRect(w * 0.5, -h * 0.2, w * 0.4, h * 0.4);
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        super.drawHead(ctx2);
+      }
       ctx2.restore();
     }
   };
 
   // ts/entities/rockets/mirv.ts
   var MirvRocket = class extends Rocket {
-    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
+    constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier, sprite);
       this.hasSplit = false;
       this.width = width2;
       this.type = "mirv";
@@ -1609,40 +1570,30 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const w = this.radius;
-      const h = this.radius * 2.5;
-      ctx2.fillStyle = "rgba(255, 100, 255, 0.5)";
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.arc(0, h * 0.4, w, 0, Math.PI, false);
-      ctx2.fill();
-      ctx2.shadowBlur = 0;
-      const bodyGrad = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
-      bodyGrad.addColorStop(0, "#555");
-      bodyGrad.addColorStop(1, "#333");
-      ctx2.fillStyle = bodyGrad;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
-      ctx2.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
-      ctx2.fill();
-      ctx2.strokeStyle = "rgba(0,0,0,0.5)";
-      ctx2.lineWidth = 2;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -h / 2);
-      ctx2.lineTo(0, h / 2);
-      ctx2.stroke();
-      ctx2.beginPath();
-      ctx2.ellipse(0, 0, w * 0.8, h * 0.2, 0, 0, Math.PI * 2);
-      ctx2.stroke();
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.arc(0, -h / 2, w / 1.5, Math.PI * 0.9, Math.PI * 0.1, true);
-      ctx2.closePath();
-      ctx2.fill();
+      if (this.sprite) {
+        const w = this.radius * 4;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius;
+        const h = this.radius * 2.5;
+        ctx2.fillStyle = "rgba(255, 100, 255, 0.5)";
+        ctx2.shadowColor = this.color;
+        ctx2.shadowBlur = 15;
+        ctx2.beginPath();
+        ctx2.arc(0, h * 0.4, w, 0, Math.PI, false);
+        ctx2.fill();
+        ctx2.shadowBlur = 0;
+        const bodyGrad = ctx2.createLinearGradient(0, -h / 2, 0, h / 2);
+        bodyGrad.addColorStop(0, "#555");
+        bodyGrad.addColorStop(1, "#333");
+        ctx2.fillStyle = bodyGrad;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -h / 2);
+        ctx2.bezierCurveTo(w, -h / 4, w, h / 4, 0, h / 2);
+        ctx2.bezierCurveTo(-w, h / 4, -w, -h / 4, 0, -h / 2);
+        ctx2.fill();
+      }
       ctx2.restore();
     }
   };
@@ -1681,8 +1632,8 @@
   // ts/entities/rockets/designator.ts
   var ArtilleryDesignator = class extends Rocket {
     // 3 seconds at 60fps
-    constructor(width2, height2, cities, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(void 0, 0, 0, 0, width2, sizeMultiplier, speedMultiplier);
+    constructor(width2, height2, cities, sizeMultiplier = 1, speedMultiplier = 1, sprite = void 0) {
+      super(void 0, 0, 0, 0, width2, sizeMultiplier, speedMultiplier, sprite);
       this.targetX = 0;
       this.targetY = 0;
       this.isDesignating = false;
@@ -1752,35 +1703,36 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
-      const w = this.radius * 2;
-      const h = this.radius * 2;
-      ctx2.fillStyle = "#424242";
-      ctx2.beginPath();
-      ctx2.moveTo(-w / 2, -h / 2);
-      ctx2.lineTo(w / 2, -h / 2);
-      ctx2.lineTo(w, h / 2);
-      ctx2.lineTo(-w, h / 2);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = this.color;
-      ctx2.shadowColor = this.color;
-      ctx2.shadowBlur = 15;
-      ctx2.beginPath();
-      ctx2.arc(0, 0, w / 4, 0, Math.PI * 2);
-      ctx2.fill();
+      if (this.sprite) {
+        const w = this.radius * 4.5;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+      } else {
+        const w = this.radius * 2;
+        const h = this.radius * 2;
+        ctx2.fillStyle = "#424242";
+        ctx2.beginPath();
+        ctx2.moveTo(-w / 2, -h / 2);
+        ctx2.lineTo(w / 2, -h / 2);
+        ctx2.lineTo(w, h / 2);
+        ctx2.lineTo(-w, h / 2);
+        ctx2.closePath();
+        ctx2.fill();
+      }
       ctx2.restore();
     }
   };
 
   // ts/entities/rockets/shell.ts
   var ArtilleryShell = class {
-    constructor(targetX, targetY) {
+    constructor(targetX, targetY, sprite = void 0) {
       this.timeLeft = 30;
       // 0.5 seconds travel time
       this.startY = 0;
       this.targetX = targetX;
       this.targetY = targetY;
       this.startX = targetX + random(-50, 50);
+      this.sprite = sprite;
     }
     update() {
       this.timeLeft--;
@@ -1788,26 +1740,42 @@
     }
     draw(ctx2) {
       const progress = 1 - this.timeLeft / 30;
-      ctx2.beginPath();
-      ctx2.moveTo(this.startX, this.startY);
-      ctx2.lineTo(this.targetX, this.targetY);
-      const gradient = ctx2.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
-      const stop1 = Math.max(0, progress - 0.05);
-      const stop2 = progress;
-      const stop3 = Math.min(1, progress + 0.05);
-      gradient.addColorStop(0, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(stop1, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(stop2, "white");
-      gradient.addColorStop(stop3, "rgba(255, 100, 0, 0)");
-      gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
-      ctx2.strokeStyle = gradient;
-      ctx2.lineWidth = 4;
-      ctx2.stroke();
+      const currentX = this.startX + (this.targetX - this.startX) * progress;
+      const currentY = this.startY + (this.targetY - this.startY) * progress;
+      if (this.sprite) {
+        ctx2.save();
+        ctx2.translate(currentX, currentY);
+        const angle = Math.atan2(this.targetY - this.startY, this.targetX - this.startX) - Math.PI / 2;
+        ctx2.rotate(angle);
+        const w = 28;
+        const h = w * (this.sprite.height / this.sprite.width);
+        ctx2.drawImage(this.sprite, -w / 2, -h / 2, w, h);
+        ctx2.restore();
+      } else {
+        ctx2.beginPath();
+        ctx2.moveTo(this.startX, this.startY);
+        ctx2.lineTo(this.targetX, this.targetY);
+        const gradient = ctx2.createLinearGradient(this.startX, this.startY, this.targetX, this.targetY);
+        const stop1 = Math.max(0, progress - 0.05);
+        const stop2 = progress;
+        const stop3 = Math.min(1, progress + 0.05);
+        gradient.addColorStop(0, "rgba(255, 100, 0, 0)");
+        gradient.addColorStop(stop1, "rgba(255, 100, 0, 0)");
+        gradient.addColorStop(stop2, "white");
+        gradient.addColorStop(stop3, "rgba(255, 100, 0, 0)");
+        gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
+        ctx2.strokeStyle = gradient;
+        ctx2.lineWidth = 4;
+        ctx2.stroke();
+      }
     }
   };
 
   // ts/systems/spawning.ts
   function handleSpawning(state2, width2, height2) {
+    if (state2.empActiveTimer > 0) {
+      return;
+    }
     const waveDef = getWaveDefinition(state2.currentWave);
     if (waveDef.isBossWave) return;
     const difficulty = difficultySettings[state2.difficulty];
@@ -1832,13 +1800,14 @@
     const sizeMultiplier = difficulty.missileSizeMultiplier;
     let newRocket;
     const rocketConstructors = {
-      standard: () => new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier),
-      mirv: () => new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier),
-      stealth: () => new StealthRocket(width2, sizeMultiplier, speedMultiplier),
-      swarmer: () => new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier),
+      standard: () => new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier, loadedSprites.standardRocket),
+      mirv: () => new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier, loadedSprites.mirvRocket),
+      stealth: () => new StealthRocket(width2, sizeMultiplier, speedMultiplier, loadedSprites.stealthRocket),
+      swarmer: () => new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier, loadedSprites.swarmerRocket),
       flare_rocket: () => new FlareRocket(width2, sizeMultiplier, speedMultiplier),
-      armored: () => new ArmoredRocket(width2, sizeMultiplier, speedMultiplier),
-      designator: () => new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier)
+      // No sprite for this one yet
+      armored: () => new ArmoredRocket(width2, sizeMultiplier, speedMultiplier, loadedSprites.armoredRocket),
+      designator: () => new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier, loadedSprites.designatorRocket)
     };
     if (rocketConstructors[type]) {
       newRocket = rocketConstructors[type]();
@@ -2074,7 +2043,14 @@
     state2.shockwaves.forEach((s) => s.update());
   }
   function handleRocketLogic(state2, rocket, index, width2, height2) {
-    if (rocket.y >= height2 || rocket.x < -rocket.radius || rocket.x > width2 + rocket.radius || rocket.life > config.rocketMaxLifetime) {
+    if (rocket.y >= height2) {
+      if (rocket.type !== "designator") {
+        createGroundImpact(state2, rocket.x, height2 - 1);
+      }
+      state2.rockets.splice(index, 1);
+      return true;
+    }
+    if (rocket.x < -rocket.radius || rocket.x > width2 + rocket.radius || rocket.life > config.rocketMaxLifetime) {
       state2.rockets.splice(index, 1);
       return true;
     }
@@ -2094,7 +2070,9 @@
     }
     if (rocket instanceof ArtilleryDesignator && rocket.isDesignating && rocket.designationTimer > rocket.designationDuration) {
       if (rocket.targetCity) {
-        state2.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y));
+        state2.artilleryShells.push(
+          new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y)
+        );
       }
       state2.rockets.splice(index, 1);
       return true;
@@ -2253,7 +2231,14 @@
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
         state2.interceptors.push(
-          new Interceptor(width2 / 2, height2, state2.targetedRocket, state2.interceptorSpeed, config.nukeBlastRadius, "nuke")
+          new Interceptor(
+            width2 / 2,
+            height2,
+            state2.targetedRocket,
+            state2.interceptorSpeed,
+            config.nukeBlastRadius,
+            "nuke"
+          )
         );
         state2.nukeAvailable = false;
       } else {
@@ -2264,7 +2249,14 @@
         for (let i = 0; i < numShots; i++) {
           const launchX = startX + i * 10;
           state2.interceptors.push(
-            new Interceptor(launchX, height2, state2.targetedRocket, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
+            new Interceptor(
+              launchX,
+              height2,
+              state2.targetedRocket,
+              state2.interceptorSpeed,
+              state2.interceptorBlastRadius,
+              "standard"
+            )
           );
         }
       }
@@ -2310,7 +2302,14 @@
     }
     if (touchTarget) {
       state2.interceptors.push(
-        new Interceptor(canvas2.width / 2, canvas2.height, touchTarget, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
+        new Interceptor(
+          canvas2.width / 2,
+          canvas2.height,
+          touchTarget,
+          state2.interceptorSpeed,
+          state2.interceptorBlastRadius,
+          "standard"
+        )
       );
     }
   }
@@ -2328,13 +2327,17 @@
   function togglePause(state2, restartCallback) {
     if (state2.gameState === "IN_WAVE") {
       pauseGame(state2);
-      showPauseScreen(() => resumeGame(state2), restartCallback);
+      const toggleFpsCallback = () => {
+        state2.showFps = !state2.showFps;
+        showPauseScreen(state2, () => resumeGame(state2), restartCallback, toggleFpsCallback);
+      };
+      showPauseScreen(state2, () => resumeGame(state2), restartCallback, toggleFpsCallback);
     } else if (state2.gameState === "PAUSED") {
       resumeGame(state2);
     }
   }
 
-  // ts/logic/upgradeHandlers.ts
+  // ts/upgrades/helpers.ts
   function applyCost(state2, baseCost) {
     if (state2.activePerks.rapidDeployment && !state2.firstUpgradePurchased) {
       state2.firstUpgradePurchased = true;
@@ -2342,17 +2345,8 @@
     }
     return baseCost;
   }
-  function handleUpgradeRepair(state2, refreshUpgradeScreen2) {
-    const cost = applyCost(state2, config.upgradeCosts.repairCity);
-    if (state2.coins >= cost) {
-      const cityToRepair = state2.cities.find((c) => c.isDestroyed);
-      if (cityToRepair) {
-        state2.coins -= cost;
-        cityToRepair.repair();
-        refreshUpgradeScreen2();
-      }
-    }
-  }
+
+  // ts/upgrades/core.ts
   function handleUpgradeTurret(state2, canvas2, refreshUpgradeScreen2) {
     const cost = applyCost(state2, config.upgradeCosts.automatedTurret);
     if (state2.coins >= cost && state2.turrets.length < config.maxTurrets) {
@@ -2389,15 +2383,6 @@
       refreshUpgradeScreen2();
     }
   }
-  function handleUpgradeNuke(state2, refreshUpgradeScreen2) {
-    const cost = applyCost(state2, config.upgradeCosts.nuke);
-    const nukeIsAvailable = !state2.nukeAvailable || state2.activePerks.surplusValue;
-    if (state2.coins >= cost && nukeIsAvailable) {
-      state2.coins -= cost;
-      state2.nukeAvailable = true;
-      refreshUpgradeScreen2();
-    }
-  }
   function handleUpgradeBaseArmor(state2, refreshUpgradeScreen2) {
     const cost = applyCost(state2, config.upgradeCosts.baseArmor);
     if (state2.coins >= cost && !state2.basesAreArmored) {
@@ -2422,6 +2407,17 @@
       state2.coins -= cost;
       state2.turretRangeLevel++;
       state2.turrets.forEach((t) => t.range *= 1.15);
+      refreshUpgradeScreen2();
+    }
+  }
+
+  // ts/upgrades/tactical.ts
+  function handleUpgradeNuke(state2, refreshUpgradeScreen2) {
+    const cost = applyCost(state2, config.upgradeCosts.nuke);
+    const nukeIsPurchasable = !state2.nukeAvailable || state2.activePerks.surplusValue;
+    if (state2.coins >= cost && nukeIsPurchasable) {
+      state2.coins -= cost;
+      state2.nukeAvailable = true;
       refreshUpgradeScreen2();
     }
   }
@@ -2451,6 +2447,19 @@
       state2.coins -= cost;
       state2.scramblerActive = true;
       refreshUpgradeScreen2();
+    }
+  }
+
+  // ts/upgrades/maintenance.ts
+  function handleUpgradeRepair(state2, refreshUpgradeScreen2) {
+    const cost = applyCost(state2, config.upgradeCosts.repairCity);
+    if (state2.coins >= cost) {
+      const cityToRepair = state2.cities.find((c) => c.isDestroyed);
+      if (cityToRepair) {
+        state2.coins -= cost;
+        cityToRepair.repair();
+        refreshUpgradeScreen2();
+      }
     }
   }
 
@@ -2511,32 +2520,6 @@
     );
   }
 
-  // ts/assetLoader.ts
-  var spriteUrls = {
-    bunker: "assets/bunker.png",
-    dome: "assets/dome.png",
-    comms: "assets/tower.png"
-  };
-  var loadedSprites = {};
-  function loadGameAssets() {
-    const promises = [];
-    for (const key in spriteUrls) {
-      const url = spriteUrls[key];
-      const promise = new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          loadedSprites[key] = img;
-          resolve();
-        };
-        img.onerror = () => reject(new Error(`Failed to load sprite: ${key} at ${url}`));
-        img.src = url;
-      });
-      promises.push(promise);
-    }
-    return Promise.all(promises).then(() => {
-    });
-  }
-
   // ts/main.ts
   var canvas = document.getElementById("gameCanvas");
   var ctx = canvas.getContext("2d");
@@ -2586,9 +2569,9 @@
     const citySlotWidth = width / config.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120);
-    const spriteKeys = Object.keys(loadedSprites);
+    const structureSpriteKeys = ["bunker", "dome", "comms"];
     for (let i = 0; i < config.cityCount; i++) {
-      const randomSpriteKey = spriteKeys[Math.floor(random(0, spriteKeys.length))];
+      const randomSpriteKey = structureSpriteKeys[Math.floor(random(0, structureSpriteKeys.length))];
       const sprite = loadedSprites[randomSpriteKey];
       let h;
       if (randomSpriteKey === "comms") {
@@ -2626,7 +2609,9 @@
       window.addEventListener("resize", resizeCanvas);
       canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
       canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
-      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e), { passive: false });
+      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e), {
+        passive: false
+      });
       document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
       document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
         const gameWasRunning = state.gameState === "IN_WAVE";

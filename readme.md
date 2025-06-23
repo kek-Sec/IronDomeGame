@@ -5,7 +5,7 @@
 
 A fast-paced, wave-based tower defense game built with HTML5 Canvas and modern web technologies. As the commander of the last defense system, your mission is to protect your cities from relentless waves of incoming enemy rockets. Use your skill and strategy to upgrade your arsenal, unlock powerful perks, and survive as long as you can against an ever-evolving threat.
 
-![Iron Dome Gameplay Screenshot](https://i.imgur.com/X0PJqPF.png)
+![Iron Dome Gameplay Screenshot](https://i.imgur.com/5lQBWas.gif)
 
 ---
 

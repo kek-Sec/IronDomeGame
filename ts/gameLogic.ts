@@ -9,7 +9,7 @@ import { handleSpawning } from './systems/spawning';
 import { findTargetedRocket } from './systems/targeting';
 import { handleInterceptorCollisions, handleTracerCollisions } from './systems/collisions';
 import { updateEmpEffects, updateCityEffects } from './systems/effectsSystem';
-import { createAdvancedExplosion, triggerScreenShake } from './utils';
+import { createAdvancedExplosion, createGroundImpact, triggerScreenShake } from './utils';
 import { ArtilleryDesignator, ArtilleryShell } from './entities/rockets';
 
 /**
@@ -60,12 +60,17 @@ function handleRocketLogic(
     width: number,
     height: number
 ): boolean {
-    if (
-        rocket.y >= height ||
-        rocket.x < -rocket.radius ||
-        rocket.x > width + rocket.radius ||
-        rocket.life > config.rocketMaxLifetime
-    ) {
+    // Check if rocket hits the ground
+    if (rocket.y >= height) {
+        // Don't create effects for designators that just fly off screen
+        if (rocket.type !== 'designator') {
+            createGroundImpact(state, rocket.x, height - 1);
+        }
+        state.rockets.splice(index, 1);
+        return true;
+    }
+
+    if (rocket.x < -rocket.radius || rocket.x > width + rocket.radius || rocket.life > config.rocketMaxLifetime) {
         state.rockets.splice(index, 1);
         return true;
     }

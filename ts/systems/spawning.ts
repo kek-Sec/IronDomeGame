@@ -11,10 +11,17 @@ import {
     FlareRocket,
     ArmoredRocket,
     ArtilleryDesignator,
+    ArtilleryShell,
 } from '../entities/rockets';
 import { random } from '../utils';
+import { loadedSprites } from '../assetLoader';
 
 export function handleSpawning(state: T.GameState, width: number, height: number): void {
+    // FIX: Prevent any new spawns while an EMP is active.
+    if (state.empActiveTimer > 0) {
+        return;
+    }
+
     const waveDef = getWaveDefinition(state.currentWave);
     if (waveDef.isBossWave) return;
 
@@ -54,13 +61,31 @@ function createRocket(
     let newRocket: T.Rocket | undefined;
 
     const rocketConstructors: Record<string, () => T.Rocket> = {
-        standard: () => new Rocket(undefined, undefined, undefined, undefined, width, sizeMultiplier, speedMultiplier),
-        mirv: () => new MirvRocket(width, height, sizeMultiplier, speedMultiplier),
-        stealth: () => new StealthRocket(width, sizeMultiplier, speedMultiplier),
-        swarmer: () => new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier),
-        flare_rocket: () => new FlareRocket(width, sizeMultiplier, speedMultiplier),
-        armored: () => new ArmoredRocket(width, sizeMultiplier, speedMultiplier),
-        designator: () => new ArtilleryDesignator(width, height, state.cities, sizeMultiplier, speedMultiplier),
+        standard: () =>
+            new Rocket(
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                width,
+                sizeMultiplier,
+                speedMultiplier,
+                loadedSprites.standardRocket
+            ),
+        mirv: () => new MirvRocket(width, height, sizeMultiplier, speedMultiplier, loadedSprites.mirvRocket),
+        stealth: () => new StealthRocket(width, sizeMultiplier, speedMultiplier, loadedSprites.stealthRocket),
+        swarmer: () => new SwarmerRocket(width, height, sizeMultiplier, speedMultiplier, loadedSprites.swarmerRocket),
+        flare_rocket: () => new FlareRocket(width, sizeMultiplier, speedMultiplier), // No sprite for this one yet
+        armored: () => new ArmoredRocket(width, sizeMultiplier, speedMultiplier, loadedSprites.armoredRocket),
+        designator: () =>
+            new ArtilleryDesignator(
+                width,
+                height,
+                state.cities,
+                sizeMultiplier,
+                speedMultiplier,
+                loadedSprites.designatorRocket
+            ),
     };
 
     if (rocketConstructors[type]) {

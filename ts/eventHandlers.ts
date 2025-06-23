@@ -130,7 +130,12 @@ export function resumeGame(state: GameState): void {
 export function togglePause(state: GameState, restartCallback: () => void): void {
     if (state.gameState === 'IN_WAVE') {
         pauseGame(state);
-        UI.showPauseScreen(() => resumeGame(state), restartCallback);
+        const toggleFpsCallback = () => {
+            state.showFps = !state.showFps;
+            // Re-render the pause screen to update the button text
+            UI.showPauseScreen(state, () => resumeGame(state), restartCallback, toggleFpsCallback);
+        };
+        UI.showPauseScreen(state, () => resumeGame(state), restartCallback, toggleFpsCallback);
     } else if (state.gameState === 'PAUSED') {
         resumeGame(state);
     }

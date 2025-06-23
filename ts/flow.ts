@@ -2,7 +2,9 @@
 // * Manages the overall flow of the game, like starting waves and handling upgrades.
 import { config } from './config';
 import * as UI from './ui';
-import * as upgradeHandlers from './logic/upgradeHandlers';
+import * as coreUpgrades from './upgrades/core';
+import * as tacticalUpgrades from './upgrades/tactical';
+import * as maintenanceUpgrades from './upgrades/maintenance';
 import { HiveCarrier } from './entities/bosses';
 import * as T from './types';
 import { getWaveDefinition } from './waveManager';
@@ -59,20 +61,20 @@ export function refreshUpgradeScreen(state: T.GameState, canvas: HTMLCanvasEleme
     UI.showBetweenWaveScreen(
         state,
         {
-            upgradeRepairCallback: () => upgradeHandlers.handleUpgradeRepair(state, refreshCallback),
-            upgradeTurretCallback: () => upgradeHandlers.handleUpgradeTurret(state, canvas, refreshCallback),
-            upgradeSpeedCallback: () => upgradeHandlers.handleUpgradeSpeed(state, refreshCallback),
-            upgradeMultishotCallback: () => upgradeHandlers.handleUpgradeMultishot(state, refreshCallback),
-            upgradeBlastRadiusCallback: () => upgradeHandlers.handleUpgradeBlastRadius(state, refreshCallback),
-            upgradeNukeCallback: () => upgradeHandlers.handleUpgradeNuke(state, refreshCallback),
-            upgradeBaseArmorCallback: () => upgradeHandlers.handleUpgradeBaseArmor(state, refreshCallback),
-            upgradeTurretSpeedCallback: () => upgradeHandlers.handleUpgradeTurretSpeed(state, refreshCallback),
-            upgradeTurretRangeCallback: () => upgradeHandlers.handleUpgradeTurretRange(state, refreshCallback),
-            upgradeHomingMineCallback: () => upgradeHandlers.handleUpgradeHomingMine(state, refreshCallback),
+            upgradeRepairCallback: () => maintenanceUpgrades.handleUpgradeRepair(state, refreshCallback),
+            upgradeTurretCallback: () => coreUpgrades.handleUpgradeTurret(state, canvas, refreshCallback),
+            upgradeSpeedCallback: () => coreUpgrades.handleUpgradeSpeed(state, refreshCallback),
+            upgradeMultishotCallback: () => coreUpgrades.handleUpgradeMultishot(state, refreshCallback),
+            upgradeBlastRadiusCallback: () => coreUpgrades.handleUpgradeBlastRadius(state, refreshCallback),
+            upgradeNukeCallback: () => tacticalUpgrades.handleUpgradeNuke(state, refreshCallback),
+            upgradeBaseArmorCallback: () => coreUpgrades.handleUpgradeBaseArmor(state, refreshCallback),
+            upgradeTurretSpeedCallback: () => coreUpgrades.handleUpgradeTurretSpeed(state, refreshCallback),
+            upgradeTurretRangeCallback: () => coreUpgrades.handleUpgradeTurretRange(state, refreshCallback),
+            upgradeHomingMineCallback: () => tacticalUpgrades.handleUpgradeHomingMine(state, refreshCallback),
             upgradeFieldReinforcementCallback: () =>
-                upgradeHandlers.handleUpgradeFieldReinforcement(state, refreshCallback),
+                tacticalUpgrades.handleUpgradeFieldReinforcement(state, refreshCallback),
             upgradeTargetingScramblerCallback: () =>
-                upgradeHandlers.handleUpgradeTargetingScrambler(state, refreshCallback),
+                tacticalUpgrades.handleUpgradeTargetingScrambler(state, refreshCallback),
             nextWaveCallback: () => startNextWave(state, canvas),
         },
         config

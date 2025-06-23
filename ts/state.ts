@@ -40,6 +40,7 @@ export function createInitialState(playerData: PlayerData): GameState {
         fps: 0,
         frameCount: 0,
         lastFpsUpdate: 0,
+        showFps: false,
         mouse: { x: 0, y: 0 },
         targetedRocket: null,
 

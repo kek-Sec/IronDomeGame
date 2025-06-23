@@ -6,6 +6,7 @@ import { loadPlayerData } from './saveManager';
 import type { GameState, HiveCarrier, StartGameCallback, PlayerData } from './types';
 import {
     fpsCounterEl,
+    fpsBoxEl,
     scoreEl,
     coinsEl,
     waveEl,
@@ -28,6 +29,9 @@ export function updateTopUI(state: GameState): void {
     scoreEl.textContent = state.score.toLocaleString();
     coinsEl.textContent = state.coins.toLocaleString();
     waveEl.textContent = (state.currentWave + 1).toString();
+
+    // Toggle visibility of FPS Box
+    fpsBoxEl.style.display = state.showFps ? 'flex' : 'none';
 
     const isPausable = state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED';
     pauseButton.style.display = isPausable ? 'flex' : 'none';
@@ -167,15 +171,23 @@ export function showGameOverScreen(
     document.getElementById('restart-button')?.addEventListener('click', restartCallback);
 }
 
-export function showPauseScreen(resumeCallback: () => void, restartCallback: () => void): void {
+export function showPauseScreen(
+    state: GameState,
+    resumeCallback: () => void,
+    restartCallback: () => void,
+    toggleFpsCallback: () => void
+): void {
+    const fpsButtonText = state.showFps ? 'Hide FPS' : 'Show FPS';
     const fullHTML = `
         <h1>PAUSED</h1>
-        <div class="upgrade-options">
+        <div class="pause-options">
             <button id="resume-button" class="modal-button">RESUME</button>
-            <button id="restart-button-pause" class="modal-button">RESTART</button>
+            <button id="toggle-fps-button" class="modal-button secondary">${fpsButtonText}</button>
+            <button id="restart-button-pause" class="modal-button tertiary">RESTART</button>
         </div>
     `;
-    showModalWithContent(fullHTML);
+    showModalWithContent(fullHTML, 'pause-screen');
     document.getElementById('resume-button')?.addEventListener('click', resumeCallback);
+    document.getElementById('toggle-fps-button')?.addEventListener('click', toggleFpsCallback);
     document.getElementById('restart-button-pause')?.addEventListener('click', restartCallback);
 }

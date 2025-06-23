@@ -1,6 +1,7 @@
 // ts/ui/domElements.ts
 
 export const fpsCounterEl = document.getElementById('fps-counter') as HTMLElement;
+export const fpsBoxEl = document.getElementById('fps-box') as HTMLElement;
 export const scoreEl = document.getElementById('score') as HTMLElement;
 export const coinsEl = document.getElementById('coins') as HTMLElement;
 export const waveEl = document.getElementById('wave') as HTMLElement;
