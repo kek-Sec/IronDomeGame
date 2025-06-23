@@ -11,6 +11,7 @@ export interface GameState {
     score: number;
     coins: number;
     currentWave: number;
+    cityCount: number;
 
     // Game Entities
     rockets: Rocket[];

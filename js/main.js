@@ -1243,6 +1243,7 @@
       score: perks2.veteranCommander ? 500 : 0,
       coins: 0,
       currentWave: 0,
+      cityCount: 5,
       rockets: [],
       interceptors: [],
       particles: [],
@@ -2233,7 +2234,7 @@
       return;
     }
     const destroyedCities = state2.cities.filter((c) => c.isDestroyed).length;
-    if (destroyedCities === config.cityCount) {
+    if (destroyedCities === state2.cityCount) {
       state2.gameState = "GAME_OVER";
       const isNewHighScore = state2.score > state2.playerData.highScores[state2.difficulty];
       if (isNewHighScore) {
@@ -2702,11 +2703,12 @@
   };
   function createCities() {
     state.cities = [];
-    const citySlotWidth = width / config.cityCount;
+    state.cityCount = window.innerWidth < 768 ? 3 : config.cityCount;
+    const citySlotWidth = width / state.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120);
     const structureSpriteKeys = ["bunker", "dome", "comms"];
-    for (let i = 0; i < config.cityCount; i++) {
+    for (let i = 0; i < state.cityCount; i++) {
       const randomSpriteKey = structureSpriteKeys[Math.floor(random(0, structureSpriteKeys.length))];
       const sprite = loadedSprites[randomSpriteKey];
       let h;

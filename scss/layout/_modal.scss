@@ -152,7 +152,7 @@
 
 .start-screen-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     flex-wrap: wrap;
     gap: 20px;
@@ -314,19 +314,6 @@ p.start-screen-subtitle {
 }
 
 @media (max-width: 768px) {
-    .ui-box h2 {
-        font-size: 1.2em;
-    }
-    #boss-ui-container {
-        top: 80px;
-        width: 80%;
-    }
-    .pause-btn,
-    .info-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5em;
-    }
     .modal-content {
         padding: 20px;
         width: 95%;
@@ -353,29 +340,14 @@ p.start-screen-subtitle {
             font-size: 1.2em;
         }
     }
+    .start-screen-header {
+        justify-content: space-between;
+    }
 }
 
 @media (max-width: 480px) {
-    #ui-container {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 5px;
-    }
     #boss-ui-container {
-        top: 180px;
-    }
-    #top-right-buttons {
-        top: 10px;
-        right: 10px;
-    }
-    .pause-btn,
-    .info-btn {
-        width: 45px;
-        height: 45px;
-    }
-    .ui-box h2 {
-        font-size: 1em;
+        top: 130px;
     }
     .shop-grid,
     .perk-grid,

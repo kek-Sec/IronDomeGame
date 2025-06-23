@@ -76,14 +76,16 @@ const resetAndStartGame: StartGameCallback = (difficulty = 'normal') => {
 // --- Helper Functions ---
 function createCities(): void {
     state.cities = [];
-    const citySlotWidth = width / config.cityCount;
+    // Dynamically set city count based on screen size for mobile friendliness
+    state.cityCount = window.innerWidth < 768 ? 3 : config.cityCount;
+    const citySlotWidth = width / state.cityCount;
     const minHeight = 50;
     const maxHeight = Math.min(height * 0.15, 120); // Base max height for regular buildings
 
     // FIX: Only use structure sprites for cities, not all loaded sprites.
     const structureSpriteKeys = ['bunker', 'dome', 'comms'];
 
-    for (let i = 0; i < config.cityCount; i++) {
+    for (let i = 0; i < state.cityCount; i++) {
         // Pick a random sprite key from our dedicated list of structures.
         const randomSpriteKey = structureSpriteKeys[Math.floor(random(0, structureSpriteKeys.length))];
         const sprite = loadedSprites[randomSpriteKey];

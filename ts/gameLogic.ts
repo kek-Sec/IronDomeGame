@@ -147,7 +147,7 @@ function checkGameState(state: T.GameState, refreshUpgradeScreen: () => void) {
     }
 
     const destroyedCities = state.cities.filter((c) => c.isDestroyed).length;
-    if (destroyedCities === config.cityCount) {
+    if (destroyedCities === state.cityCount) {
         state.gameState = 'GAME_OVER';
         const isNewHighScore = state.score > state.playerData.highScores[state.difficulty];
         if (isNewHighScore) {
