@@ -1,0 +1,32 @@
+# .github/workflows/cypress.yaml
+
+name: Cypress Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install dependencies, build, and run tests
+      # using the official Cypress GitHub Action
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          # Specifies the command to build your project
+          build: npm run build:publish
+          
+          # Specifies the command to start your local server
+          start: npm start
+          
+          # Tells Cypress to wait until the server is responding
+          # before running the tests. Uses the baseUrl from cypress.config.ts
+          wait-on: 'http://127.0.0.1:8080'
+          
+          # Runs tests in the browser in headless mode
+          headless: true
