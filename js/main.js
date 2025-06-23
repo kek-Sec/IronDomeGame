@@ -2732,6 +2732,9 @@
   var resetAndStartGame = (difficulty = "normal") => {
     const playerData = loadPlayerData();
     state = createInitialState(playerData);
+    if (window.Cypress) {
+      window.gameState = state;
+    }
     state.difficulty = difficulty;
     state.coins = difficultySettings[difficulty].startingCoins;
     state.currentWave = -1;

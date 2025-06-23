@@ -69,6 +69,12 @@ const resetAndStartGame: StartGameCallback = (difficulty = 'normal') => {
     // Re-load player data to ensure perks are current
     const playerData = loadPlayerData();
     state = createInitialState(playerData);
+
+    // Re-assign the global state for Cypress testing after creating the new state object
+    if ((window as any).Cypress) {
+        (window as any).gameState = state;
+    }
+
     state.difficulty = difficulty;
     state.coins = difficultySettings[difficulty].startingCoins;
 
