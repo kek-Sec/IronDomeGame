@@ -2794,6 +2794,9 @@
       await loadGameAssets();
       const playerData = loadPlayerData();
       state = createInitialState(playerData);
+      if (window.Cypress) {
+        window.gameState = state;
+      }
       resizeCanvas();
       window.addEventListener("resize", resizeCanvas);
       canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));

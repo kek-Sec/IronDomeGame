@@ -159,6 +159,11 @@ async function init(): Promise<void> {
 
         const playerData = loadPlayerData();
         state = createInitialState(playerData);
+        // Expose the game state to the window object for easy debugging and testing
+        // when running in the Cypress test environment.
+        if ((window as any).Cypress) {
+            (window as any).gameState = state;
+        }
         resizeCanvas();
 
         window.addEventListener('resize', resizeCanvas);
