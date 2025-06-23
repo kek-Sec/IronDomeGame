@@ -1258,7 +1258,7 @@
     };
   }
 
-  // ts/entities/rockets.ts
+  // ts/entities/rockets/base.ts
   var Rocket = class {
     constructor(startX, startY, targetVx, targetVy, width2, sizeMultiplier = 1, speedMultiplier = 1) {
       this.type = "standard";
@@ -1345,17 +1345,11 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/armored.ts
   var ArmoredRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(
-        void 0,
-        void 0,
-        random(-0.5, 0.5),
-        random(1, 1.5),
-        width2,
-        sizeMultiplier * 1.5,
-        speedMultiplier * 0.7
-      );
+      super(void 0, void 0, random(-0.5, 0.5), random(1, 1.5), width2, sizeMultiplier * 1.5, speedMultiplier * 0.7);
       this.health = 3;
       this.maxHealth = 3;
       this.hitFlashTimer = 0;
@@ -1393,9 +1387,9 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
+      super.drawHead(ctx2);
       const w = this.radius;
       const h = this.radius * 3;
-      super.drawHead(ctx2);
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       ctx2.strokeStyle = "#212529";
@@ -1412,6 +1406,8 @@
       this.drawHealthBar(ctx2);
     }
   };
+
+  // ts/entities/rockets/stealth.ts
   var StealthRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 0.8, speedMultiplier * 1.2);
@@ -1469,6 +1465,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/drone.ts
   var Drone = class extends Rocket {
     constructor(startX, startY, targetVx, targetVy, width2, speedMultiplier = 1) {
       super(startX, startY, targetVx, targetVy, width2, 0.6, speedMultiplier * 1.5);
@@ -1500,6 +1498,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/swarmer.ts
   var SwarmerRocket = class extends Rocket {
     constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 1.5, speedMultiplier * 0.8);
@@ -1546,6 +1546,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/mirv.ts
   var MirvRocket = class extends Rocket {
     constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
@@ -1618,6 +1620,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/flare.ts
   var FlareRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
@@ -1647,6 +1651,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/designator.ts
   var ArtilleryDesignator = class extends Rocket {
     // 3 seconds at 60fps
     constructor(width2, height2, cities, sizeMultiplier = 1, speedMultiplier = 1) {
@@ -1708,18 +1714,6 @@
       ctx2.shadowBlur = 15;
       ctx2.stroke();
       ctx2.shadowBlur = 0;
-      const circleRadius = this.targetCity.width / 2 * (1 - progress);
-      ctx2.beginPath();
-      ctx2.arc(
-        this.targetCity.x + this.targetCity.width / 2,
-        this.targetCity.y + this.targetCity.height / 2,
-        circleRadius,
-        0,
-        Math.PI * 2
-      );
-      ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
-      ctx2.lineWidth = 2;
-      ctx2.stroke();
     }
     draw(ctx2) {
       this.drawTrail(ctx2);
@@ -1751,6 +1745,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/shell.ts
   var ArtilleryShell = class {
     constructor(targetX, targetY) {
       this.timeLeft = 30;
