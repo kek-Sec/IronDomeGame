@@ -674,6 +674,90 @@
     }
   };
 
+  // ts/perks.ts
+  var perks = {
+    veteranCommander: {
+      name: "Veteran Commander",
+      description: "Begin each run with 500 extra score.",
+      cost: 150
+    },
+    advancedFortifications: {
+      name: "Advanced Fortifications",
+      description: "Start each game with Base Armor already applied to all cities.",
+      cost: 400
+    },
+    rapidDeployment: {
+      name: "Rapid Deployment",
+      description: "The first upgrade purchased in the shop each wave is 25% cheaper.",
+      cost: 300
+    },
+    efficientInterceptors: {
+      name: "Efficient Interceptors",
+      description: 'All interceptors have a 10% chance to be a "Critical Hit", dealing triple damage.',
+      cost: 500
+    },
+    surplusValue: {
+      name: "Surplus Value",
+      description: "The Nuke Interceptor can be purchased every wave (instead of one per game).",
+      cost: 800
+    },
+    extraMine: {
+      name: "Reserve Mine",
+      description: "Start every game with one free Homing Mine available.",
+      cost: 200
+    }
+  };
+
+  // ts/saveManager.ts
+  var SAVE_KEY = "ironDomePlayerData_TS";
+  function getInitialPlayerData() {
+    const unlockedPerks = {};
+    Object.keys(perks).forEach((key) => {
+      unlockedPerks[key] = false;
+    });
+    return {
+      prestigePoints: 0,
+      unlockedPerks,
+      highScores: {
+        easy: 0,
+        normal: 0,
+        hard: 0
+      }
+    };
+  }
+  function loadPlayerData() {
+    const initialData = getInitialPlayerData();
+    try {
+      const savedData = localStorage.getItem(SAVE_KEY);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        return {
+          ...initialData,
+          ...parsedData,
+          highScores: {
+            ...initialData.highScores,
+            ...parsedData.highScores || {}
+          },
+          unlockedPerks: {
+            ...initialData.unlockedPerks,
+            ...parsedData.unlockedPerks || {}
+          }
+        };
+      }
+    } catch (error) {
+      console.error("Failed to load player data:", error);
+      localStorage.removeItem(SAVE_KEY);
+    }
+    return initialData;
+  }
+  function savePlayerData(playerData) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
+    } catch (error) {
+      console.error("Failed to save player data:", error);
+    }
+  }
+
   // ts/ui/domElements.ts
   var fpsCounterEl = document.getElementById("fps-counter");
   var scoreEl = document.getElementById("score");
@@ -923,90 +1007,6 @@
     addListenerIfPresent("next-wave-button", nextWaveCallback);
   }
 
-  // ts/perks.ts
-  var perks = {
-    veteranCommander: {
-      name: "Veteran Commander",
-      description: "Begin each run with 500 extra score.",
-      cost: 150
-    },
-    advancedFortifications: {
-      name: "Advanced Fortifications",
-      description: "Start each game with Base Armor already applied to all cities.",
-      cost: 400
-    },
-    rapidDeployment: {
-      name: "Rapid Deployment",
-      description: "The first upgrade purchased in the shop each wave is 25% cheaper.",
-      cost: 300
-    },
-    efficientInterceptors: {
-      name: "Efficient Interceptors",
-      description: 'All interceptors have a 10% chance to be a "Critical Hit", dealing triple damage.',
-      cost: 500
-    },
-    surplusValue: {
-      name: "Surplus Value",
-      description: "The Nuke Interceptor can be purchased every wave (instead of one per game).",
-      cost: 800
-    },
-    extraMine: {
-      name: "Reserve Mine",
-      description: "Start every game with one free Homing Mine available.",
-      cost: 200
-    }
-  };
-
-  // ts/saveManager.ts
-  var SAVE_KEY = "ironDomePlayerData_TS";
-  function getInitialPlayerData() {
-    const unlockedPerks = {};
-    Object.keys(perks).forEach((key) => {
-      unlockedPerks[key] = false;
-    });
-    return {
-      prestigePoints: 0,
-      unlockedPerks,
-      highScores: {
-        easy: 0,
-        normal: 0,
-        hard: 0
-      }
-    };
-  }
-  function loadPlayerData() {
-    const initialData = getInitialPlayerData();
-    try {
-      const savedData = localStorage.getItem(SAVE_KEY);
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        return {
-          ...initialData,
-          ...parsedData,
-          highScores: {
-            ...initialData.highScores,
-            ...parsedData.highScores || {}
-          },
-          unlockedPerks: {
-            ...initialData.unlockedPerks,
-            ...parsedData.unlockedPerks || {}
-          }
-        };
-      }
-    } catch (error) {
-      console.error("Failed to load player data:", error);
-      localStorage.removeItem(SAVE_KEY);
-    }
-    return initialData;
-  }
-  function savePlayerData(playerData) {
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
-    } catch (error) {
-      console.error("Failed to save player data:", error);
-    }
-  }
-
   // ts/ui/armoryScreen.ts
   var perkIcons = {
     veteranCommander: "\u{1F3C6}",
@@ -1075,14 +1075,13 @@
   // ts/ui.ts
   function updateTopUI(state2) {
     fpsCounterEl.textContent = state2.fps.toString();
-    scoreEl.textContent = state2.score.toString();
-    coinsEl.textContent = state2.coins.toString();
+    scoreEl.textContent = state2.score.toLocaleString();
+    coinsEl.textContent = state2.coins.toLocaleString();
     waveEl.textContent = (state2.currentWave + 1).toString();
-    if (state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED") {
-      pauseButton.style.display = "flex";
+    const isPausable = state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED";
+    pauseButton.style.display = isPausable ? "flex" : "none";
+    if (isPausable) {
       pauseIcon.innerHTML = state2.gameState === "PAUSED" ? "\u25B6" : "||";
-    } else {
-      pauseButton.style.display = "none";
     }
   }
   function updateBossUI(boss) {
@@ -1095,10 +1094,19 @@
       bossUiContainer.style.display = "none";
     }
   }
+  function hideModal() {
+    modalContainer.style.display = "none";
+  }
+  function showModalWithContent(innerHTML, className = "") {
+    modalContainer.style.display = "flex";
+    modalContent.className = "modal-content";
+    if (className) {
+      modalContent.classList.add(className);
+    }
+    modalContent.innerHTML = innerHTML;
+  }
   function showStartScreen(startGameCallback, showArmoryCallback) {
     const playerData = loadPlayerData();
-    modalContainer.style.display = "flex";
-    modalContent.classList.remove("armory");
     let difficultyCardsHTML = '<div class="difficulty-card-grid">';
     for (const key in difficultySettings) {
       const diff = difficultySettings[key];
@@ -1120,7 +1128,7 @@
         `;
     }
     difficultyCardsHTML += "</div>";
-    modalContent.innerHTML = `
+    const fullHTML = `
         <div class="start-screen-header">
             <h1>IRON DOME</h1>
             <button id="armory-button" class="armory-button">
@@ -1130,21 +1138,16 @@
         <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
         ${difficultyCardsHTML}
     `;
-    for (const key in difficultySettings) {
-      document.getElementById(`start-${key}`)?.addEventListener("click", (e) => {
-        let target = e.target;
-        while (target && !target.dataset.difficulty) {
-          target = target.parentElement;
-        }
-        if (target && target.dataset.difficulty) {
-          startGameCallback(target.dataset.difficulty);
-        }
+    showModalWithContent(fullHTML);
+    document.querySelectorAll(".difficulty-card").forEach((card) => {
+      card.addEventListener("click", (e) => {
+        const difficulty = e.currentTarget.dataset.difficulty;
+        startGameCallback(difficulty);
       });
-    }
+    });
     document.getElementById("armory-button")?.addEventListener("click", showArmoryCallback);
   }
   function showRocketInfoScreen(closeCallback) {
-    modalContainer.style.display = "flex";
     let rocketHTML = '<div class="rocket-info-grid">';
     for (const key in rocketInfo) {
       const rocket = rocketInfo[key];
@@ -1159,29 +1162,27 @@
         `;
     }
     rocketHTML += "</div>";
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>ROCKET BESTIARY</h1>
         ${rocketHTML}
         <button id="close-info-button" class="modal-button">CLOSE</button>
     `;
-    const cleanupAndClose = () => {
-      modalContainer.removeEventListener("click", backgroundClickHandler);
-      closeCallback();
-    };
+    showModalWithContent(fullHTML);
+    const closeButton = document.getElementById("close-info-button");
     const backgroundClickHandler = (e) => {
       if (e.target === modalContainer) {
-        cleanupAndClose();
+        closeButton?.removeEventListener("click", closeCallback);
+        modalContainer.removeEventListener("click", backgroundClickHandler);
+        closeCallback();
       }
     };
-    document.getElementById("close-info-button")?.addEventListener("click", cleanupAndClose);
+    closeButton?.addEventListener("click", closeCallback);
     modalContainer.addEventListener("click", backgroundClickHandler);
   }
   function showGameOverScreen(state2, restartCallback, pointsEarned, newHighScore) {
     const { score, currentWave } = state2;
-    modalContainer.style.display = "flex";
-    modalContent.classList.add("game-over");
     const newHighScoreHTML = newHighScore ? `<p class="new-high-score-banner">\u{1F3C6} NEW HIGH SCORE! \u{1F3C6}</p>` : "";
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>MISSION FAILED</h1>
         ${newHighScoreHTML}
         <p class="game-over-stats">FINAL SCORE: ${score.toLocaleString()}</p>
@@ -1189,26 +1190,20 @@
         <p class="prestige-points">PRESTIGE EARNED: ${pointsEarned.toLocaleString()}</p>
         <button id="restart-button" class="modal-button">TRY AGAIN</button>
     `;
-    document.getElementById("restart-button")?.addEventListener("click", () => {
-      modalContent.classList.remove("game-over");
-      restartCallback();
-    });
+    showModalWithContent(fullHTML, "game-over");
+    document.getElementById("restart-button")?.addEventListener("click", restartCallback);
   }
   function showPauseScreen(resumeCallback, restartCallback) {
-    modalContainer.style.display = "flex";
-    modalContent.classList.remove("game-over");
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>PAUSED</h1>
         <div class="upgrade-options">
             <button id="resume-button" class="modal-button">RESUME</button>
             <button id="restart-button-pause" class="modal-button">RESTART</button>
         </div>
     `;
+    showModalWithContent(fullHTML);
     document.getElementById("resume-button")?.addEventListener("click", resumeCallback);
     document.getElementById("restart-button-pause")?.addEventListener("click", restartCallback);
-  }
-  function hideModal() {
-    modalContainer.style.display = "none";
   }
 
   // ts/state.ts
@@ -2399,39 +2394,12 @@
     state2.mouse.x = e.clientX - rect.left;
     state2.mouse.y = e.clientY - rect.top;
   }
-  function _handleMineDeployment(state2, x, y, height2) {
-    if (state2.homingMinesAvailable > 0 && y > height2 * config.homingMineDeploymentZone) {
-      state2.homingMines.push(new HomingMine(x, height2 - 10));
-      state2.homingMinesAvailable--;
-      return true;
-    }
-    return false;
-  }
-  function _handleEmpClick(state2, x, y) {
-    for (let i = state2.empPowerUps.length - 1; i >= 0; i--) {
-      const emp = state2.empPowerUps[i];
-      if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
-        state2.empActiveTimer = config.empDuration;
-        state2.empShockwave = { radius: 0, alpha: 1 };
-        state2.empPowerUps.splice(i, 1);
-        return true;
-      }
-    }
-    return false;
-  }
-  function _handleInterceptorLaunch(state2, width2, height2) {
+  function handleInterceptorLaunch(state2, width2, height2) {
     if (state2.targetedRocket) {
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
         state2.interceptors.push(
-          new Interceptor(
-            width2 / 2,
-            height2,
-            state2.targetedRocket,
-            state2.interceptorSpeed,
-            config.nukeBlastRadius,
-            "nuke"
-          )
+          new Interceptor(width2 / 2, height2, state2.targetedRocket, state2.interceptorSpeed, config.nukeBlastRadius, "nuke")
         );
         state2.nukeAvailable = false;
       } else {
@@ -2442,30 +2410,32 @@
         for (let i = 0; i < numShots; i++) {
           const launchX = startX + i * 10;
           state2.interceptors.push(
-            new Interceptor(
-              launchX,
-              height2,
-              state2.targetedRocket,
-              state2.interceptorSpeed,
-              state2.interceptorBlastRadius,
-              "standard"
-            )
+            new Interceptor(launchX, height2, state2.targetedRocket, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
           );
         }
       }
-      return true;
     }
-    return false;
   }
   function handleClick(state2, canvas2, e) {
     if (state2.gameState !== "IN_WAVE") return;
     const rect = canvas2.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const { width: width2, height: height2 } = canvas2;
-    if (_handleMineDeployment(state2, x, y, height2)) return;
-    if (_handleEmpClick(state2, x, y)) return;
-    if (_handleInterceptorLaunch(state2, width2, height2)) return;
+    for (let i = state2.empPowerUps.length - 1; i >= 0; i--) {
+      const emp = state2.empPowerUps[i];
+      if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
+        state2.empActiveTimer = config.empDuration;
+        state2.empShockwave = { radius: 0, alpha: 1 };
+        state2.empPowerUps.splice(i, 1);
+        return;
+      }
+    }
+    if (state2.homingMinesAvailable > 0 && y > canvas2.height * config.homingMineDeploymentZone) {
+      state2.homingMines.push(new HomingMine(x, canvas2.height - 10));
+      state2.homingMinesAvailable--;
+      return;
+    }
+    handleInterceptorLaunch(state2, canvas2.width, canvas2.height);
   }
   function handleTouchStart(state2, canvas2, e) {
     e.preventDefault();
@@ -2473,7 +2443,6 @@
     const rect = canvas2.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    const { width: width2, height: height2 } = canvas2;
     let closestDist = config.touchTargetingRadius;
     let touchTarget = null;
     const potentialTargets = [...state2.rockets, ...state2.flares];
@@ -2487,24 +2456,27 @@
     }
     if (touchTarget) {
       state2.interceptors.push(
-        new Interceptor(
-          width2 / 2,
-          height2,
-          touchTarget,
-          state2.interceptorSpeed,
-          state2.interceptorBlastRadius,
-          "standard"
-        )
+        new Interceptor(canvas2.width / 2, canvas2.height, touchTarget, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
       );
+    }
+  }
+  function pauseGame(state2) {
+    if (state2.gameState === "IN_WAVE") {
+      state2.gameState = "PAUSED";
+    }
+  }
+  function resumeGame(state2) {
+    if (state2.gameState === "PAUSED") {
+      state2.gameState = "IN_WAVE";
+      hideModal();
     }
   }
   function togglePause(state2, restartCallback) {
     if (state2.gameState === "IN_WAVE") {
-      state2.gameState = "PAUSED";
-      showPauseScreen(() => togglePause(state2, restartCallback), restartCallback);
+      pauseGame(state2);
+      showPauseScreen(() => resumeGame(state2), restartCallback);
     } else if (state2.gameState === "PAUSED") {
-      state2.gameState = "IN_WAVE";
-      hideModal();
+      resumeGame(state2);
     }
   }
 
@@ -2781,19 +2753,6 @@
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
     if (state && state.gameState !== "IN_WAVE") {
-      if (state.cities && state.cities.length > 0) {
-        const citySlotWidth = width / config.cityCount;
-        state.cities.forEach((city, i) => {
-          city.x = i * citySlotWidth + (citySlotWidth - city.width) / 2;
-          city.y = height - city.height;
-        });
-      }
-      if (state.turrets && state.turrets.length > 0) {
-        state.turrets.forEach((turret, index) => {
-          turret.x = index === 0 ? width * 0.25 : width * 0.75;
-          turret.y = height - 10;
-        });
-      }
       draw(ctx, state, width, height);
     }
   };
@@ -2801,8 +2760,7 @@
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
     }
-    modalContainer.style.display = "flex";
-    modalContent.innerHTML = "<h1>Loading Assets...</h1>";
+    showModalWithContent("<h1>Loading Assets...</h1>");
     try {
       await loadGameAssets();
       const playerData = loadPlayerData();
@@ -2814,27 +2772,28 @@
       window.addEventListener("resize", resizeCanvas);
       canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
       canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
+      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e), { passive: false });
       document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
       document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
         const gameWasRunning = state.gameState === "IN_WAVE";
         if (gameWasRunning) {
-          state.gameState = "PAUSED";
-          updateTopUI(state);
+          pauseGame(state);
         }
         showRocketInfoScreen(() => {
           hideModal();
           if (gameWasRunning) {
-            state.gameState = "IN_WAVE";
-            updateTopUI(state);
+            resumeGame(state);
           }
         });
       });
-      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
       showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
       animationFrameId = requestAnimationFrame(gameLoop);
     } catch (error) {
       console.error("Failed to load game assets:", error);
-      modalContent.innerHTML = "<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>";
+      showModalWithContent(
+        "<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>",
+        "game-over"
+      );
     }
   }
   init();

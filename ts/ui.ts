@@ -1,13 +1,8 @@
 // ts/ui.ts
-// * Manages and exports all UI-related functions, acting as a barrel file.
+// * Manages and exports all UI-related functions.
 
-// Re-export functions from the new, modularized UI files
-export { showBetweenWaveScreen } from './ui/shopScreen';
-export { showArmoryScreen } from './ui/armoryScreen';
-
-// --- Core UI Functions still in this file ---
 import { difficultySettings, rocketInfo } from './config';
-import { savePlayerData, loadPlayerData } from './saveManager';
+import { loadPlayerData } from './saveManager';
 import type { GameState, HiveCarrier, StartGameCallback, PlayerData } from './types';
 import {
     fpsCounterEl,
@@ -23,17 +18,22 @@ import {
     bossHealthBarEl,
 } from './ui/domElements';
 
+export { showBetweenWaveScreen } from './ui/shopScreen';
+export { showArmoryScreen } from './ui/armoryScreen';
+
+
+// --- Core UI Functions ---
+
 export function updateTopUI(state: GameState): void {
     fpsCounterEl.textContent = state.fps.toString();
-    scoreEl.textContent = state.score.toString();
-    coinsEl.textContent = state.coins.toString();
+    scoreEl.textContent = state.score.toLocaleString();
+    coinsEl.textContent = state.coins.toLocaleString();
     waveEl.textContent = (state.currentWave + 1).toString();
 
-    if (state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED') {
-        pauseButton.style.display = 'flex';
+    const isPausable = state.gameState === 'IN_WAVE' || state.gameState === 'PAUSED';
+    pauseButton.style.display = isPausable ? 'flex' : 'none';
+    if(isPausable) {
         pauseIcon.innerHTML = state.gameState === 'PAUSED' ? '▶' : '||';
-    } else {
-        pauseButton.style.display = 'none';
     }
 }
 
@@ -48,11 +48,23 @@ export function updateBossUI(boss: HiveCarrier | null): void {
     }
 }
 
+// --- Modal and Screen Management ---
+
+export function hideModal(): void {
+    modalContainer.style.display = 'none';
+}
+
+export function showModalWithContent(innerHTML: string, className: string = ''): void {
+    modalContainer.style.display = 'flex';
+    modalContent.className = 'modal-content'; // Reset classes
+    if (className) {
+        modalContent.classList.add(className);
+    }
+    modalContent.innerHTML = innerHTML;
+}
+
 export function showStartScreen(startGameCallback: StartGameCallback, showArmoryCallback: () => void): void {
     const playerData = loadPlayerData();
-    modalContainer.style.display = 'flex';
-    modalContent.classList.remove('armory');
-
     let difficultyCardsHTML = '<div class="difficulty-card-grid">';
     for (const key in difficultySettings) {
         const diff = difficultySettings[key as keyof typeof difficultySettings];
@@ -75,7 +87,7 @@ export function showStartScreen(startGameCallback: StartGameCallback, showArmory
     }
     difficultyCardsHTML += '</div>';
 
-    modalContent.innerHTML = `
+    const fullHTML = `
         <div class="start-screen-header">
             <h1>IRON DOME</h1>
             <button id="armory-button" class="armory-button">
@@ -86,24 +98,19 @@ export function showStartScreen(startGameCallback: StartGameCallback, showArmory
         ${difficultyCardsHTML}
     `;
 
-    for (const key in difficultySettings) {
-        document.getElementById(`start-${key}`)?.addEventListener('click', (e: Event) => {
-            let target = e.target as HTMLElement | null;
-            while (target && !target.dataset.difficulty) {
-                target = target.parentElement;
-            }
-            if (target && target.dataset.difficulty) {
-                startGameCallback(target.dataset.difficulty as 'easy' | 'normal' | 'hard');
-            }
+    showModalWithContent(fullHTML);
+
+    document.querySelectorAll('.difficulty-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const difficulty = (e.currentTarget as HTMLElement).dataset.difficulty as 'easy' | 'normal' | 'hard';
+            startGameCallback(difficulty);
         });
-    }
+    });
     document.getElementById('armory-button')?.addEventListener('click', showArmoryCallback);
 }
 
 export function showRocketInfoScreen(closeCallback: () => void): void {
-    modalContainer.style.display = 'flex';
     let rocketHTML = '<div class="rocket-info-grid">';
-
     for (const key in rocketInfo) {
         const rocket = rocketInfo[key as keyof typeof rocketInfo];
         rocketHTML += `
@@ -118,40 +125,32 @@ export function showRocketInfoScreen(closeCallback: () => void): void {
     }
     rocketHTML += '</div>';
 
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>ROCKET BESTIARY</h1>
         ${rocketHTML}
         <button id="close-info-button" class="modal-button">CLOSE</button>
     `;
 
-    const cleanupAndClose = (): void => {
-        modalContainer.removeEventListener('click', backgroundClickHandler);
-        closeCallback();
-    };
+    showModalWithContent(fullHTML);
 
-    const backgroundClickHandler = (e: MouseEvent): void => {
+    const closeButton = document.getElementById('close-info-button');
+    const backgroundClickHandler = (e: MouseEvent) => {
         if (e.target === modalContainer) {
-            cleanupAndClose();
+            closeButton?.removeEventListener('click', closeCallback);
+            modalContainer.removeEventListener('click', backgroundClickHandler);
+            closeCallback();
         }
     };
-
-    document.getElementById('close-info-button')?.addEventListener('click', cleanupAndClose);
+    
+    closeButton?.addEventListener('click', closeCallback);
     modalContainer.addEventListener('click', backgroundClickHandler);
 }
 
-export function showGameOverScreen(
-    state: GameState,
-    restartCallback: () => void,
-    pointsEarned: number,
-    newHighScore: boolean
-): void {
+export function showGameOverScreen(state: GameState, restartCallback: () => void, pointsEarned: number, newHighScore: boolean): void {
     const { score, currentWave } = state;
-    modalContainer.style.display = 'flex';
-    modalContent.classList.add('game-over');
-
     const newHighScoreHTML = newHighScore ? `<p class="new-high-score-banner">🏆 NEW HIGH SCORE! 🏆</p>` : '';
 
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>MISSION FAILED</h1>
         ${newHighScoreHTML}
         <p class="game-over-stats">FINAL SCORE: ${score.toLocaleString()}</p>
@@ -159,26 +158,20 @@ export function showGameOverScreen(
         <p class="prestige-points">PRESTIGE EARNED: ${pointsEarned.toLocaleString()}</p>
         <button id="restart-button" class="modal-button">TRY AGAIN</button>
     `;
-    document.getElementById('restart-button')?.addEventListener('click', () => {
-        modalContent.classList.remove('game-over');
-        restartCallback();
-    });
+
+    showModalWithContent(fullHTML, 'game-over');
+    document.getElementById('restart-button')?.addEventListener('click', restartCallback);
 }
 
 export function showPauseScreen(resumeCallback: () => void, restartCallback: () => void): void {
-    modalContainer.style.display = 'flex';
-    modalContent.classList.remove('game-over');
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>PAUSED</h1>
         <div class="upgrade-options">
             <button id="resume-button" class="modal-button">RESUME</button>
             <button id="restart-button-pause" class="modal-button">RESTART</button>
         </div>
     `;
+    showModalWithContent(fullHTML);
     document.getElementById('resume-button')?.addEventListener('click', resumeCallback);
     document.getElementById('restart-button-pause')?.addEventListener('click', restartCallback);
-}
-
-export function hideModal(): void {
-    modalContainer.style.display = 'none';
 }
