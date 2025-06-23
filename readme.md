@@ -20,21 +20,23 @@ Ready to defend your cities?
 ## ✨ Features
 
 - **Dynamic Wave System:** Face increasingly difficult waves of enemies with procedural generation for endless gameplay. No two games are exactly the same!
-- **Diverse Enemy Arsenal:** Intercept a variety of threats, including standard missiles, MIRVs that split into multiple warheads, stealth rockets that cloak, swarmer missiles that deploy drones, and heavily armored projectiles.
+- **Diverse Enemy Arsenal:** Intercept a variety of threats, including standard missiles, MIRVs that split into multiple warheads, stealth rockets that cloak, swarmer missiles that deploy drones, heavily armored projectiles, decoy-deploying flare rockets, and high-priority artillery designators.
 - **Epic Boss Battles:** Survive long enough to challenge the formidable Hive Carrier boss in high-stakes encounters.
 - **In-Depth Upgrade Shop:** Use coins earned in battle to purchase permanent upgrades for your interceptors, build automated C-RAM turrets, and buy tactical abilities like Nukes, Proximity Mines, and Targeting Scramblers.
 - **Persistent Perk System:** Earn Prestige Points from your score to unlock powerful perks in the Armory. These provide permanent bonuses for all future games, rewarding your progress.
+- **Fully Responsive Design:** Enjoy a seamless experience on both desktop and mobile devices, with a UI that adapts to your screen size.
 - **Multiple Difficulty Levels:** Choose from Recruit, Veteran, or Elite difficulty to match your skill level and challenge yourself.
-- **Modern Tech Stack:** Built from the ground up with **TypeScript** for robust code, **HTML5 Canvas** for smooth rendering, and **SCSS** for clean, modern styling.
 
 ---
 
 ## 🎮 How to Play
 
-- **Objective:** Protect your five cities at the bottom of the screen. The game ends when all of your cities are destroyed.
-- **Controls:**
-    - **Aim:** Move your mouse to aim the central missile launcher.
-    - **Target & Fire:** Click on an enemy rocket to select it as a target. Your reticle will lock on. Click again to launch an interceptor.
+- **Objective:** Protect your cities at the bottom of the screen. The game ends when all of your cities are destroyed.
+- **Controls (Desktop):**
+    - **Aim:** Move your mouse to aim the central missile launcher. It will automatically target the nearest enemy to your cursor.
+    - **Fire:** Click anywhere on the screen to launch an interceptor at the locked target.
+- **Controls (Mobile):**
+    - **Target & Fire:** Tap on or near an enemy rocket to instantly fire an interceptor at it.
 - **Upgrades:** Between waves, you'll enter the shop. Spend your earned coins wisely to enhance your defenses and prepare for the next onslaught.
 
 ---
