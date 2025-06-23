@@ -1065,6 +1065,7 @@
   }
 
   // ts/ui.ts
+  var modalContent2 = modalContent;
   function updateTopUI(state2) {
     fpsCounterEl.textContent = state2.fps.toString();
     scoreEl.textContent = state2.score.toString();
@@ -1090,7 +1091,7 @@
   function showStartScreen(startGameCallback, showArmoryCallback) {
     const playerData = loadPlayerData();
     modalContainer.style.display = "flex";
-    modalContent.classList.remove("armory");
+    modalContent2.classList.remove("armory");
     let difficultyCardsHTML = '<div class="difficulty-card-grid">';
     for (const key in difficultySettings) {
       const diff = difficultySettings[key];
@@ -1111,7 +1112,7 @@
         `;
     }
     difficultyCardsHTML += "</div>";
-    modalContent.innerHTML = `
+    modalContent2.innerHTML = `
         <div class="start-screen-header">
             <h1>IRON DOME</h1>
             <button id="armory-button" class="armory-button">
@@ -1121,18 +1122,19 @@
         <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
         ${difficultyCardsHTML}
     `;
-    for (const key in difficultySettings) {
-      document.getElementById(`start-${key}`)?.addEventListener("click", (e) => {
-        let target = e.target;
-        while (target && !target.dataset.difficulty) {
-          target = target.parentElement;
-        }
-        if (target && target.dataset.difficulty) {
-          startGameCallback(target.dataset.difficulty);
-        }
-      });
-    }
-    document.getElementById("armory-button")?.addEventListener("click", showArmoryCallback);
+    const newModalContent = modalContent2.cloneNode(true);
+    modalContent2.parentNode.replaceChild(newModalContent, modalContent2);
+    modalContent2 = document.getElementById("modal-content-main");
+    modalContent2.addEventListener("click", (e) => {
+      const target = e.target;
+      const difficultyCard = target.closest(".difficulty-card");
+      const armoryButton = target.closest("#armory-button");
+      if (difficultyCard && difficultyCard.dataset.difficulty) {
+        startGameCallback(difficultyCard.dataset.difficulty);
+      } else if (armoryButton) {
+        showArmoryCallback();
+      }
+    });
   }
   function showRocketInfoScreen(closeCallback) {
     modalContainer.style.display = "flex";
@@ -1150,7 +1152,7 @@
         `;
     }
     rocketHTML += "</div>";
-    modalContent.innerHTML = `
+    modalContent2.innerHTML = `
         <h1>ROCKET BESTIARY</h1>
         ${rocketHTML}
         <button id="close-info-button" class="modal-button">CLOSE</button>
@@ -1170,9 +1172,9 @@
   function showGameOverScreen(state2, restartCallback, pointsEarned, newHighScore) {
     const { score, currentWave } = state2;
     modalContainer.style.display = "flex";
-    modalContent.classList.add("game-over");
+    modalContent2.classList.add("game-over");
     const newHighScoreHTML = newHighScore ? `<p class="new-high-score-banner">\u{1F3C6} NEW HIGH SCORE! \u{1F3C6}</p>` : "";
-    modalContent.innerHTML = `
+    modalContent2.innerHTML = `
         <h1>MISSION FAILED</h1>
         ${newHighScoreHTML}
         <p class="game-over-stats">FINAL SCORE: ${score.toLocaleString()}</p>
@@ -1181,14 +1183,14 @@
         <button id="restart-button" class="modal-button">TRY AGAIN</button>
     `;
     document.getElementById("restart-button")?.addEventListener("click", () => {
-      modalContent.classList.remove("game-over");
+      modalContent2.classList.remove("game-over");
       restartCallback();
     });
   }
   function showPauseScreen(resumeCallback, restartCallback) {
     modalContainer.style.display = "flex";
-    modalContent.classList.remove("game-over");
-    modalContent.innerHTML = `
+    modalContent2.classList.remove("game-over");
+    modalContent2.innerHTML = `
         <h1>PAUSED</h1>
         <div class="upgrade-options">
             <button id="resume-button" class="modal-button">RESUME</button>
@@ -2794,6 +2796,9 @@
       await loadGameAssets();
       const playerData = loadPlayerData();
       state = createInitialState(playerData);
+      if (window.Cypress) {
+        window.gameState = state;
+      }
       resizeCanvas();
       window.addEventListener("resize", resizeCanvas);
       canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));

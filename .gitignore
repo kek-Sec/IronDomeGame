@@ -3,3 +3,8 @@ dist/
 css/
 js/
 js/main.js
+test/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
