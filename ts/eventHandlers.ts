@@ -90,7 +90,6 @@ export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: Mous
     if (_handleInterceptorLaunch(state, width, height)) return;
 }
 
-
 // --- Touch Handling Logic ---
 
 export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e: TouchEvent): void {
@@ -114,7 +113,7 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
             touchTarget = target;
         }
     }
-    
+
     if (touchTarget) {
         state.interceptors.push(
             new Interceptor(
@@ -128,7 +127,6 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
         );
     }
 }
-
 
 // --- Pause/Resume Logic ---
 

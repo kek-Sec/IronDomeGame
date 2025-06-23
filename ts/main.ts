@@ -200,7 +200,8 @@ async function init(): Promise<void> {
         animationFrameId = requestAnimationFrame(gameLoop);
     } catch (error) {
         console.error('Failed to load game assets:', error);
-        modalContent.innerHTML = '<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>';
+        modalContent.innerHTML =
+            '<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>';
     }
 }
 

@@ -20,12 +20,7 @@ import {
 import type { GameState } from './types';
 import { getWaveDefinition } from './waveManager';
 
-export function update(
-    state: GameState,
-    width: number,
-    height: number,
-    refreshUpgradeScreen: () => void
-): void {
+export function update(state: GameState, width: number, height: number, refreshUpgradeScreen: () => void): void {
     if (state.gameState !== 'IN_WAVE') return;
 
     state.gameTime++;

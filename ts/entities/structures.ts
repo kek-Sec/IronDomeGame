@@ -29,14 +29,7 @@ export class City implements CityType {
     isSmoking: boolean;
     private sprite: HTMLImageElement;
 
-    constructor(
-        x: number,
-        y: number,
-        w: number,
-        h: number,
-        isArmored: boolean = false,
-        sprite: HTMLImageElement
-    ) {
+    constructor(x: number, y: number, w: number, h: number, isArmored: boolean = false, sprite: HTMLImageElement) {
         this.x = x;
         this.y = y;
         this.width = w;

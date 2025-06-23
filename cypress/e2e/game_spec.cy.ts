@@ -1,7 +1,7 @@
 // cypress/e2e/game_spec.cy.ts
 
 interface CustomWindow extends Window {
-    gameState: any; 
+    gameState: any;
 }
 
 describe('Gameplay Mechanics', () => {
@@ -18,39 +18,43 @@ describe('Gameplay Mechanics', () => {
         cy.window({ timeout: 10000 }).its('gameState.rockets.0').should('exist');
 
         // Get the initial number of interceptors (should be 0)
-        cy.window().its('gameState.interceptors.length').then(initialInterceptorCount => {
-            // Use a .then() block to ensure gameState is available
-            cy.window().then(win => {
-                const gameWin = win as unknown as CustomWindow;
-                
-                // Manually set the multishot level to max for this test
-                gameWin.gameState.multishotLevel = 3;
-                
-                // Get the first available rocket to target
-                const targetRocket = gameWin.gameState.rockets[0];
-                expect(targetRocket, 'Ensure target rocket exists').to.exist;
+        cy.window()
+            .its('gameState.interceptors.length')
+            .then((initialInterceptorCount) => {
+                // Use a .then() block to ensure gameState is available
+                cy.window().then((win) => {
+                    const gameWin = win as unknown as CustomWindow;
 
-                // --- FIX: Simulate a user targeting the rocket ---
-                // 1. Trigger a mousemove event over the rocket to allow the game to target it
-                cy.get('#gameCanvas').trigger('mousemove', { clientX: targetRocket.x, clientY: targetRocket.y });
+                    // Manually set the multishot level to max for this test
+                    gameWin.gameState.multishotLevel = 3;
 
-                // 2. Wait for the game to process the mouse move and update the targetedRocket state
-                cy.window().its('gameState.targetedRocket').should('not.be.null');
+                    // Get the first available rocket to target
+                    const targetRocket = gameWin.gameState.rockets[0];
+                    expect(targetRocket, 'Ensure target rocket exists').to.exist;
 
-                // 3. Now, click anywhere on the canvas to fire the interceptors at the locked target
-                cy.get('#gameCanvas').click();
+                    // --- FIX: Simulate a user targeting the rocket ---
+                    // 1. Trigger a mousemove event over the rocket to allow the game to target it
+                    cy.get('#gameCanvas').trigger('mousemove', { clientX: targetRocket.x, clientY: targetRocket.y });
 
-                // 4. Assert that 4 new interceptors have been created
-                cy.window().its('gameState.interceptors.length').should('eq', initialInterceptorCount + 4);
+                    // 2. Wait for the game to process the mouse move and update the targetedRocket state
+                    cy.window().its('gameState.targetedRocket').should('not.be.null');
 
-                // 5. Optional but good: Assert that all new interceptors are targeting the same rocket
-                cy.window().then(finalWin => {
-                    const finalGameWin = finalWin as unknown as CustomWindow;
-                    finalGameWin.gameState.interceptors.forEach((interceptor: any) => {
-                        expect(interceptor.target.id).to.equal(targetRocket.id);
+                    // 3. Now, click anywhere on the canvas to fire the interceptors at the locked target
+                    cy.get('#gameCanvas').click();
+
+                    // 4. Assert that 4 new interceptors have been created
+                    cy.window()
+                        .its('gameState.interceptors.length')
+                        .should('eq', initialInterceptorCount + 4);
+
+                    // 5. Optional but good: Assert that all new interceptors are targeting the same rocket
+                    cy.window().then((finalWin) => {
+                        const finalGameWin = finalWin as unknown as CustomWindow;
+                        finalGameWin.gameState.interceptors.forEach((interceptor: any) => {
+                            expect(interceptor.target.id).to.equal(targetRocket.id);
+                        });
                     });
                 });
             });
-        });
     });
 });
