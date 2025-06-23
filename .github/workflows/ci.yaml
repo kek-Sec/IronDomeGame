@@ -1,0 +1,44 @@
+# .github/workflows/ci.yaml
+# New GitHub Action for running CI checks on TypeScript code.
+
+name: Code Quality CI
+
+# This action runs on every push and pull request to the main branch.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # This job runs all quality and security checks
+  quality-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Check TypeScript Types
+        run: npm run type-check
+
+      - name: Check Formatting
+        run: npm run format:check
+      
+      - name: Initialize CodeQL for security scanning
+        uses: github/codeql-action/init@v3
+        with:
+          languages: 'javascript'
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

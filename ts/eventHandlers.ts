@@ -1,5 +1,5 @@
 // ts/eventHandlers.ts
-// * Manages all user input and UI-triggered events.
+// * Manages the logic for user input and UI-triggered events.
 
 import { config } from './config';
 import { Interceptor, HomingMine } from './entities/playerAbilities';
@@ -12,34 +12,9 @@ export function handleMouseMove(state: GameState, canvas: HTMLCanvasElement, e: 
     state.mouse.y = e.clientY - rect.top;
 }
 
-// --- Click Handling Logic ---
-
-function _handleMineDeployment(state: GameState, x: number, y: number, height: number): boolean {
-    if (state.homingMinesAvailable > 0 && y > height * config.homingMineDeploymentZone) {
-        state.homingMines.push(new HomingMine(x, height - 10));
-        state.homingMinesAvailable--;
-        return true;
-    }
-    return false;
-}
-
-function _handleEmpClick(state: GameState, x: number, y: number): boolean {
-    for (let i = state.empPowerUps.length - 1; i >= 0; i--) {
-        const emp = state.empPowerUps[i];
-        if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
-            state.empActiveTimer = config.empDuration;
-            state.empShockwave = { radius: 0, alpha: 1 };
-            state.empPowerUps.splice(i, 1);
-            return true;
-        }
-    }
-    return false;
-}
-
-function _handleInterceptorLaunch(state: GameState, width: number, height: number): boolean {
+function handleInterceptorLaunch(state: GameState, width: number, height: number): void {
     if (state.targetedRocket) {
         const nukeIsAvailable = state.nukeAvailable && !state.activePerks.surplusValue;
-
         if (nukeIsAvailable) {
             state.interceptors.push(
                 new Interceptor(
@@ -72,9 +47,7 @@ function _handleInterceptorLaunch(state: GameState, width: number, height: numbe
                 );
             }
         }
-        return true;
     }
-    return false;
 }
 
 export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: MouseEvent): void {
@@ -83,14 +56,28 @@ export function handleClick(state: GameState, canvas: HTMLCanvasElement, e: Mous
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const { width, height } = canvas;
 
-    if (_handleMineDeployment(state, x, y, height)) return;
-    if (_handleEmpClick(state, x, y)) return;
-    if (_handleInterceptorLaunch(state, width, height)) return;
+    // Check for EMP click
+    for (let i = state.empPowerUps.length - 1; i >= 0; i--) {
+        const emp = state.empPowerUps[i];
+        if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
+            state.empActiveTimer = config.empDuration;
+            state.empShockwave = { radius: 0, alpha: 1 };
+            state.empPowerUps.splice(i, 1);
+            return;
+        }
+    }
+
+    // Check for Mine deployment
+    if (state.homingMinesAvailable > 0 && y > canvas.height * config.homingMineDeploymentZone) {
+        state.homingMines.push(new HomingMine(x, canvas.height - 10));
+        state.homingMinesAvailable--;
+        return;
+    }
+
+    // Otherwise, launch interceptor
+    handleInterceptorLaunch(state, canvas.width, canvas.height);
 }
-
-// --- Touch Handling Logic ---
 
 export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e: TouchEvent): void {
     e.preventDefault();
@@ -99,7 +86,6 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
     const rect = canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    const { width, height } = canvas;
 
     let closestDist = config.touchTargetingRadius;
     let touchTarget: Rocket | Flare | null = null;
@@ -117,8 +103,8 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
     if (touchTarget) {
         state.interceptors.push(
             new Interceptor(
-                width / 2,
-                height,
+                canvas.width / 2,
+                canvas.height,
                 touchTarget,
                 state.interceptorSpeed,
                 state.interceptorBlastRadius,
@@ -128,14 +114,24 @@ export function handleTouchStart(state: GameState, canvas: HTMLCanvasElement, e:
     }
 }
 
-// --- Pause/Resume Logic ---
+export function pauseGame(state: GameState): void {
+    if (state.gameState === 'IN_WAVE') {
+        state.gameState = 'PAUSED';
+    }
+}
+
+export function resumeGame(state: GameState): void {
+    if (state.gameState === 'PAUSED') {
+        state.gameState = 'IN_WAVE';
+        UI.hideModal();
+    }
+}
 
 export function togglePause(state: GameState, restartCallback: () => void): void {
     if (state.gameState === 'IN_WAVE') {
-        state.gameState = 'PAUSED';
-        UI.showPauseScreen(() => togglePause(state, restartCallback), restartCallback);
+        pauseGame(state);
+        UI.showPauseScreen(() => resumeGame(state), restartCallback);
     } else if (state.gameState === 'PAUSED') {
-        state.gameState = 'IN_WAVE';
-        UI.hideModal();
+        resumeGame(state);
     }
 }

@@ -17,6 +17,7 @@
         "build:publish": "npm run clean && npm-run-all --parallel build:html build:css build:js build:assets",
         "format": "prettier --write \"**/*.{ts,scss,json,md}\"",
         "format:check": "prettier --check \"**/*.{ts,scss,json,md}\"",
+        "type-check": "tsc --noEmit",
         "cy:open": "cypress open"
     },
     "keywords": [

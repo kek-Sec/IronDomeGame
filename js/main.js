@@ -674,6 +674,90 @@
     }
   };
 
+  // ts/perks.ts
+  var perks = {
+    veteranCommander: {
+      name: "Veteran Commander",
+      description: "Begin each run with 500 extra score.",
+      cost: 150
+    },
+    advancedFortifications: {
+      name: "Advanced Fortifications",
+      description: "Start each game with Base Armor already applied to all cities.",
+      cost: 400
+    },
+    rapidDeployment: {
+      name: "Rapid Deployment",
+      description: "The first upgrade purchased in the shop each wave is 25% cheaper.",
+      cost: 300
+    },
+    efficientInterceptors: {
+      name: "Efficient Interceptors",
+      description: 'All interceptors have a 10% chance to be a "Critical Hit", dealing triple damage.',
+      cost: 500
+    },
+    surplusValue: {
+      name: "Surplus Value",
+      description: "The Nuke Interceptor can be purchased every wave (instead of one per game).",
+      cost: 800
+    },
+    extraMine: {
+      name: "Reserve Mine",
+      description: "Start every game with one free Homing Mine available.",
+      cost: 200
+    }
+  };
+
+  // ts/saveManager.ts
+  var SAVE_KEY = "ironDomePlayerData_TS";
+  function getInitialPlayerData() {
+    const unlockedPerks = {};
+    Object.keys(perks).forEach((key) => {
+      unlockedPerks[key] = false;
+    });
+    return {
+      prestigePoints: 0,
+      unlockedPerks,
+      highScores: {
+        easy: 0,
+        normal: 0,
+        hard: 0
+      }
+    };
+  }
+  function loadPlayerData() {
+    const initialData = getInitialPlayerData();
+    try {
+      const savedData = localStorage.getItem(SAVE_KEY);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        return {
+          ...initialData,
+          ...parsedData,
+          highScores: {
+            ...initialData.highScores,
+            ...parsedData.highScores || {}
+          },
+          unlockedPerks: {
+            ...initialData.unlockedPerks,
+            ...parsedData.unlockedPerks || {}
+          }
+        };
+      }
+    } catch (error) {
+      console.error("Failed to load player data:", error);
+      localStorage.removeItem(SAVE_KEY);
+    }
+    return initialData;
+  }
+  function savePlayerData(playerData) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
+    } catch (error) {
+      console.error("Failed to save player data:", error);
+    }
+  }
+
   // ts/ui/domElements.ts
   var fpsCounterEl = document.getElementById("fps-counter");
   var scoreEl = document.getElementById("score");
@@ -923,90 +1007,6 @@
     addListenerIfPresent("next-wave-button", nextWaveCallback);
   }
 
-  // ts/perks.ts
-  var perks = {
-    veteranCommander: {
-      name: "Veteran Commander",
-      description: "Begin each run with 500 extra score.",
-      cost: 150
-    },
-    advancedFortifications: {
-      name: "Advanced Fortifications",
-      description: "Start each game with Base Armor already applied to all cities.",
-      cost: 400
-    },
-    rapidDeployment: {
-      name: "Rapid Deployment",
-      description: "The first upgrade purchased in the shop each wave is 25% cheaper.",
-      cost: 300
-    },
-    efficientInterceptors: {
-      name: "Efficient Interceptors",
-      description: 'All interceptors have a 10% chance to be a "Critical Hit", dealing triple damage.',
-      cost: 500
-    },
-    surplusValue: {
-      name: "Surplus Value",
-      description: "The Nuke Interceptor can be purchased every wave (instead of one per game).",
-      cost: 800
-    },
-    extraMine: {
-      name: "Reserve Mine",
-      description: "Start every game with one free Homing Mine available.",
-      cost: 200
-    }
-  };
-
-  // ts/saveManager.ts
-  var SAVE_KEY = "ironDomePlayerData_TS";
-  function getInitialPlayerData() {
-    const unlockedPerks = {};
-    Object.keys(perks).forEach((key) => {
-      unlockedPerks[key] = false;
-    });
-    return {
-      prestigePoints: 0,
-      unlockedPerks,
-      highScores: {
-        easy: 0,
-        normal: 0,
-        hard: 0
-      }
-    };
-  }
-  function loadPlayerData() {
-    const initialData = getInitialPlayerData();
-    try {
-      const savedData = localStorage.getItem(SAVE_KEY);
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        return {
-          ...initialData,
-          ...parsedData,
-          highScores: {
-            ...initialData.highScores,
-            ...parsedData.highScores || {}
-          },
-          unlockedPerks: {
-            ...initialData.unlockedPerks,
-            ...parsedData.unlockedPerks || {}
-          }
-        };
-      }
-    } catch (error) {
-      console.error("Failed to load player data:", error);
-      localStorage.removeItem(SAVE_KEY);
-    }
-    return initialData;
-  }
-  function savePlayerData(playerData) {
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(playerData));
-    } catch (error) {
-      console.error("Failed to save player data:", error);
-    }
-  }
-
   // ts/ui/armoryScreen.ts
   var perkIcons = {
     veteranCommander: "\u{1F3C6}",
@@ -1075,14 +1075,13 @@
   // ts/ui.ts
   function updateTopUI(state2) {
     fpsCounterEl.textContent = state2.fps.toString();
-    scoreEl.textContent = state2.score.toString();
-    coinsEl.textContent = state2.coins.toString();
+    scoreEl.textContent = state2.score.toLocaleString();
+    coinsEl.textContent = state2.coins.toLocaleString();
     waveEl.textContent = (state2.currentWave + 1).toString();
-    if (state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED") {
-      pauseButton.style.display = "flex";
+    const isPausable = state2.gameState === "IN_WAVE" || state2.gameState === "PAUSED";
+    pauseButton.style.display = isPausable ? "flex" : "none";
+    if (isPausable) {
       pauseIcon.innerHTML = state2.gameState === "PAUSED" ? "\u25B6" : "||";
-    } else {
-      pauseButton.style.display = "none";
     }
   }
   function updateBossUI(boss) {
@@ -1095,10 +1094,19 @@
       bossUiContainer.style.display = "none";
     }
   }
+  function hideModal() {
+    modalContainer.style.display = "none";
+  }
+  function showModalWithContent(innerHTML, className = "") {
+    modalContainer.style.display = "flex";
+    modalContent.className = "modal-content";
+    if (className) {
+      modalContent.classList.add(className);
+    }
+    modalContent.innerHTML = innerHTML;
+  }
   function showStartScreen(startGameCallback, showArmoryCallback) {
     const playerData = loadPlayerData();
-    modalContainer.style.display = "flex";
-    modalContent.classList.remove("armory");
     let difficultyCardsHTML = '<div class="difficulty-card-grid">';
     for (const key in difficultySettings) {
       const diff = difficultySettings[key];
@@ -1120,7 +1128,7 @@
         `;
     }
     difficultyCardsHTML += "</div>";
-    modalContent.innerHTML = `
+    const fullHTML = `
         <div class="start-screen-header">
             <h1>IRON DOME</h1>
             <button id="armory-button" class="armory-button">
@@ -1130,21 +1138,16 @@
         <p class="start-screen-subtitle">Select your engagement difficulty, Commander.</p>
         ${difficultyCardsHTML}
     `;
-    for (const key in difficultySettings) {
-      document.getElementById(`start-${key}`)?.addEventListener("click", (e) => {
-        let target = e.target;
-        while (target && !target.dataset.difficulty) {
-          target = target.parentElement;
-        }
-        if (target && target.dataset.difficulty) {
-          startGameCallback(target.dataset.difficulty);
-        }
+    showModalWithContent(fullHTML);
+    document.querySelectorAll(".difficulty-card").forEach((card) => {
+      card.addEventListener("click", (e) => {
+        const difficulty = e.currentTarget.dataset.difficulty;
+        startGameCallback(difficulty);
       });
-    }
+    });
     document.getElementById("armory-button")?.addEventListener("click", showArmoryCallback);
   }
   function showRocketInfoScreen(closeCallback) {
-    modalContainer.style.display = "flex";
     let rocketHTML = '<div class="rocket-info-grid">';
     for (const key in rocketInfo) {
       const rocket = rocketInfo[key];
@@ -1159,29 +1162,27 @@
         `;
     }
     rocketHTML += "</div>";
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>ROCKET BESTIARY</h1>
         ${rocketHTML}
         <button id="close-info-button" class="modal-button">CLOSE</button>
     `;
-    const cleanupAndClose = () => {
-      modalContainer.removeEventListener("click", backgroundClickHandler);
-      closeCallback();
-    };
+    showModalWithContent(fullHTML);
+    const closeButton = document.getElementById("close-info-button");
     const backgroundClickHandler = (e) => {
       if (e.target === modalContainer) {
-        cleanupAndClose();
+        closeButton?.removeEventListener("click", closeCallback);
+        modalContainer.removeEventListener("click", backgroundClickHandler);
+        closeCallback();
       }
     };
-    document.getElementById("close-info-button")?.addEventListener("click", cleanupAndClose);
+    closeButton?.addEventListener("click", closeCallback);
     modalContainer.addEventListener("click", backgroundClickHandler);
   }
   function showGameOverScreen(state2, restartCallback, pointsEarned, newHighScore) {
     const { score, currentWave } = state2;
-    modalContainer.style.display = "flex";
-    modalContent.classList.add("game-over");
     const newHighScoreHTML = newHighScore ? `<p class="new-high-score-banner">\u{1F3C6} NEW HIGH SCORE! \u{1F3C6}</p>` : "";
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>MISSION FAILED</h1>
         ${newHighScoreHTML}
         <p class="game-over-stats">FINAL SCORE: ${score.toLocaleString()}</p>
@@ -1189,26 +1190,20 @@
         <p class="prestige-points">PRESTIGE EARNED: ${pointsEarned.toLocaleString()}</p>
         <button id="restart-button" class="modal-button">TRY AGAIN</button>
     `;
-    document.getElementById("restart-button")?.addEventListener("click", () => {
-      modalContent.classList.remove("game-over");
-      restartCallback();
-    });
+    showModalWithContent(fullHTML, "game-over");
+    document.getElementById("restart-button")?.addEventListener("click", restartCallback);
   }
   function showPauseScreen(resumeCallback, restartCallback) {
-    modalContainer.style.display = "flex";
-    modalContent.classList.remove("game-over");
-    modalContent.innerHTML = `
+    const fullHTML = `
         <h1>PAUSED</h1>
         <div class="upgrade-options">
             <button id="resume-button" class="modal-button">RESUME</button>
             <button id="restart-button-pause" class="modal-button">RESTART</button>
         </div>
     `;
+    showModalWithContent(fullHTML);
     document.getElementById("resume-button")?.addEventListener("click", resumeCallback);
     document.getElementById("restart-button-pause")?.addEventListener("click", restartCallback);
-  }
-  function hideModal() {
-    modalContainer.style.display = "none";
   }
 
   // ts/state.ts
@@ -1263,7 +1258,33 @@
     };
   }
 
-  // ts/entities/rockets.ts
+  // ts/waveManager.ts
+  function getWaveDefinition(waveNumber) {
+    if (waveNumber < config.waveDefinitions.length) {
+      return config.waveDefinitions[waveNumber];
+    }
+    const waveFactor = waveNumber - config.waveDefinitions.length + 1;
+    const totalRockets = 15 + waveFactor * 2;
+    const waveData = { isBossWave: false, composition: [] };
+    if (waveFactor > 0 && waveFactor % 5 === 0) {
+      waveData.isBossWave = true;
+      waveData.bossType = "hiveCarrier";
+      return waveData;
+    }
+    const availableTypes = ["standard", "standard", "standard", "mirv"];
+    if (waveNumber > 8) availableTypes.push("stealth");
+    if (waveNumber > 10) availableTypes.push("swarmer");
+    if (waveNumber > 12) availableTypes.push("armored");
+    if (waveNumber > 14) availableTypes.push("flare_rocket");
+    if (waveNumber > 6) availableTypes.push("designator");
+    for (let i = 0; i < totalRockets; i++) {
+      const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+      waveData.composition.push(randomType);
+    }
+    return waveData;
+  }
+
+  // ts/entities/rockets/base.ts
   var Rocket = class {
     constructor(startX, startY, targetVx, targetVy, width2, sizeMultiplier = 1, speedMultiplier = 1) {
       this.type = "standard";
@@ -1350,17 +1371,11 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/armored.ts
   var ArmoredRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
-      super(
-        void 0,
-        void 0,
-        random(-0.5, 0.5),
-        random(1, 1.5),
-        width2,
-        sizeMultiplier * 1.5,
-        speedMultiplier * 0.7
-      );
+      super(void 0, void 0, random(-0.5, 0.5), random(1, 1.5), width2, sizeMultiplier * 1.5, speedMultiplier * 0.7);
       this.health = 3;
       this.maxHealth = 3;
       this.hitFlashTimer = 0;
@@ -1398,9 +1413,9 @@
       ctx2.save();
       ctx2.translate(this.x, this.y);
       ctx2.rotate(this.angle);
+      super.drawHead(ctx2);
       const w = this.radius;
       const h = this.radius * 3;
-      super.drawHead(ctx2);
       ctx2.fillStyle = "#495057";
       ctx2.fillRect(-w * 0.7, -h * 0.3, w * 1.4, h * 0.6);
       ctx2.strokeStyle = "#212529";
@@ -1417,6 +1432,8 @@
       this.drawHealthBar(ctx2);
     }
   };
+
+  // ts/entities/rockets/stealth.ts
   var StealthRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 0.8, speedMultiplier * 1.2);
@@ -1474,6 +1491,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/drone.ts
   var Drone = class extends Rocket {
     constructor(startX, startY, targetVx, targetVy, width2, speedMultiplier = 1) {
       super(startX, startY, targetVx, targetVy, width2, 0.6, speedMultiplier * 1.5);
@@ -1505,6 +1524,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/swarmer.ts
   var SwarmerRocket = class extends Rocket {
     constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier * 1.5, speedMultiplier * 0.8);
@@ -1551,6 +1572,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/mirv.ts
   var MirvRocket = class extends Rocket {
     constructor(width2, height2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
@@ -1623,6 +1646,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/flare.ts
   var FlareRocket = class extends Rocket {
     constructor(width2, sizeMultiplier = 1, speedMultiplier = 1) {
       super(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
@@ -1652,6 +1677,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/designator.ts
   var ArtilleryDesignator = class extends Rocket {
     // 3 seconds at 60fps
     constructor(width2, height2, cities, sizeMultiplier = 1, speedMultiplier = 1) {
@@ -1713,18 +1740,6 @@
       ctx2.shadowBlur = 15;
       ctx2.stroke();
       ctx2.shadowBlur = 0;
-      const circleRadius = this.targetCity.width / 2 * (1 - progress);
-      ctx2.beginPath();
-      ctx2.arc(
-        this.targetCity.x + this.targetCity.width / 2,
-        this.targetCity.y + this.targetCity.height / 2,
-        circleRadius,
-        0,
-        Math.PI * 2
-      );
-      ctx2.strokeStyle = `rgba(255, 0, 0, ${0.5 + progress * 0.5})`;
-      ctx2.lineWidth = 2;
-      ctx2.stroke();
     }
     draw(ctx2) {
       this.drawTrail(ctx2);
@@ -1756,6 +1771,8 @@
       ctx2.restore();
     }
   };
+
+  // ts/entities/rockets/shell.ts
   var ArtilleryShell = class {
     constructor(targetX, targetY) {
       this.timeLeft = 30;
@@ -1788,6 +1805,50 @@
       ctx2.stroke();
     }
   };
+
+  // ts/systems/spawning.ts
+  function handleSpawning(state2, width2, height2) {
+    const waveDef = getWaveDefinition(state2.currentWave);
+    if (waveDef.isBossWave) return;
+    const difficulty = difficultySettings[state2.difficulty];
+    const difficultyScale = state2.currentWave > 5 ? 1 + (state2.currentWave - 5) * 0.15 : 1;
+    const currentWaveDelay = (waveDef.delay || 85) * difficulty.waveDelayMultiplier / difficultyScale;
+    state2.waveRocketSpawn.timer++;
+    if (state2.waveRocketSpawn.timer > currentWaveDelay && state2.waveRocketSpawn.toSpawn.length > 0) {
+      const rocketType = state2.waveRocketSpawn.toSpawn.pop();
+      if (rocketType) {
+        createRocket(state2, rocketType, width2, height2, difficulty);
+      }
+      state2.waveRocketSpawn.timer = 0;
+    }
+    if (Math.random() < config.empSpawnChance && state2.empPowerUps.length < 1 && state2.empActiveTimer <= 0) {
+      state2.empPowerUps.push(new EMP(null, null, width2, height2));
+    }
+  }
+  function createRocket(state2, type, width2, height2, difficulty) {
+    const speedBonus = difficulty.enemySpeedBonus || 1;
+    const difficultyScale = state2.currentWave > 5 ? 1 + (state2.currentWave - 5) * 0.15 : 1;
+    const speedMultiplier = (1 + state2.currentWave * 0.05) * difficultyScale * speedBonus;
+    const sizeMultiplier = difficulty.missileSizeMultiplier;
+    let newRocket;
+    const rocketConstructors = {
+      standard: () => new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier),
+      mirv: () => new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier),
+      stealth: () => new StealthRocket(width2, sizeMultiplier, speedMultiplier),
+      swarmer: () => new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier),
+      flare_rocket: () => new FlareRocket(width2, sizeMultiplier, speedMultiplier),
+      armored: () => new ArmoredRocket(width2, sizeMultiplier, speedMultiplier),
+      designator: () => new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier)
+    };
+    if (rocketConstructors[type]) {
+      newRocket = rocketConstructors[type]();
+      if (state2.scramblerActive && Math.random() < 0.25) {
+        newRocket.vx = random(-4, 4);
+        newRocket.vy *= 0.8;
+      }
+      state2.rockets.push(newRocket);
+    }
+  }
 
   // ts/entities/bosses.ts
   var HiveCarrier = class {
@@ -1869,33 +1930,7 @@
     }
   };
 
-  // ts/waveManager.ts
-  function getWaveDefinition(waveNumber) {
-    if (waveNumber < config.waveDefinitions.length) {
-      return config.waveDefinitions[waveNumber];
-    }
-    const waveFactor = waveNumber - config.waveDefinitions.length + 1;
-    const totalRockets = 15 + waveFactor * 2;
-    const waveData = { isBossWave: false, composition: [] };
-    if (waveFactor > 0 && waveFactor % 5 === 0) {
-      waveData.isBossWave = true;
-      waveData.bossType = "hiveCarrier";
-      return waveData;
-    }
-    const availableTypes = ["standard", "standard", "standard", "mirv"];
-    if (waveNumber > 8) availableTypes.push("stealth");
-    if (waveNumber > 10) availableTypes.push("swarmer");
-    if (waveNumber > 12) availableTypes.push("armored");
-    if (waveNumber > 14) availableTypes.push("flare_rocket");
-    if (waveNumber > 6) availableTypes.push("designator");
-    for (let i = 0; i < totalRockets; i++) {
-      const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-      waveData.composition.push(randomType);
-    }
-    return waveData;
-  }
-
-  // ts/logic/updateLogic.ts
+  // ts/systems/targeting.ts
   function findTargetedRocket(state2) {
     let closestDist = Infinity;
     state2.targetedRocket = null;
@@ -1904,7 +1939,9 @@
       potentialTargets.push(state2.boss);
     }
     for (const target of potentialTargets) {
-      if (target.type === "stealth" && "isVisible" in target && !target.isVisible) continue;
+      if (target.type === "stealth" && "isVisible" in target && !target.isVisible) {
+        continue;
+      }
       const dist = Math.hypot(target.x - state2.mouse.x, target.y - state2.mouse.y);
       const targetableRadius = target instanceof HiveCarrier ? target.radius : 50;
       if (dist < targetableRadius && dist < closestDist) {
@@ -1913,255 +1950,45 @@
       }
     }
   }
-  function handleSpawning(state2, width2, height2) {
-    const waveDef = getWaveDefinition(state2.currentWave);
-    if (waveDef.isBossWave) return;
-    const difficulty = difficultySettings[state2.difficulty];
-    const difficultyScale = state2.currentWave > 5 ? 1 + (state2.currentWave - 5) * 0.15 : 1;
-    const currentWaveDelay = (waveDef.delay || 85) * difficulty.waveDelayMultiplier / difficultyScale;
-    const speedBonus = difficulty.enemySpeedBonus || 1;
-    const speedMultiplier = (1 + state2.currentWave * 0.05) * difficultyScale * speedBonus;
-    state2.waveRocketSpawn.timer++;
-    if (state2.waveRocketSpawn.timer > currentWaveDelay && state2.waveRocketSpawn.toSpawn.length > 0) {
-      const rocketType = state2.waveRocketSpawn.toSpawn.pop();
-      const sizeMultiplier = difficulty.missileSizeMultiplier;
-      let newRocket;
-      if (rocketType === "standard") {
-        newRocket = new Rocket(void 0, void 0, void 0, void 0, width2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "mirv") {
-        newRocket = new MirvRocket(width2, height2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "stealth") {
-        newRocket = new StealthRocket(width2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "swarmer") {
-        newRocket = new SwarmerRocket(width2, height2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "flare_rocket") {
-        newRocket = new FlareRocket(width2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "armored") {
-        newRocket = new ArmoredRocket(width2, sizeMultiplier, speedMultiplier);
-      } else if (rocketType === "designator") {
-        newRocket = new ArtilleryDesignator(width2, height2, state2.cities, sizeMultiplier, speedMultiplier);
-      }
-      if (newRocket) {
-        if (state2.scramblerActive && Math.random() < 0.25) {
-          newRocket.vx = random(-4, 4);
-          newRocket.vy *= 0.8;
-        }
-        state2.rockets.push(newRocket);
-      }
-      state2.waveRocketSpawn.timer = 0;
-    }
-    if (Math.random() < config.empSpawnChance && state2.empPowerUps.length < 1 && state2.empActiveTimer <= 0) {
-      state2.empPowerUps.push(new EMP(null, null, width2, height2));
-    }
+
+  // ts/systems/collisions.ts
+  function awardPoints(state2, rocketType) {
+    const points = config.points[rocketType] || config.points.standard;
+    state2.score += points;
+    state2.coins += points;
   }
-  function updateBoss(state2) {
-    if (!state2.boss) return;
-    state2.boss.update(state2.rockets);
-  }
-  function updateRockets(state2, width2, height2) {
-    if (state2.empActiveTimer > 0) return;
-    for (let i = state2.rockets.length - 1; i >= 0; i--) {
-      const rocket = state2.rockets[i];
-      rocket.update(state2.flares);
-      if (rocket instanceof ArtilleryDesignator && rocket.isDesignating) {
-        if (rocket.designationTimer > rocket.designationDuration) {
-          if (rocket.targetCity) {
-            state2.artilleryShells.push(
-              new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y)
-            );
-          }
-          state2.rockets.splice(i, 1);
-          continue;
-        }
-      }
-      if (rocket.life > config.rocketMaxLifetime) {
-        state2.rockets.splice(i, 1);
-        continue;
-      }
-      const bounds = rocket.radius;
-      if (rocket.y >= height2 || rocket.x < -bounds || rocket.x > width2 + bounds) {
-        state2.rockets.splice(i, 1);
-        continue;
-      }
-      let hitCity = false;
-      if (rocket.type !== "designator") {
-        for (const city of state2.cities) {
-          if (!city.isDestroyed && rocket.x > city.x && rocket.x < city.x + city.width && rocket.y > city.y) {
-            if (city.isArmored) {
-              city.isArmored = false;
-            } else {
-              city.destroy();
-            }
-            hitCity = true;
-            createAdvancedExplosion(state2, rocket.x, rocket.y);
-            triggerScreenShake(state2, 15, 30);
-            break;
-          }
-        }
-      }
-      if (hitCity) {
-        state2.rockets.splice(i, 1);
-        continue;
-      }
-      if (rocket.type === "mirv" || rocket.type === "swarmer") {
-        const splittableRocket = rocket;
-        if (splittableRocket.hasSplit && typeof splittableRocket.split === "function") {
-          state2.rockets.push(...splittableRocket.split());
-          state2.rockets.splice(i, 1);
-          continue;
-        }
-      }
-    }
-  }
-  function updateArtilleryShells(state2) {
-    for (let i = state2.artilleryShells.length - 1; i >= 0; i--) {
-      const shell = state2.artilleryShells[i];
-      if (shell.update()) {
-        for (const city of state2.cities) {
-          if (!city.isDestroyed && shell.targetX > city.x && shell.targetX < city.x + city.width) {
-            city.destroy();
-            break;
-          }
-        }
-        createAdvancedExplosion(state2, shell.targetX, shell.targetY + 50);
-        triggerScreenShake(state2, 40, 60);
-        state2.artilleryShells.splice(i, 1);
-      }
-    }
-  }
-  function updateFlares(state2) {
-    for (let i = state2.flares.length - 1; i >= 0; i--) {
-      const flare = state2.flares[i];
-      flare.update();
-      if (flare.life <= 0) {
-        state2.flares.splice(i, 1);
-      }
-    }
-  }
-  function updateTurrets(state2) {
-    if (state2.empActiveTimer > 0) return;
-    for (const turret of state2.turrets) {
-      const newTracers = turret.update(state2.rockets);
-      if (newTracers.length > 0) {
-        state2.tracerRounds.push(...newTracers);
-      }
-    }
-  }
-  function updateTracerRounds(state2) {
-    for (let i = state2.tracerRounds.length - 1; i >= 0; i--) {
-      const tracer = state2.tracerRounds[i];
-      tracer.update();
-      if (tracer.life <= 0 || tracer.y < 0) {
-        state2.tracerRounds.splice(i, 1);
-        continue;
-      }
-      if (state2.boss && Math.hypot(tracer.x - state2.boss.x, tracer.y - state2.boss.y) < state2.boss.radius) {
-        const isDestroyed = state2.boss.takeDamage(1);
-        state2.score += 10;
-        state2.coins += 10;
-        state2.tracerRounds.splice(i, 1);
-        state2.flashes.push(new Flash(tracer.x, tracer.y, 20, "255, 255, 255"));
-        if (isDestroyed) {
-          state2.score += config.points.boss;
-          state2.coins += config.points.boss;
-          createAdvancedExplosion(state2, state2.boss.x, state2.boss.y);
-          triggerScreenShake(state2, 50, 120);
-          state2.boss = null;
-          state2.bossDefeated = true;
-        }
-        continue;
-      }
-      for (let j = state2.rockets.length - 1; j >= 0; j--) {
-        const rocket = state2.rockets[j];
-        if (Math.hypot(tracer.x - rocket.x, tracer.y - rocket.y) < tracer.radius + rocket.radius) {
-          let isDestroyed = true;
-          const damage = rocket.type === "armored" ? 2 : 1;
-          if (typeof rocket.takeDamage === "function") {
-            isDestroyed = rocket.takeDamage(damage);
-          }
-          state2.tracerRounds.splice(i, 1);
-          if (isDestroyed) {
-            let points = config.points.standard;
-            if (rocket.type === "mirv") points = config.points.mirv;
-            else if (rocket.type === "stealth") points = config.points.stealth;
-            else if (rocket.type === "swarmer") points = config.points.swarmer;
-            else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
-            else if (rocket.type === "drone") points = config.points.drone;
-            else if (rocket.type === "armored") points = config.points.armored;
-            else if (rocket.type === "designator") points = config.points.designator;
-            state2.score += points;
-            state2.coins += points;
-            state2.rockets.splice(j, 1);
-            createAdvancedExplosion(state2, rocket.x, rocket.y);
-          } else {
-            state2.flashes.push(new Flash(tracer.x, tracer.y, 20, "255, 255, 255"));
-          }
-          break;
-        }
-      }
-    }
-  }
-  function updateInterceptors(state2, width2) {
+  function handleInterceptorCollisions(state2) {
     for (let i = state2.interceptors.length - 1; i >= 0; i--) {
       const interceptor = state2.interceptors[i];
-      interceptor.update(state2.rockets, state2.flares, state2.boss);
       let detonated = false;
-      if (interceptor.y < 0 || interceptor.x < 0 || interceptor.x > width2) {
-        state2.interceptors.splice(i, 1);
-        continue;
-      }
-      let damage = interceptor.type === "nuke" ? config.nukeDamage : config.interceptorDamage;
-      if (state2.activePerks.efficientInterceptors && Math.random() < 0.1) {
-        damage *= 3;
-      }
       if (state2.boss && Math.hypot(interceptor.x - state2.boss.x, interceptor.y - state2.boss.y) < state2.boss.radius) {
-        const isDestroyed = state2.boss.takeDamage(damage);
-        state2.score += damage * 10;
-        state2.coins += damage * 10;
         detonated = true;
-        if (isDestroyed) {
-          state2.score += config.points.boss;
-          state2.coins += config.points.boss;
+        const damage = interceptor.type === "nuke" ? config.nukeDamage : config.interceptorDamage;
+        if (state2.boss.takeDamage(damage)) {
+          awardPoints(state2, "boss");
           createAdvancedExplosion(state2, state2.boss.x, state2.boss.y);
           triggerScreenShake(state2, 50, 120);
           state2.boss = null;
           state2.bossDefeated = true;
         }
       }
-      if (!detonated) {
-        for (let f = state2.flares.length - 1; f >= 0; f--) {
-          const flare = state2.flares[f];
-          if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
-            state2.flares.splice(f, 1);
-            detonated = true;
-            break;
+      for (let j = state2.rockets.length - 1; j >= 0 && !detonated; j--) {
+        const rocket = state2.rockets[j];
+        if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
+          detonated = true;
+          const damage = config.interceptorDamage * (state2.activePerks.efficientInterceptors && Math.random() < 0.1 ? 3 : 1);
+          const isDestroyed = rocket.takeDamage ? rocket.takeDamage(damage) : true;
+          if (isDestroyed) {
+            awardPoints(state2, rocket.type);
+            state2.rockets.splice(j, 1);
           }
         }
       }
-      if (!detonated) {
-        for (let j = state2.rockets.length - 1; j >= 0; j--) {
-          const rocket = state2.rockets[j];
-          if (Math.hypot(interceptor.x - rocket.x, interceptor.y - rocket.y) < interceptor.blastRadius + rocket.radius) {
-            let isDestroyed = true;
-            if (typeof rocket.takeDamage === "function") {
-              isDestroyed = rocket.takeDamage(damage);
-            }
-            if (isDestroyed) {
-              let points = config.points.standard;
-              if (rocket.type === "mirv") points = config.points.mirv;
-              else if (rocket.type === "stealth") points = config.points.stealth;
-              else if (rocket.type === "swarmer") points = config.points.swarmer;
-              else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
-              else if (rocket.type === "drone") points = config.points.drone;
-              else if (rocket.type === "armored") points = config.points.armored;
-              else if (rocket.type === "designator") points = config.points.designator;
-              state2.score += points;
-              state2.coins += points;
-              state2.rockets.splice(j, 1);
-            }
-            detonated = true;
-            break;
-          }
+      for (let f = state2.flares.length - 1; f >= 0 && !detonated; f--) {
+        const flare = state2.flares[f];
+        if (Math.hypot(interceptor.x - flare.x, interceptor.y - flare.y) < interceptor.blastRadius + flare.radius) {
+          detonated = true;
+          state2.flares.splice(f, 1);
         }
       }
       if (detonated) {
@@ -2175,37 +2002,41 @@
       }
     }
   }
-  function updateHomingMines(state2) {
-    for (let i = state2.homingMines.length - 1; i >= 0; i--) {
-      const mine = state2.homingMines[i];
-      if (mine.update(state2.rockets)) {
-        createAdvancedExplosion(state2, mine.x, mine.y);
-        triggerScreenShake(state2, 10, 20);
-        for (let j = state2.rockets.length - 1; j >= 0; j--) {
-          const rocket = state2.rockets[j];
-          if (Math.hypot(mine.x - rocket.x, mine.y - rocket.y) < config.homingMineDetonationRadius) {
-            let points = config.points.standard;
-            if (rocket.type === "mirv") points = config.points.mirv;
-            else if (rocket.type === "stealth") points = config.points.stealth;
-            else if (rocket.type === "swarmer") points = config.points.swarmer;
-            else if (rocket.type === "flare_rocket") points = config.points.flare_rocket;
-            else if (rocket.type === "drone") points = config.points.drone;
-            else if (rocket.type === "armored") points = config.points.armored;
-            else if (rocket.type === "designator") points = config.points.designator;
-            state2.score += points;
-            state2.coins += points;
+  function handleTracerCollisions(state2) {
+    for (let i = state2.tracerRounds.length - 1; i >= 0; i--) {
+      const tracer = state2.tracerRounds[i];
+      let hit = false;
+      for (let j = state2.rockets.length - 1; j >= 0; j--) {
+        const rocket = state2.rockets[j];
+        if (Math.hypot(tracer.x - rocket.x, tracer.y - rocket.y) < tracer.radius + rocket.radius) {
+          hit = true;
+          const damage = rocket.type === "armored" ? 2 : 1;
+          const isDestroyed = rocket.takeDamage ? rocket.takeDamage(damage) : true;
+          if (isDestroyed) {
+            awardPoints(state2, rocket.type);
             state2.rockets.splice(j, 1);
+            createAdvancedExplosion(state2, tracer.x, tracer.y);
+          } else {
+            state2.flashes.push(new Flash(tracer.x, tracer.y, 20, "255, 255, 255"));
           }
+          break;
         }
-        state2.homingMines.splice(i, 1);
+      }
+      if (hit) {
+        state2.tracerRounds.splice(i, 1);
       }
     }
   }
-  function updateParticles(state2) {
-    for (let i = state2.particles.length - 1; i >= 0; i--) {
-      const p = state2.particles[i];
-      p.update();
-      if (p.life <= 0) state2.particles.splice(i, 1);
+
+  // ts/systems/effectsSystem.ts
+  function updateEmpEffects(state2) {
+    if (state2.empActiveTimer > 0) {
+      state2.empShockwave.radius += 20;
+      state2.empShockwave.alpha = Math.max(0, state2.empShockwave.alpha - 0.01);
+    } else {
+      if (state2.empShockwave.radius !== 0 || state2.empShockwave.alpha !== 0) {
+        state2.empShockwave = { radius: 0, alpha: 0 };
+      }
     }
   }
   function updateCityEffects(state2, height2) {
@@ -2219,68 +2050,71 @@
   }
 
   // ts/gameLogic.ts
-  function update(state2, width2, height2, refreshUpgradeScreen2) {
-    if (state2.gameState !== "IN_WAVE") return;
-    state2.gameTime++;
+  function updateEntities(state2, width2, height2) {
+    if (state2.boss) state2.boss.update(state2.rockets);
+    if (state2.empActiveTimer <= 0) {
+      state2.turrets.forEach((t) => {
+        const newTracers = t.update(state2.rockets);
+        if (newTracers.length > 0) state2.tracerRounds.push(...newTracers);
+      });
+      for (let i = state2.rockets.length - 1; i >= 0; i--) {
+        const rocket = state2.rockets[i];
+        rocket.update(state2.flares);
+        if (handleRocketLogic(state2, rocket, i, width2, height2)) {
+          continue;
+        }
+      }
+    }
+    state2.interceptors.forEach((interceptor) => interceptor.update(state2.rockets, state2.flares, state2.boss));
+    state2.tracerRounds.forEach((tracer) => tracer.update());
+    state2.flares.forEach((flare) => flare.update());
+    state2.empPowerUps.forEach((emp) => emp.update());
+    state2.particles.forEach((p) => p.update());
+    state2.flashes.forEach((f) => f.update());
+    state2.shockwaves.forEach((s) => s.update());
+  }
+  function handleRocketLogic(state2, rocket, index, width2, height2) {
+    if (rocket.y >= height2 || rocket.x < -rocket.radius || rocket.x > width2 + rocket.radius || rocket.life > config.rocketMaxLifetime) {
+      state2.rockets.splice(index, 1);
+      return true;
+    }
+    for (const city of state2.cities) {
+      if (!city.isDestroyed && rocket.type !== "designator" && rocket.y > city.y && rocket.x > city.x && rocket.x < city.x + city.width) {
+        city.isArmored ? city.isArmored = false : city.destroy();
+        createAdvancedExplosion(state2, rocket.x, rocket.y);
+        triggerScreenShake(state2, 15, 30);
+        state2.rockets.splice(index, 1);
+        return true;
+      }
+    }
+    if ((rocket.type === "mirv" || rocket.type === "swarmer") && rocket.hasSplit && rocket.split) {
+      state2.rockets.push(...rocket.split());
+      state2.rockets.splice(index, 1);
+      return true;
+    }
+    if (rocket instanceof ArtilleryDesignator && rocket.isDesignating && rocket.designationTimer > rocket.designationDuration) {
+      if (rocket.targetCity) {
+        state2.artilleryShells.push(new ArtilleryShell(rocket.targetCity.x + rocket.targetCity.width / 2, rocket.targetCity.y));
+      }
+      state2.rockets.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+  function cleanupEntities(state2, width2) {
+    state2.interceptors = state2.interceptors.filter((i) => i.y > 0 && i.x > 0 && i.x < width2);
+    state2.tracerRounds = state2.tracerRounds.filter((t) => t.life > 0 && t.y > 0);
+    state2.flares = state2.flares.filter((f) => f.life > 0);
+    state2.particles = state2.particles.filter((p) => p.life > 0);
+    state2.flashes = state2.flashes.filter((f) => f.alpha > 0);
+    state2.shockwaves = state2.shockwaves.filter((s) => s.alpha > 0);
+    state2.empPowerUps = state2.empPowerUps.filter((e) => e.life > 0);
+  }
+  function checkGameState(state2, refreshUpgradeScreen2) {
     const waveDef = getWaveDefinition(state2.currentWave);
-    if (!waveDef.isBossWave && state2.rockets.length === 0 && state2.waveRocketSpawn.toSpawn.length === 0 && state2.boss === null) {
-      state2.timeSinceLastRocket++;
-    } else {
-      state2.timeSinceLastRocket = 0;
-    }
-    if (state2.empActiveTimer > 0) {
-      state2.empActiveTimer--;
-      state2.empShockwave.radius += 20;
-      state2.empShockwave.alpha = Math.max(0, state2.empShockwave.alpha - 0.01);
-    } else {
-      state2.empShockwave = { radius: 0, alpha: 0 };
-    }
-    handleSpawning(state2, width2, height2);
-    updateBoss(state2);
-    updateRockets(state2, width2, height2);
-    updateArtilleryShells(state2);
-    updateFlares(state2);
-    updateTurrets(state2);
-    updateInterceptors(state2, width2);
-    updateTracerRounds(state2);
-    updateHomingMines(state2);
-    updateParticles(state2);
-    updateCityEffects(state2, height2);
-    state2.flashes.forEach((flash, i) => {
-      flash.update();
-      if (flash.alpha <= 0) state2.flashes.splice(i, 1);
-    });
-    state2.shockwaves.forEach((shockwave, i) => {
-      shockwave.update();
-      if (shockwave.alpha <= 0) state2.shockwaves.splice(i, 1);
-    });
-    state2.empPowerUps.forEach((emp, i) => {
-      emp.update();
-      if (emp.life <= 0) state2.empPowerUps.splice(i, 1);
-    });
-    findTargetedRocket(state2);
-    let waveIsOver = false;
-    const waveDuration = state2.gameTime - state2.waveStartTime;
-    if (waveDuration > 10800) {
-      waveIsOver = true;
-      console.warn(`Failsafe triggered: Wave ${state2.currentWave + 1} ended due to absolute timeout.`);
-      state2.rockets = [];
-    }
-    if (state2.timeSinceLastRocket > 1200) {
-      waveIsOver = true;
-      console.warn("Failsafe triggered: Wave ended due to 20s of no activity.");
-      state2.waveRocketSpawn.toSpawn = [];
-    }
-    if (waveDef.isBossWave) {
-      if (state2.bossDefeated && state2.rockets.length === 0) {
-        waveIsOver = true;
-      }
-    } else {
-      if (state2.rockets.length === 0 && state2.waveRocketSpawn.toSpawn.length === 0) {
-        waveIsOver = true;
-      }
-    }
-    if (waveIsOver) {
+    const allEnemiesDefeated = state2.rockets.length === 0 && (!waveDef.isBossWave || state2.bossDefeated);
+    const waveComplete = allEnemiesDefeated && state2.waveRocketSpawn.toSpawn.length === 0;
+    if (waveComplete) {
       state2.gameState = "BETWEEN_WAVES";
       state2.targetedRocket = null;
       state2.flares = [];
@@ -2302,6 +2136,21 @@
       state2.playerData.prestigePoints += pointsEarned;
       savePlayerData(state2.playerData);
     }
+  }
+  function update(state2, width2, height2, refreshUpgradeScreen2) {
+    state2.gameTime++;
+    if (state2.empActiveTimer > 0) {
+      state2.empActiveTimer--;
+    }
+    findTargetedRocket(state2);
+    handleSpawning(state2, width2, height2);
+    updateEntities(state2, width2, height2);
+    updateCityEffects(state2, height2);
+    updateEmpEffects(state2);
+    handleInterceptorCollisions(state2);
+    handleTracerCollisions(state2);
+    cleanupEntities(state2, width2);
+    checkGameState(state2, refreshUpgradeScreen2);
   }
 
   // ts/drawing.ts
@@ -2399,39 +2248,12 @@
     state2.mouse.x = e.clientX - rect.left;
     state2.mouse.y = e.clientY - rect.top;
   }
-  function _handleMineDeployment(state2, x, y, height2) {
-    if (state2.homingMinesAvailable > 0 && y > height2 * config.homingMineDeploymentZone) {
-      state2.homingMines.push(new HomingMine(x, height2 - 10));
-      state2.homingMinesAvailable--;
-      return true;
-    }
-    return false;
-  }
-  function _handleEmpClick(state2, x, y) {
-    for (let i = state2.empPowerUps.length - 1; i >= 0; i--) {
-      const emp = state2.empPowerUps[i];
-      if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
-        state2.empActiveTimer = config.empDuration;
-        state2.empShockwave = { radius: 0, alpha: 1 };
-        state2.empPowerUps.splice(i, 1);
-        return true;
-      }
-    }
-    return false;
-  }
-  function _handleInterceptorLaunch(state2, width2, height2) {
+  function handleInterceptorLaunch(state2, width2, height2) {
     if (state2.targetedRocket) {
       const nukeIsAvailable = state2.nukeAvailable && !state2.activePerks.surplusValue;
       if (nukeIsAvailable) {
         state2.interceptors.push(
-          new Interceptor(
-            width2 / 2,
-            height2,
-            state2.targetedRocket,
-            state2.interceptorSpeed,
-            config.nukeBlastRadius,
-            "nuke"
-          )
+          new Interceptor(width2 / 2, height2, state2.targetedRocket, state2.interceptorSpeed, config.nukeBlastRadius, "nuke")
         );
         state2.nukeAvailable = false;
       } else {
@@ -2442,30 +2264,32 @@
         for (let i = 0; i < numShots; i++) {
           const launchX = startX + i * 10;
           state2.interceptors.push(
-            new Interceptor(
-              launchX,
-              height2,
-              state2.targetedRocket,
-              state2.interceptorSpeed,
-              state2.interceptorBlastRadius,
-              "standard"
-            )
+            new Interceptor(launchX, height2, state2.targetedRocket, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
           );
         }
       }
-      return true;
     }
-    return false;
   }
   function handleClick(state2, canvas2, e) {
     if (state2.gameState !== "IN_WAVE") return;
     const rect = canvas2.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const { width: width2, height: height2 } = canvas2;
-    if (_handleMineDeployment(state2, x, y, height2)) return;
-    if (_handleEmpClick(state2, x, y)) return;
-    if (_handleInterceptorLaunch(state2, width2, height2)) return;
+    for (let i = state2.empPowerUps.length - 1; i >= 0; i--) {
+      const emp = state2.empPowerUps[i];
+      if (Math.hypot(x - emp.x, y - emp.y) < emp.radius) {
+        state2.empActiveTimer = config.empDuration;
+        state2.empShockwave = { radius: 0, alpha: 1 };
+        state2.empPowerUps.splice(i, 1);
+        return;
+      }
+    }
+    if (state2.homingMinesAvailable > 0 && y > canvas2.height * config.homingMineDeploymentZone) {
+      state2.homingMines.push(new HomingMine(x, canvas2.height - 10));
+      state2.homingMinesAvailable--;
+      return;
+    }
+    handleInterceptorLaunch(state2, canvas2.width, canvas2.height);
   }
   function handleTouchStart(state2, canvas2, e) {
     e.preventDefault();
@@ -2473,7 +2297,6 @@
     const rect = canvas2.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    const { width: width2, height: height2 } = canvas2;
     let closestDist = config.touchTargetingRadius;
     let touchTarget = null;
     const potentialTargets = [...state2.rockets, ...state2.flares];
@@ -2487,24 +2310,27 @@
     }
     if (touchTarget) {
       state2.interceptors.push(
-        new Interceptor(
-          width2 / 2,
-          height2,
-          touchTarget,
-          state2.interceptorSpeed,
-          state2.interceptorBlastRadius,
-          "standard"
-        )
+        new Interceptor(canvas2.width / 2, canvas2.height, touchTarget, state2.interceptorSpeed, state2.interceptorBlastRadius, "standard")
       );
+    }
+  }
+  function pauseGame(state2) {
+    if (state2.gameState === "IN_WAVE") {
+      state2.gameState = "PAUSED";
+    }
+  }
+  function resumeGame(state2) {
+    if (state2.gameState === "PAUSED") {
+      state2.gameState = "IN_WAVE";
+      hideModal();
     }
   }
   function togglePause(state2, restartCallback) {
     if (state2.gameState === "IN_WAVE") {
-      state2.gameState = "PAUSED";
-      showPauseScreen(() => togglePause(state2, restartCallback), restartCallback);
+      pauseGame(state2);
+      showPauseScreen(() => resumeGame(state2), restartCallback);
     } else if (state2.gameState === "PAUSED") {
-      state2.gameState = "IN_WAVE";
-      hideModal();
+      resumeGame(state2);
     }
   }
 
@@ -2781,19 +2607,6 @@
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
     if (state && state.gameState !== "IN_WAVE") {
-      if (state.cities && state.cities.length > 0) {
-        const citySlotWidth = width / config.cityCount;
-        state.cities.forEach((city, i) => {
-          city.x = i * citySlotWidth + (citySlotWidth - city.width) / 2;
-          city.y = height - city.height;
-        });
-      }
-      if (state.turrets && state.turrets.length > 0) {
-        state.turrets.forEach((turret, index) => {
-          turret.x = index === 0 ? width * 0.25 : width * 0.75;
-          turret.y = height - 10;
-        });
-      }
       draw(ctx, state, width, height);
     }
   };
@@ -2801,8 +2614,7 @@
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
     }
-    modalContainer.style.display = "flex";
-    modalContent.innerHTML = "<h1>Loading Assets...</h1>";
+    showModalWithContent("<h1>Loading Assets...</h1>");
     try {
       await loadGameAssets();
       const playerData = loadPlayerData();
@@ -2814,27 +2626,28 @@
       window.addEventListener("resize", resizeCanvas);
       canvas.addEventListener("mousemove", (e) => handleMouseMove(state, canvas, e));
       canvas.addEventListener("click", (e) => handleClick(state, canvas, e));
+      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e), { passive: false });
       document.getElementById("pause-button")?.addEventListener("click", () => togglePause(state, init));
       document.getElementById("rocket-info-btn")?.addEventListener("click", () => {
         const gameWasRunning = state.gameState === "IN_WAVE";
         if (gameWasRunning) {
-          state.gameState = "PAUSED";
-          updateTopUI(state);
+          pauseGame(state);
         }
         showRocketInfoScreen(() => {
           hideModal();
           if (gameWasRunning) {
-            state.gameState = "IN_WAVE";
-            updateTopUI(state);
+            resumeGame(state);
           }
         });
       });
-      canvas.addEventListener("touchstart", (e) => handleTouchStart(state, canvas, e));
       showStartScreen(resetAndStartGame, () => showArmoryScreen(playerData, resetAndStartGame));
       animationFrameId = requestAnimationFrame(gameLoop);
     } catch (error) {
       console.error("Failed to load game assets:", error);
-      modalContent.innerHTML = "<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>";
+      showModalWithContent(
+        "<h1>Error</h1><p>Could not load game assets. Please refresh the page to try again.</p>",
+        "game-over"
+      );
     }
   }
   init();
